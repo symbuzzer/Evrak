@@ -74,6 +74,10 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 
 Evrak, herhangi bir Android izni talep etmez. Açılan dosyalar yalnızca cihazın kendi yerel depolama alanında (uygulamanın kendi önbelleğinde) tutulur; herhangi bir sunucuya veri gönderilmez, hiçbir analitik/takip SDK'sı kullanılmaz. İnternete ve cihazın dosya sistemine hiç bir şekilde erişmez.
 
+Güncelleme butonuna bastığınızda, kurulu olan Evrak uygulaması sürümü ile oluşturulan URL cihazınızın varsayılan tarayıcısı ile açılır.  
+Örneğin cihazınızda Evrak v1.0.4 sürümü yüklü ise, Güncelleme butonuna bastığınızda tarayıcıda şu URL açılır: `https://symbuzzer.github.io/evrak/index.htm?ver=1.0.4` Yani uygulama sürüm numarası dışında başkaca bir veri dışarıyla paylaşılmaz.  
+Paylaşılan sürüm numarasının sadece güncelleme kontrolü için kullanıldığını kontrol etmek için güncelleme sayfası kaynak koduna göz atabilirsiniz: https://github.com/symbuzzer/symbuzzer.github.io/blob/main/evrak/index.htm
+
 ## Katkıda Bulunma
 
 Hata bildirimleri, öneriler ve pull request'ler memnuniyetle karşılanır. Yeni bir dosya formatı desteği eklemek veya mevcut görüntüleyicilerden birini iyileştirmek isterseniz, lütfen bir issue açarak talep ve öneride bulunun.
