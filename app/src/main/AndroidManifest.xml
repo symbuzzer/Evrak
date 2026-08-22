@@ -36,7 +36,19 @@
                 <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
                 <data android:mimeType="image/tiff" />
                 <data android:mimeType="image/x-tiff" />
+                <data android:mimeType="application/x-udf" />
                 <data android:mimeType="*/*" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:pathPattern=".*\\.udf" />
+                <data android:pathPattern=".*\\.UDF" />
             </intent-filter>
 
             <intent-filter>
@@ -49,6 +61,7 @@
                 <data android:mimeType="image/jpeg" />
                 <data android:mimeType="image/png" />
                 <data android:mimeType="image/*" />
+                <data android:mimeType="application/x-udf" />
                 <data android:mimeType="*/*" />
             </intent-filter>
         </activity>

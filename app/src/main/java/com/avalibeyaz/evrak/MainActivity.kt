@@ -20,6 +20,7 @@ import com.avalibeyaz.evrak.ui.ImageViewerScreen
 import com.avalibeyaz.evrak.ui.TiffViewerScreen
 import com.avalibeyaz.evrak.ui.PdfViewerScreen
 import com.avalibeyaz.evrak.ui.WordViewerScreen
+import com.avalibeyaz.evrak.ui.UdfViewerScreen
 import com.avalibeyaz.evrak.ui.UnsupportedViewerScreen
 import com.avalibeyaz.evrak.ui.theme.EvrakTheme
 import java.io.File
@@ -57,7 +58,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
             MainScreen(
                 historyList = historyList,
                 onItemClick = { evrak ->
-                    navController.navigate("viewer/${Uri.encode(evrak.path)}")
+                    navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
                 },
                 onDeleteClick = { evrak ->
                     viewModel.deleteEvrak(evrak)
@@ -79,8 +80,9 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                 onAboutClick = { showAboutDialog = true }
             )
         }
-        composable("viewer/{filePath}") { backStackEntry ->
+        composable("viewer/{filePath}/{displayName}") { backStackEntry ->
             val filePath = backStackEntry.arguments?.getString("filePath") ?: ""
+            val displayName = backStackEntry.arguments?.getString("displayName") ?: ""
             val context = androidx.compose.ui.platform.LocalContext.current
             
             // Safety check for rapid back clicks
@@ -101,10 +103,13 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
             val isWord = filePath.endsWith(".docx", true) || 
                           filePath.endsWith(".doc", true)
             
+            val isUdf = filePath.endsWith(".udf", true)
+            
             when {
                 isPdf -> {
                     PdfViewerScreen(
                         filePath = filePath,
+                        displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) }
                     )
@@ -112,6 +117,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                 isTiff -> {
                     TiffViewerScreen(
                         filePath = filePath,
+                        displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) }
                     )
@@ -119,6 +125,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                 isImage -> {
                     ImageViewerScreen(
                         filePath = filePath,
+                        displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) }
                     )
@@ -126,6 +133,15 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                 isWord -> {
                     WordViewerScreen(
                         filePath = filePath,
+                        displayName = displayName,
+                        onBackClick = onBackSafe,
+                        onShareClick = { shareFile(context, filePath) }
+                    )
+                }
+                isUdf -> {
+                    UdfViewerScreen(
+                        filePath = filePath,
+                        displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) }
                     )
@@ -133,6 +149,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                 else -> {
                     UnsupportedViewerScreen(
                         filePath = filePath,
+                        displayName = displayName,
                         onBackClick = onBackSafe
                     )
                 }
@@ -173,7 +190,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                 }
                 
                 viewModel.openDocument(fileUri, activityContentResolver) { evrak ->
-                    navController.navigate("viewer/${Uri.encode(evrak.path)}") {
+                    navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}") {
                         popUpTo("history")
                     }
                 }
@@ -197,6 +214,7 @@ private fun shareFile(context: android.content.Context, filePath: String) {
         filePath.endsWith(".png", true) -> "image/png"
         filePath.endsWith(".jpg", true) || filePath.endsWith(".jpeg", true) -> "image/jpeg"
         filePath.endsWith(".gif", true) -> "image/gif"
+        filePath.endsWith(".udf", true) -> "application/x-udf"
         else -> "application/octet-stream"
     }
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
