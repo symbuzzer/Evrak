@@ -60,7 +60,7 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 | [Apache POI](https://poi.apache.org/) (poi, poi-ooxml, poi-scratchpad) — DOC/DOCX ayrıştırma | Apache License 2.0 |
 | [Coil](https://github.com/coil-kt/coil) (coil-compose, coil-gif) — görsel yükleme (JPG/PNG/GIF) | Apache License 2.0 |
 | [tiffrenderer](https://github.com/lucf15/TiffRenderer) — TIFF render motoru | Apache License 2.0 |
-| [docx-preview](https://github.com/volodymyrbaydalka/docxjs) — DOCX içeriğinin WebView üzerinde render edilmesi (CDN üzerinden) | Apache License 2.0 |
+| [docx-preview](https://github.com/volodymyrbaydalka/docxjs) v0.4.0 — DOCX içeriğinin WebView üzerinde render edilmesi (APK içine `assets/js/` altında gömülü) | Apache License 2.0 |
 | [JSZip](https://github.com/Stuk/jszip) — docx-preview'un ZIP (DOCX) ayrıştırma bağımlılığı (CDN üzerinden) | MIT License (veya GPLv3 — çift lisanslı) |
 
 ## Gizlilik
