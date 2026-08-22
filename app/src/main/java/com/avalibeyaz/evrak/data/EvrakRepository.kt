@@ -3,7 +3,6 @@ package com.avalibeyaz.evrak.data
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
-import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import androidx.documentfile.provider.DocumentFile
@@ -11,7 +10,6 @@ import kotlinx.coroutines.flow.Flow
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.InputStream
 import java.util.zip.ZipFile
 
 class EvrakRepository(private val context: Context, private val evrakDao: EvrakDao) {
@@ -25,11 +23,11 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         val cr = resolver ?: context.contentResolver
         
         // 1. Identification: Try MIME first, then sniffer
-        val mimeType = try { cr.getType(uri) } catch (e: Exception) { null }
+        val mimeType = try { cr.getType(uri) } catch (_: Exception) { null }
         var extension = getExtensionFromMime(mimeType, uri)
         
         // 2. Initial name
-        var fileName = getFileName(uri, cr) ?: "Bilinmeyen Belge"
+        val fileName = getFileName(uri, cr) ?: "Bilinmeyen Belge"
 
         // 2.1 Fallback extension from filename if MIME failed
         if (extension == null) {
@@ -66,7 +64,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         
         // 4. Final filename correction
         var finalName = fileName
-        if (extension != null && !finalName.endsWith(extension!!, ignoreCase = true)) {
+        if (extension != null && !finalName.endsWith(extension, ignoreCase = true)) {
             val nameWithoutExt = if (finalName.contains(".")) finalName.substringBeforeLast(".") else finalName
             finalName = "$nameWithoutExt$extension"
         }
@@ -226,7 +224,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                         }
                     }
                     true
-                } catch (e2: Exception) {
+                } catch (_: Exception) {
                     false
                 }
             }
@@ -319,20 +317,6 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             }
         } catch (e: Exception) {
             null
-        }
-    }
-
-    private fun isVirtualFile(uri: Uri, cr: ContentResolver): Boolean {
-        if (!DocumentsContract.isDocumentUri(context, uri)) return false
-        return try {
-            cr.query(uri, arrayOf(DocumentsContract.Document.COLUMN_FLAGS), null, null, null)?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val flags = cursor.getInt(0)
-                    (flags and DocumentsContract.Document.FLAG_VIRTUAL_DOCUMENT) != 0
-                } else false
-            } ?: false
-        } catch (e: Exception) {
-            false
         }
     }
 }
