@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Evrak</string>
+    <string name="history">Geçmiş</string>
+    <string name="update">Güncelleme</string>
+    <string name="about">Hakkında</string>
+    <string name="about_description">Avukat tarafından Avukatlar için ücretsiz, reklamsız ve açık kaynak kodlu olarak geliştirildi.</string>
+    <string name="share">Paylaş</string>
+    <string name="save">Kaydet</string>
+    <string name="rename">Yeniden adlandır</string>
+    <string name="delete">Sil</string>
+    <string name="send">Gönder</string>
+    <string name="confirm_delete">Silmek istediğinize emin misiniz?</string>
+    <string name="rename_title">Dosyayı Yeniden Adlandır</string>
+    <string name="rename_hint">Yeni dosya adı</string>
+    <string name="page_format">%1$d / %2$d</string>
+    <string name="no_history">Henüz görüntülenen belge yok.</string>
+    <string name="ok">Tamam</string>
+    <string name="cancel">İptal</string>
+</resources>
