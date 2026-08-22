@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -54,6 +55,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
     NavHost(navController = navController, startDestination = "history") {
         composable("history") {
             val context = androidx.compose.ui.platform.LocalContext.current
+            val shareAppLabel = stringResource(id = R.string.share_app)
             MainScreen(
                 historyList = historyList,
                 onItemClick = { evrak ->
@@ -75,6 +77,13 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                     val url = "https://symbuzzer.github.io/evrak/index.htm?ver=${BuildConfig.VERSION_NAME}"
                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                     context.startActivity(intent)
+                },
+                onShareAppClick = {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, "Evrak uygulamasını indirin: https://github.com/symbuzzer/Evrak/releases/latest/download/Evrak.apk")
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, shareAppLabel))
                 },
                 onAboutClick = { showAboutDialog = true }
             )

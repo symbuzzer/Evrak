@@ -47,6 +47,7 @@ fun MainScreen(
     onDeleteAllClick: () -> Unit,
     onRefresh: () -> Unit,
     onUpdateClick: () -> Unit,
+    onShareAppClick: () -> Unit,
     onAboutClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -87,6 +88,21 @@ fun MainScreen(
                     Text(text = "${stringResource(id = R.string.app_name)} v${BuildConfig.VERSION_NAME}") 
                 },
                 actions = {
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                        tooltip = {
+                            PlainTooltip {
+                                Text(stringResource(id = R.string.share_app))
+                            }
+                        },
+                        state = rememberTooltipState()
+                    ) {
+                        IconButton(onClick = onShareAppClick) {
+                            Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share_app))
+                        }
+                    }
                     TooltipBox(
                         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                             TooltipAnchorPosition.Above
