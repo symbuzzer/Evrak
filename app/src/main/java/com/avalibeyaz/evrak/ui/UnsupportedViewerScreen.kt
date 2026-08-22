@@ -52,7 +52,7 @@ fun UnsupportedViewerScreen(
             Spacer(modifier = Modifier.height(24.dp))
             
             Text(
-                text = "Tanımlanamayan Format",
+                text = stringResource(id = R.string.unsupported_format_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -60,7 +60,7 @@ fun UnsupportedViewerScreen(
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = "Bu dosya formatı şu anda Evrak tarafından desteklenmiyor.",
+                text = stringResource(id = R.string.unsupported_format_message),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant

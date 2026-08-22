@@ -16,4 +16,26 @@
     <string name="no_history">Henüz görüntülenen belge yok</string>
     <string name="ok">Tamam</string>
     <string name="cancel">İptal</string>
+
+    <!-- New Strings -->
+    <string name="error">Hata</string>
+    <string name="error_file_not_found">Dosya bulunamadı.</string>
+    <string name="error_unknown">Bilinmeyen hata</string>
+    <string name="about_developed_by">"%1$s tarafından geliştirilmiştir."</string>
+    <string name="about_view_libraries">Kullanılan kütüphaneleri\u0020</string>
+    <string name="about_view">görüntüleyin</string>
+    <string name="about_source_code">Kaynak kodunu\u0020</string>
+    <string name="about_feedback">Görüş ve önerilerinizi\u0020</string>
+    <string name="about_report">bildirin</string>
+    <string name="delete_all">Tümünü sil</string>
+    <string name="confirm_delete_all_message">Bütün geçmişi ve önbelleğe alınmış dosyaları silmek istediğinize emin misiniz?</string>
+    <string name="unsupported_format_title">Tanımlanamayan Format</string>
+    <string name="unsupported_format_message">Bu dosya formatı şu anda Evrak tarafından desteklenmiyor.</string>
+    <string name="error_udf_read">UDF içeriği (content.xml) okunamadı ya da dosya bozuk.</string>
+    <string name="error_udf_invalid">Invalid content.</string>
+    <string name="error_document_content_not_found">No content found.</string>
+    <string name="error_file_open_failed">Dosya okunamadı</string>
+    <string name="error_format_not_supported_view">Dosya formatı bu görünümde desteklenmiyor.</string>
+    <string name="error_tiff_open_failed">TIFF dosyası açılamadı: %1$s</string>
+    <string name="share_app_text">Evrak uygulamasını indirin: https://github.com/symbuzzer/Evrak/releases</string>
 </resources>

@@ -177,7 +177,7 @@ fun MainScreen(
                                 contentPadding = PaddingValues(0.dp)
                             ) {
                                 Text(
-                                    text = "Tümünü sil",
+                                    text = stringResource(id = R.string.delete_all),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.error
                                 )
@@ -228,22 +228,23 @@ fun MainScreen(
                             file
                         )
                         val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                            val path = selectedEvrak!!.path
-                            type = when {
-                                path.endsWith(".pdf", true) -> "application/pdf"
-                                path.endsWith(".docx", true) -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                path.endsWith(".doc", true) -> "application/msword"
-                                path.endsWith(".png", true) -> "image/png"
-                                path.endsWith(".jpg", true) || path.endsWith(".jpeg", true) -> "image/jpeg"
-                                path.endsWith(".gif", true) -> "image/gif"
-                                else -> "application/octet-stream"
-                            }
-                            putExtra(Intent.EXTRA_STREAM, uri)
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share)))
+                    val path = selectedEvrak!!.path
+                    type = when {
+                        path.endsWith(".pdf", true) -> "application/pdf"
+                        path.endsWith(".docx", true) -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                        path.endsWith(".doc", true) -> "application/msword"
+                        path.endsWith(".png", true) -> "image/png"
+                        path.endsWith(".jpg", true) || path.endsWith(".jpeg", true) -> "image/jpeg"
+                        path.endsWith(".gif", true) -> "image/gif"
+                        else -> "application/octet-stream"
                     }
-                )
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                val shareLabel = context.getString(R.string.share)
+                context.startActivity(Intent.createChooser(shareIntent, shareLabel))
+            }
+        )
                 
                 OptionItem(
                     icon = Icons.Default.Save,
@@ -337,8 +338,8 @@ fun MainScreen(
     if (showDeleteAllConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteAllConfirm = false },
-            title = { Text(text = "Tümünü sil") },
-            text = { Text(text = "Bütün geçmişi ve önbelleğe alınmış dosyaları silmek istediğinize emin misiniz?") },
+            title = { Text(text = stringResource(id = R.string.delete_all)) },
+            text = { Text(text = stringResource(id = R.string.confirm_delete_all_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -376,9 +377,7 @@ fun EvrakItem(evrak: Evrak, onClick: () -> Unit, onLongClick: () -> Unit) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = SimpleDateFormat("dd/MM/yyyy - hh:mm a", Locale.getDefault())
-                    .format(Date(evrak.dateOpened))
-                    .replace("AM", "ÖÖ")
-                    .replace("PM", "ÖS"),
+                    .format(Date(evrak.dateOpened)),
                 style = MaterialTheme.typography.bodySmall
             )
         }

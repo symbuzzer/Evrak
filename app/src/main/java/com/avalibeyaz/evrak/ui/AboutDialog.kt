@@ -49,7 +49,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                         append("Ali BEYAZ")
                     }
                     pop()
-                    append(" tarafından geliştirilmiştir.")
+                    append(stringResource(id = R.string.about_developed_by, ""))
                 }
 
                 @Suppress("DEPRECATION")
@@ -65,13 +65,13 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 
                 // Library link
                 val libraryText = buildAnnotatedString {
-                    append("Kullanılan kütüphaneleri ")
+                    append(stringResource(id = R.string.about_view_libraries))
                     pushStringAnnotation(tag = "URL", annotation = "https://github.com/symbuzzer/Evrak#kullan%C4%B1lan-k%C3%BCt%C3%BCphaneler-ve-lisanslar%C4%B1")
                     withStyle(style = SpanStyle(
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )) {
-                        append("görüntüleyin")
+                        append(stringResource(id = R.string.about_view))
                     }
                     pop()
                     append(".")
@@ -90,13 +90,13 @@ fun AboutDialog(onDismiss: () -> Unit) {
 
                 // Source code link
                 val sourceCodeText = buildAnnotatedString {
-                    append("Kaynak kodunu ")
+                    append(stringResource(id = R.string.about_source_code))
                     pushStringAnnotation(tag = "URL", annotation = "https://github.com/symbuzzer/Evrak")
                     withStyle(style = SpanStyle(
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )) {
-                        append("görüntüleyin")
+                        append(stringResource(id = R.string.about_view))
                     }
                     pop()
                     append(".")
@@ -115,13 +115,13 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 
                 // Contact link (bildirin only)
                 val contactText = buildAnnotatedString {
-                    append("Görüş ve önerilerinizi ")
+                    append(stringResource(id = R.string.about_feedback))
                     pushStringAnnotation(tag = "URL", annotation = "https://wa.me/905392552070")
                     withStyle(style = SpanStyle(
                         color = MaterialTheme.colorScheme.primary, 
                         fontWeight = FontWeight.Bold
                     )) {
-                        append("bildirin")
+                        append(stringResource(id = R.string.about_report))
                     }
                     pop()
                     append(".")
