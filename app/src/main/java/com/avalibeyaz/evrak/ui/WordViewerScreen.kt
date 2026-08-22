@@ -48,7 +48,9 @@ fun WordViewerScreen(
                 val file = File(filePath)
                 
                 if (!file.exists()) {
-                    htmlContent = wrapInHtml("<div class='error'><h3>Hata</h3><p>Dosya bulunamadı.</p></div>")
+                    val errorTitle = context.getString(R.string.error)
+                    val errorMsg = context.getString(R.string.error_file_not_found)
+                    htmlContent = wrapInHtml("<div class='error'><h3>$errorTitle</h3><p>$errorMsg</p></div>")
                     return@withContext
                 }
 
@@ -89,16 +91,17 @@ fun WordViewerScreen(
                     fis.close()
                     htmlContent = wrapInHtml(html.toString())
                 } else {
-                    htmlContent = wrapInHtml("<div class='info'><p>Dosya formatı bu görünümde desteklenmiyor.</p></div>")
+                    val errorMsg = context.getString(R.string.error_format_not_supported_view)
+                    htmlContent = wrapInHtml("<div class='info'><p>$errorMsg</p></div>")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                val errorTitle = e.javaClass.simpleName
-                val errorMsg = e.localizedMessage ?: "Bilinmeyen hata"
+                val errorTitle = context.getString(R.string.error_file_open_failed)
+                val errorMsg = e.localizedMessage ?: context.getString(R.string.error_unknown)
                 htmlContent = wrapInHtml("""
                     <div class='error'>
-                        <h3>Dosya okunamadı</h3>
-                        <p><strong>$errorTitle</strong></p>
+                        <h3>$errorTitle</h3>
+                        <p><strong>${e.javaClass.simpleName}</strong></p>
                         <p>$errorMsg</p>
                     </div>
                 """.trimIndent())

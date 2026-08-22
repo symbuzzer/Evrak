@@ -79,9 +79,10 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                     context.startActivity(intent)
                 },
                 onShareAppClick = {
+                    val shareText = context.getString(R.string.share_app_text)
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, "Evrak uygulamasını indirin: https://github.com/symbuzzer/Evrak/releases/latest/download/Evrak.apk")
+                        putExtra(Intent.EXTRA_TEXT, shareText)
                     }
                     context.startActivity(Intent.createChooser(shareIntent, shareAppLabel))
                 },

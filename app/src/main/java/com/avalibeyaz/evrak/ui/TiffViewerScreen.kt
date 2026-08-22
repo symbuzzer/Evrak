@@ -76,7 +76,8 @@ fun TiffViewerScreen(
             pageCount = tiffRenderer.pageCount
         } catch (e: Exception) {
             e.printStackTrace()
-            loadError = "TIFF dosyası açılamadı: ${e.message}"
+            val errorMessage = context.getString(R.string.error_tiff_open_failed, e.message ?: "")
+            loadError = errorMessage
             tiffRenderer?.close()
             pfd?.close()
         }
