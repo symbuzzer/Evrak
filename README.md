@@ -4,6 +4,13 @@
 
 UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygulamaları aracılığıyla gelen evrakları açmak için genellikle birden fazla farklı uygulamaya ihtiyaç duyulur. Evrak, bu ihtiyacı tek bir yerde, gereksiz karmaşıklık olmadan çözer.
 
+<img width="270" height="585" alt="1" src="https://github.com/user-attachments/assets/68f24605-09bc-418c-8673-1b6166528b31" />
+<img width="270" height="585" alt="2" src="https://github.com/user-attachments/assets/2f7a906b-37a8-44f5-b193-22c295bab85f" />
+<img width="270" height="585" alt="3" src="https://github.com/user-attachments/assets/315d1016-36f3-457b-bf1b-d04c10106007" />
+<img width="270" height="585" alt="4" src="https://github.com/user-attachments/assets/a4fa0f9a-d922-4025-912c-725a5d07f521" />
+<img width="270" height="585" alt="5" src="https://github.com/user-attachments/assets/16ad8d58-a749-4f2e-bb2b-50b573f4356e" />
+<img width="270" height="585" alt="6" src="https://github.com/user-attachments/assets/4e43874c-9d33-4354-a4b6-568b0968006f" />
+
 ## Özellikler
 
 -  **Çoklu format desteği:** UDF, TIFF, PDF, DOCX, DOC, JPG, GIF, PNG
