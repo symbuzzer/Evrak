@@ -160,12 +160,13 @@ fun WordViewerScreen(
                         settings.builtInZoomControls = true
                         settings.displayZoomControls = false
                         settings.javaScriptEnabled = true
+                        settings.allowFileAccess = true
                         setBackgroundColor(android.graphics.Color.WHITE)
                     }
                 },
                 update = { webView ->
                     htmlContent?.let {
-                        webView.loadDataWithBaseURL(null, it, "text/html", "UTF-8", null)
+                        webView.loadDataWithBaseURL("file:///android_asset/", it, "text/html", "UTF-8", null)
                     }
                 }
             )
@@ -357,8 +358,8 @@ private fun wrapInDocxHtml(base64Data: String): String {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=850, user-scalable=yes">
-            <script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
-            <script src="https://unpkg.com/docx-preview/dist/docx-preview.js"></script>
+            <script src="file:///android_asset/js/jszip.min.js"></script>
+            <script src="file:///android_asset/js/docx-preview.min.js"></script>
             <style>
                 html {
                     height: 100%;
