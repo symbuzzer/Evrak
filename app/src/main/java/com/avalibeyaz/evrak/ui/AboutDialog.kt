@@ -55,21 +55,63 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 @Suppress("DEPRECATION")
                 ClickableText(
                     text = developerText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface),
-                    onClick = { offset ->
-                        developerText.getStringAnnotations(tag = "URL", start = offset, end = offset)
-                            .firstOrNull()?.let { annotation ->
-                                uriHandler.openUri(annotation.item)
-                            }
-                    }
-                )
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                ) { offset ->
+                    developerText.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                        .firstOrNull()?.let { annotation ->
+                            uriHandler.openUri(annotation.item)
+                        }
+                }
                 
-                // Description
-                Text(
-                    text = stringResource(id = R.string.about_description),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
-                )
+                // Library link
+                val libraryText = buildAnnotatedString {
+                    append("Kullanılan kütüphaneleri ")
+                    pushStringAnnotation(tag = "URL", annotation = "https://github.com/symbuzzer/Evrak#kullan%C4%B1lan-k%C3%BCt%C3%BCphaneler-ve-lisanslar%C4%B1")
+                    withStyle(style = SpanStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )) {
+                        append("görüntüleyin")
+                    }
+                    pop()
+                    append(".")
+                }
+
+                @Suppress("DEPRECATION")
+                ClickableText(
+                    text = libraryText,
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                ) { offset ->
+                    libraryText.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                        .firstOrNull()?.let { annotation ->
+                            uriHandler.openUri(annotation.item)
+                        }
+                }
+
+                // Source code link
+                val sourceCodeText = buildAnnotatedString {
+                    append("Kaynak kodunu ")
+                    pushStringAnnotation(tag = "URL", annotation = "https://github.com/symbuzzer/Evrak")
+                    withStyle(style = SpanStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )) {
+                        append("görüntüleyin")
+                    }
+                    pop()
+                    append(".")
+                }
+
+                @Suppress("DEPRECATION")
+                ClickableText(
+                    text = sourceCodeText,
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                ) { offset ->
+                    sourceCodeText.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                        .firstOrNull()?.let { annotation ->
+                            uriHandler.openUri(annotation.item)
+                        }
+                }
                 
                 // Contact link (bildirin only)
                 val contactText = buildAnnotatedString {
@@ -88,14 +130,13 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 @Suppress("DEPRECATION")
                 ClickableText(
                     text = contactText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface),
-                    onClick = { offset ->
-                        contactText.getStringAnnotations(tag = "URL", start = offset, end = offset)
-                            .firstOrNull()?.let { annotation ->
-                                uriHandler.openUri(annotation.item)
-                            }
-                    }
-                )
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                ) { offset ->
+                    contactText.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                        .firstOrNull()?.let { annotation ->
+                            uriHandler.openUri(annotation.item)
+                        }
+                }
             }
         },
         confirmButton = {}

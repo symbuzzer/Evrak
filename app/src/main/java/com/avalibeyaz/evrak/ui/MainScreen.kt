@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.*
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -87,7 +88,9 @@ fun MainScreen(
                 },
                 actions = {
                     TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
                         tooltip = {
                             PlainTooltip {
                                 Text(stringResource(id = R.string.update))
@@ -100,7 +103,9 @@ fun MainScreen(
                         }
                     }
                     TooltipBox(
-                        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
                         tooltip = {
                             PlainTooltip {
                                 Text(stringResource(id = R.string.about))
@@ -178,7 +183,7 @@ fun MainScreen(
         }
     }
 
-    if (showSheet && selectedEvrak != null) {
+    if (showSheet && (selectedEvrak != null)) {
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
             sheetState = sheetState

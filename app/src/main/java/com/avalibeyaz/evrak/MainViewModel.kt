@@ -1,6 +1,7 @@
 package com.avalibeyaz.evrak
 
 import android.app.Application
+import android.content.ContentResolver
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,7 +27,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
-    fun openDocument(uri: android.net.Uri, resolver: android.content.ContentResolver? = null, onOpened: (Evrak) -> Unit) {
+    fun openDocument(uri: Uri, resolver: ContentResolver? = null, onOpened: (Evrak) -> Unit) {
         viewModelScope.launch {
             val evrak = repository.addEvrakFromUri(uri, resolver)
             if (evrak != null) {
