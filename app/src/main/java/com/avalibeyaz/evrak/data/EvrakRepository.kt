@@ -12,12 +12,13 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.util.zip.ZipFile
 
 class EvrakRepository(private val context: Context, private val evrakDao: EvrakDao) {
     val allEvraklar: Flow<List<Evrak>> = evrakDao.getAllEvraklar()
 
     private val supportedExtensions = setOf(
-        ".pdf", ".docx", ".doc", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif"
+        ".pdf", ".docx", ".doc", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf"
     )
 
     suspend fun addEvrakFromUri(uri: Uri, resolver: ContentResolver? = null): Evrak? {
@@ -29,14 +30,39 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         
         // 2. Initial name
         var fileName = getFileName(uri, cr) ?: "Bilinmeyen Belge"
+
+        // 2.1 Fallback extension from filename if MIME failed
+        if (extension == null) {
+            val lastDot = fileName.lastIndexOf('.')
+            if (lastDot != -1) {
+                val ext = fileName.substring(lastDot).lowercase()
+                if (supportedExtensions.contains(ext)) {
+                    extension = ext
+                }
+            }
+        }
         
         // 3. Robust Copy and Sniffing Fallback
         val cacheFile = copyUriToInternalStorageWithSniffing(uri, cr) { sniffedExt ->
             // If sniffer found a better extension, use it
+            // FIX: If we already have .udf and sniffer finds .docx (ZIP), keep .udf
             if (sniffedExt != null) {
-                extension = sniffedExt
+                val isExistingUdf = extension?.equals(".udf", ignoreCase = true) == true
+                val isSniffedZip = sniffedExt.equals(".docx", ignoreCase = true)
+                
+                if (!(isExistingUdf && isSniffedZip)) {
+                    extension = sniffedExt
+                }
             }
         } ?: return null
+        
+        // 3.1 Deep Sniffing if it's a ZIP-based format (detected as .docx)
+        if (extension == ".docx") {
+            val deepExt = deepSniffZip(cacheFile)
+            if (deepExt != null) {
+                extension = deepExt
+            }
+        }
         
         // 4. Final filename correction
         var finalName = fileName
@@ -63,12 +89,16 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
 
     private fun getExtensionFromMime(mimeType: String?, uri: Uri): String? {
         if (mimeType != null) {
+            if (mimeType == "application/x-udf") return ".udf"
             val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
             if (ext != null) return ".$ext"
         }
         val path = uri.path ?: return null
         val lastDot = path.lastIndexOf('.')
-        if (lastDot != -1) return path.substring(lastDot)
+        if (lastDot != -1) {
+            val ext = path.substring(lastDot).lowercase()
+            if (supportedExtensions.contains(ext)) return ext
+        }
         return null
     }
 
@@ -91,8 +121,19 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         if (extension.isNotEmpty() && !finalName.endsWith(extension, ignoreCase = true)) {
             finalName += extension
         }
+
+        val oldFile = File(evrak.path)
+        val parentDir = oldFile.parentFile
+        var newPath = evrak.path
+
+        if (parentDir != null && oldFile.exists()) {
+            val newFile = File(parentDir, "${System.currentTimeMillis()}_$finalName")
+            if (oldFile.renameTo(newFile)) {
+                newPath = newFile.absolutePath
+            }
+        }
         
-        val updatedEvrak = evrak.copy(name = finalName)
+        val updatedEvrak = evrak.copy(name = finalName, path = newPath)
         evrakDao.insertEvrak(updatedEvrak)
     }
 
@@ -257,6 +298,28 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         }
 
         return null
+    }
+
+    private fun deepSniffZip(file: File): String? {
+        return try {
+            ZipFile(file).use { zip ->
+                val entries = zip.entries().asSequence().map { it.name }.toList()
+                
+                // UDF: content.xml at root (or sometimes nested, but root is standard)
+                if (entries.any { it.equals("content.xml", ignoreCase = true) }) {
+                    return ".udf"
+                }
+                
+                // DOCX: [Content_Types].xml and word/ directory
+                if (entries.any { it.contains("word/") } || entries.any { it == "[Content_Types].xml" }) {
+                    return ".docx"
+                }
+                
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun isVirtualFile(uri: Uri, cr: ContentResolver): Boolean {

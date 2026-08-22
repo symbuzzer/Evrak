@@ -19,14 +19,13 @@ import java.io.File
 @Composable
 fun UnsupportedViewerScreen(
     filePath: String,
+    displayName: String,
     onBackClick: () -> Unit
 ) {
-    val fileName = File(filePath).name
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = fileName) },
+                title = { MarqueeTitle(title = displayName) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -75,7 +74,7 @@ fun UnsupportedViewerScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = fileName,
+                    text = displayName,
                     modifier = Modifier.padding(12.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,

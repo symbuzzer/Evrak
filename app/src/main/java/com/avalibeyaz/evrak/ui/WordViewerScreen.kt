@@ -32,6 +32,7 @@ import java.io.FileInputStream
 @Composable
 fun WordViewerScreen(
     filePath: String,
+    displayName: String,
     onBackClick: () -> Unit,
     onShareClick: () -> Unit
 ) {
@@ -126,14 +127,14 @@ fun WordViewerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = File(filePath).name) },
+                title = { MarqueeTitle(title = displayName) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
                 actions = {
-                    IconButton(onClick = { saveLauncher.launch(File(filePath).name) }) {
+                    IconButton(onClick = { saveLauncher.launch(displayName) }) {
                         Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
                     }
                     IconButton(onClick = onShareClick) {

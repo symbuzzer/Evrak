@@ -47,6 +47,7 @@ import java.io.File
 @Composable
 fun TiffViewerScreen(
     filePath: String,
+    displayName: String,
     onBackClick: () -> Unit,
     onShareClick: () -> Unit
 ) {
@@ -119,7 +120,14 @@ fun TiffViewerScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = if (loadError != null) stringResource(id = R.string.app_name) else stringResource(id = R.string.page_format, currentPage, pageCount))
+                    if (loadError != null) {
+                        Text(text = stringResource(id = R.string.app_name))
+                    } else {
+                        MarqueeTitle(
+                            title = displayName,
+                            prefix = stringResource(id = R.string.page_format, currentPage, pageCount)
+                        )
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
@@ -128,8 +136,7 @@ fun TiffViewerScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        val fileName = File(filePath).name
-                        saveLauncher.launch(fileName)
+                        saveLauncher.launch(displayName)
                     }) {
                         Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
                     }
@@ -269,7 +276,7 @@ fun TiffViewerScreen(
                                     .clip(CircleShape)
                                     .background(
                                         if (isDragging) MaterialTheme.colorScheme.primary 
-                                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                                        else MaterialTheme.colorScheme.outlineVariant
                                     )
                             )
                         }
