@@ -16,6 +16,8 @@
     <string name="no_history">Henüz görüntülenen belge yok</string>
     <string name="ok">Tamam</string>
     <string name="cancel">İptal</string>
+    <string name="open_with">Birlikte aç</string>
+    <string name="no_other_apps">Bu dosyayı açmak için başka uygulama yok.</string>
 
     <!-- New Strings -->
     <string name="error">Hata</string>

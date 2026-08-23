@@ -1,6 +1,7 @@
 package com.avalibeyaz.evrak.ui
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
@@ -252,6 +254,15 @@ fun MainScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
                 HorizontalDivider()
+
+                OptionItem(
+                    icon = Icons.AutoMirrored.Filled.OpenInNew,
+                    label = stringResource(id = R.string.open_with),
+                    onClick = {
+                        showSheet = false
+                        openFileWith(context, selectedEvrak!!)
+                    }
+                )
                 
                 OptionItem(
                     icon = Icons.Default.Share,
@@ -466,23 +477,55 @@ private fun shareFile(context: android.content.Context, evrak: Evrak) {
         "${context.packageName}.fileprovider",
         file
     )
-    val mimeType = when {
-        evrak.path.endsWith(".pdf", true) -> "application/pdf"
-        evrak.path.endsWith(".docx", true) -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        evrak.path.endsWith(".doc", true) -> "application/msword"
-        evrak.path.endsWith(".png", true) -> "image/png"
-        evrak.path.endsWith(".jpg", true) || evrak.path.endsWith(".jpeg", true) -> "image/jpeg"
-        evrak.path.endsWith(".gif", true) -> "image/gif"
-        evrak.path.endsWith(".udf", true) -> "application/x-udf"
-        evrak.path.endsWith(".tiff", true) || evrak.path.endsWith(".tif", true) -> "image/tiff"
-        else -> "application/octet-stream"
-    }
+    val mimeType = getMimeType(evrak.path)
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType
         putExtra(Intent.EXTRA_STREAM, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share)))
+}
+
+private fun openFileWith(context: android.content.Context, evrak: Evrak) {
+    val file = File(evrak.path)
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    val mimeType = getMimeType(evrak.path)
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, mimeType)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        putExtra("from_open_with", true)
+        putExtra("file_path", evrak.path)
+        putExtra("display_name", evrak.name)
+    }
+
+    // Check if there are other apps to handle this intent
+    val packageManager = context.packageManager
+    val activities = packageManager.queryIntentActivities(intent, 0)
+    val isOtherAppAvailable = activities.any { it.activityInfo.packageName != context.packageName }
+
+    if (!isOtherAppAvailable) {
+        Toast.makeText(context, context.getString(R.string.no_other_apps), Toast.LENGTH_SHORT).show()
+    }
+
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.open_with)))
+}
+
+private fun getMimeType(path: String): String {
+    return when {
+        path.endsWith(".pdf", true) -> "application/pdf"
+        path.endsWith(".docx", true) -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        path.endsWith(".doc", true) -> "application/msword"
+        path.endsWith(".png", true) -> "image/png"
+        path.endsWith(".jpg", true) || path.endsWith(".jpeg", true) -> "image/jpeg"
+        path.endsWith(".gif", true) -> "image/gif"
+        path.endsWith(".udf", true) -> "application/x-udf"
+        path.endsWith(".tiff", true) || path.endsWith(".tif", true) -> "image/tiff"
+        else -> "application/octet-stream"
+    }
 }
 
 private fun shareConvertedFile(context: android.content.Context, file: File, mimeType: String) {
