@@ -72,8 +72,18 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 | [Coil](https://github.com/coil-kt/coil) (coil-compose, coil-gif) — görsel yükleme (JPG/PNG/GIF)                                                               | Apache License 2.0 |
 | [tiffrenderer](https://github.com/lucf15/TiffRenderer) — TIFF render motoru                                                                                   | Apache License 2.0 |
 | [docx-preview](https://github.com/volodymyrbaydalka/docxjs) v0.4.0 — DOCX içeriğinin WebView üzerinde render edilmesi (APK içine `assets/js/` altında gömülü) | Apache License 2.0 |
-| [JSZip](https://github.com/Stuk/jszip) — docx-preview'un ZIP (DOCX) ayrıştırma bağımlılığı (CDN üzerinden)                                                    | MIT License (veya GPLv3 — çift lisanslı) |
+| [JSZip](https://github.com/Stuk/jszip) — docx-preview'un ZIP (DOCX) ayrıştırma bağımlılığı (CDN üzerinden)                                                    | MIT License (veya GPLv3 - çift lisanslı) |
 | [TiffBitmapFactory](https://github.com/Beyka/Android-TiffBitmapFactory) v0.9.9 — TIFF dosyalarını PDF'e çevirme                                               | MIT License |
+
+### Test / Debug
+| Kütüphane                                                                                                                                                     | Lisans |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------| --- |
+| **[JUnit 4](https://github.com/junit-team/junit4)** — Unit testing framework | EPL 1.0 |
+| **[AndroidX Test JUnit](https://developer.android.com/training/testing/junit-runner)** — Android instrumentation and application testing | Apache License 2.0  |
+| **[Espresso Core](https://developer.android.com/training/testing/espresso)** — Android UI testing framework | Apache License 2.0  |
+| **[Compose UI Test JUnit4](https://developer.android.com/develop/ui/compose/testing)** — Jetpack Compose UI testing with JUnit 4 | Apache License 2.0  |
+| **[Compose UI Tooling](https://developer.android.com/develop/ui/compose/tooling)** — Jetpack Compose UI inspection and debugging | Apache License 2.0  |
+| **[Compose UI Test Manifest](https://developer.android.com/develop/ui/compose/testing)** — Manifest support for Jetpack Compose UI testing | Apache License 2.0  |
 
 ## Gizlilik
 
