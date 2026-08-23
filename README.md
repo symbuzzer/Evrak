@@ -23,7 +23,7 @@ UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygul
 - **Filtreleme:** Geçmişteki dosyaları dosya türüne göre filtreleyebilirsiniz
 - **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmeler için istenildiğinde yeniden adlandırılabilir veya silinebilir
 - **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menüsülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
-- **Diğer uygulamalarla uyum içerisinde çalışma:** "Birlikte aç" seçeneği ile Evrak üzerinde görüntülediğiniz dosyaları, destekleyen diğer uygulamalar ile açabilirsiniz
+- **Diğer uygulamalarla uyum içerisinde çalışma:** "Birlikte aç" seçeneği ile Evrak üzerinden görüntülediğiniz dosyaları, destekleyen diğer uygulamalar ile açabilirsiniz
 - **Uygulama içerisinden güncelleme:** Uygulama içerisinden güncelleme olup olmadığını kontrol edebilir ve güncelleme yapabilirsiniz
 
 ## Neden Evrak?
