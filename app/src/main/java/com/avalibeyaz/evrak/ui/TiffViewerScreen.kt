@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,6 +33,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import com.avalibeyaz.evrak.R
 import io.github.lucf15.tiffrenderer.TiffBitmap
 import io.github.lucf15.tiffrenderer.TiffRenderMode
@@ -42,6 +44,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import android.content.Intent
+import android.net.Uri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +61,9 @@ fun TiffViewerScreen(
     var currentPage by remember { mutableIntStateOf(1) }
     var loadError by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
+    
+    var isConverting by remember { mutableStateOf(false) }
+    var showFormatDialog by remember { mutableStateOf<String?>(null) } // "save" or "share"
 
     // TiffRenderer management
     var renderer by remember { mutableStateOf<TiffRenderer?>(null) }
@@ -88,19 +95,48 @@ fun TiffViewerScreen(
         }
     }
 
-    // Save launcher
-    val saveLauncher = rememberLauncherForActivityResult(
+    // Save launchers
+    val saveTiffLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("image/tiff")
     ) { uri ->
         uri?.let {
-            try {
-                context.contentResolver.openOutputStream(it)?.use { output ->
-                    File(filePath).inputStream().use { input ->
-                        input.copyTo(output)
+            scope.launch(Dispatchers.IO) {
+                try {
+                    context.contentResolver.openOutputStream(it)?.use { output ->
+                        File(filePath).inputStream().use { input ->
+                            input.copyTo(output)
+                        }
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            }
+        }
+    }
+
+    val savePdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        uri?.let { destUri ->
+            scope.launch(Dispatchers.IO) {
+                isConverting = true
+                try {
+                    val tempPdf = File(context.cacheDir, "temp_convert.pdf")
+                    val result = DocumentConverter.convertTiffToPdf(File(filePath), tempPdf)
+                    if (result is DocumentConverter.ConversionResult.Success) {
+                        context.contentResolver.openOutputStream(destUri)?.use { output ->
+                            tempPdf.inputStream().use { input -> input.copyTo(output) }
+                        }
+                    } else if (result is DocumentConverter.ConversionResult.Error) {
+                        withContext(Dispatchers.Main) {
+                            loadError = context.getString(R.string.error_conversion_failed, result.message)
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    isConverting = false
+                }
             }
         }
     }
@@ -137,11 +173,13 @@ fun TiffViewerScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        saveLauncher.launch(displayName)
+                        showFormatDialog = "save"
                     }) {
                         Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
                     }
-                    IconButton(onClick = onShareClick) {
+                    IconButton(onClick = {
+                        showFormatDialog = "share"
+                    }) {
                         Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
                     }
                 }
@@ -155,6 +193,16 @@ fun TiffViewerScreen(
         ) {
             val viewHeight = maxHeight
             
+            if (isConverting) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = stringResource(id = R.string.converting))
+                    }
+                }
+            }
+
             if (loadError != null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
@@ -286,6 +334,56 @@ fun TiffViewerScreen(
             }
         }
     }
+
+    if (showFormatDialog != null) {
+        FormatSelectionDialog(
+            extension = "TIFF",
+            onDismiss = { showFormatDialog = null },
+            onFormatSelected = { usePdf ->
+                if (showFormatDialog == "save") {
+                    if (usePdf) {
+                        val newName = displayName.substringBeforeLast(".") + ".pdf"
+                        savePdfLauncher.launch(newName)
+                    } else {
+                        saveTiffLauncher.launch(displayName)
+                    }
+                } else {
+                    // share
+                    scope.launch(Dispatchers.IO) {
+                        if (usePdf) {
+                            isConverting = true
+                            try {
+                                val pdfName = displayName.substringBeforeLast(".") + ".pdf"
+                                val tempPdf = File(context.cacheDir, pdfName)
+                                val result = DocumentConverter.convertTiffToPdf(File(filePath), tempPdf)
+                                if (result is DocumentConverter.ConversionResult.Success) {
+                                    shareConvertedFile(context, tempPdf, "application/pdf")
+                                }
+                            } finally {
+                                isConverting = false
+                            }
+                        } else {
+                            onShareClick()
+                        }
+                    }
+                }
+            }
+        )
+    }
+}
+
+private fun shareConvertedFile(context: android.content.Context, file: File, mimeType: String) {
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share)))
 }
 
 @Composable

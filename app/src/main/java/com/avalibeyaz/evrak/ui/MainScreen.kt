@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -31,8 +32,10 @@ import androidx.core.content.FileProvider
 import com.avalibeyaz.evrak.BuildConfig
 import com.avalibeyaz.evrak.R
 import com.avalibeyaz.evrak.data.Evrak
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -61,21 +64,55 @@ fun MainScreen(
     var showSheet by remember { mutableStateOf(false) }
 
     var isRefreshing by remember { mutableStateOf(false) }
+    var isConverting by remember { mutableStateOf(false) }
+    var showFormatDialog by remember { mutableStateOf<String?>(null) }
+    var conversionError by remember { mutableStateOf<String?>(null) }
 
-    // Save launcher
-    val saveLauncher = rememberLauncherForActivityResult(
+    // Save launchers
+    val savePdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri ->
         uri?.let { destUri ->
             selectedEvrak?.let { evrak ->
-                try {
-                    context.contentResolver.openOutputStream(destUri)?.use { output ->
-                        File(evrak.path).inputStream().use { input ->
-                            input.copyTo(output)
+                scope.launch(Dispatchers.IO) {
+                    isConverting = true
+                    try {
+                        val tempPdf = File(context.cacheDir, "temp_main_convert.pdf")
+                        val result = DocumentConverter.convert(File(evrak.path), tempPdf)
+                        if (result is DocumentConverter.ConversionResult.Success) {
+                            context.contentResolver.openOutputStream(destUri)?.use { output ->
+                                tempPdf.inputStream().use { input -> input.copyTo(output) }
+                            }
+                        } else if (result is DocumentConverter.ConversionResult.Error) {
+                            withContext(Dispatchers.Main) {
+                                conversionError = context.getString(R.string.error_conversion_failed, result.message)
+                            }
                         }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    } finally {
+                        isConverting = false
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    val saveOriginalLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("*/*")
+    ) { uri ->
+        uri?.let { destUri ->
+            selectedEvrak?.let { evrak ->
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        context.contentResolver.openOutputStream(destUri)?.use { output ->
+                            File(evrak.path).inputStream().use { input ->
+                                input.copyTo(output)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
         }
@@ -220,38 +257,37 @@ fun MainScreen(
                     icon = Icons.Default.Share,
                     label = stringResource(id = R.string.send),
                     onClick = {
-                        showSheet = false
-                        val file = File(selectedEvrak!!.path)
-                        val uri = FileProvider.getUriForFile(
-                            context,
-                            "${context.packageName}.fileprovider",
-                            file
-                        )
-                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                    val path = selectedEvrak!!.path
-                    type = when {
-                        path.endsWith(".pdf", true) -> "application/pdf"
-                        path.endsWith(".docx", true) -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        path.endsWith(".doc", true) -> "application/msword"
-                        path.endsWith(".png", true) -> "image/png"
-                        path.endsWith(".jpg", true) || path.endsWith(".jpeg", true) -> "image/jpeg"
-                        path.endsWith(".gif", true) -> "image/gif"
-                        else -> "application/octet-stream"
+                        val path = selectedEvrak!!.path
+                        val isConvertible = path.endsWith(".udf", true) || 
+                                           path.endsWith(".tiff", true) || 
+                                           path.endsWith(".tif", true)
+                        
+                        if (isConvertible) {
+                            showFormatDialog = "share"
+                            showSheet = false
+                        } else {
+                            showSheet = false
+                            shareFile(context, selectedEvrak!!)
+                        }
                     }
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                val shareLabel = context.getString(R.string.share)
-                context.startActivity(Intent.createChooser(shareIntent, shareLabel))
-            }
-        )
+                )
                 
                 OptionItem(
                     icon = Icons.Default.Save,
                     label = stringResource(id = R.string.save),
                     onClick = {
-                        showSheet = false
-                        saveLauncher.launch(selectedEvrak!!.name)
+                        val path = selectedEvrak!!.path
+                        val isConvertible = path.endsWith(".udf", true) || 
+                                           path.endsWith(".tiff", true) || 
+                                           path.endsWith(".tif", true)
+                        
+                        if (isConvertible) {
+                            showFormatDialog = "save"
+                            showSheet = false
+                        } else {
+                            showSheet = false
+                            saveOriginalLauncher.launch(selectedEvrak!!.name)
+                        }
                     }
                 )
 
@@ -358,6 +394,109 @@ fun MainScreen(
             }
         )
     }
+
+    if (showFormatDialog != null && selectedEvrak != null) {
+        val ext = selectedEvrak!!.path.substringAfterLast(".").uppercase()
+        FormatSelectionDialog(
+            extension = ext,
+            onDismiss = { showFormatDialog = null },
+            onFormatSelected = { usePdf ->
+                if (showFormatDialog == "save") {
+                    if (usePdf) {
+                        val newName = selectedEvrak!!.name.substringBeforeLast(".") + ".pdf"
+                        savePdfLauncher.launch(newName)
+                    } else {
+                        saveOriginalLauncher.launch(selectedEvrak!!.name)
+                    }
+                } else {
+                    // share
+                    scope.launch(Dispatchers.IO) {
+                        if (usePdf) {
+                            isConverting = true
+                            try {
+                                val pdfName = selectedEvrak!!.name.substringBeforeLast(".") + ".pdf"
+                                val tempPdf = File(context.cacheDir, pdfName)
+                                val result = DocumentConverter.convert(File(selectedEvrak!!.path), tempPdf)
+                                if (result is DocumentConverter.ConversionResult.Success) {
+                                    shareConvertedFile(context, tempPdf, "application/pdf")
+                                }
+                            } finally {
+                                isConverting = false
+                            }
+                        } else {
+                            shareFile(context, selectedEvrak!!)
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    if (isConverting) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = stringResource(id = R.string.converting), color = androidx.compose.ui.graphics.Color.White)
+            }
+        }
+    }
+
+    if (conversionError != null) {
+        AlertDialog(
+            onDismissRequest = { conversionError = null },
+            title = { Text(text = stringResource(id = R.string.error)) },
+            text = { Text(text = conversionError!!) },
+            confirmButton = {
+                TextButton(onClick = { conversionError = null }) {
+                    Text(text = stringResource(id = R.string.ok))
+                }
+            }
+        )
+    }
+}
+
+private fun shareFile(context: android.content.Context, evrak: Evrak) {
+    val file = File(evrak.path)
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    val mimeType = when {
+        evrak.path.endsWith(".pdf", true) -> "application/pdf"
+        evrak.path.endsWith(".docx", true) -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        evrak.path.endsWith(".doc", true) -> "application/msword"
+        evrak.path.endsWith(".png", true) -> "image/png"
+        evrak.path.endsWith(".jpg", true) || evrak.path.endsWith(".jpeg", true) -> "image/jpeg"
+        evrak.path.endsWith(".gif", true) -> "image/gif"
+        evrak.path.endsWith(".udf", true) -> "application/x-udf"
+        evrak.path.endsWith(".tiff", true) || evrak.path.endsWith(".tif", true) -> "image/tiff"
+        else -> "application/octet-stream"
+    }
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share)))
+}
+
+private fun shareConvertedFile(context: android.content.Context, file: File, mimeType: String) {
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share)))
 }
 
 @OptIn(ExperimentalFoundationApi::class)
