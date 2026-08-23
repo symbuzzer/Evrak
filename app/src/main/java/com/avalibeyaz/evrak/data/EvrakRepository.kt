@@ -16,7 +16,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     val allEvraklar: Flow<List<Evrak>> = evrakDao.getAllEvraklar()
 
     private val supportedExtensions = setOf(
-        ".pdf", ".docx", ".doc", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf"
+        ".pdf", ".docx", ".doc", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm"
     )
 
     suspend fun addEvrakFromUri(uri: Uri, resolver: ContentResolver? = null): Evrak? {
@@ -292,6 +292,14 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             }
             if (header[0] == 0x4D.toByte() && header[1] == 0x4D.toByte() && header[2] == 0x00.toByte() && header[3] == 0x2A.toByte()) {
                 return ".tiff"
+            }
+        }
+
+        // HTML: <!DO (3C 21 44 4F) or <htm (3C 68 74 6D)
+        if (header.size >= 4 && header[0] == 0x3C.toByte()) {
+            val s = String(header, 0, 4).lowercase()
+            if (s == "<!do" || s == "<htm") {
+                return ".html"
             }
         }
 

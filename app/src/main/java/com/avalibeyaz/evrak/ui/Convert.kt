@@ -515,6 +515,12 @@ object DocumentConverter {
         }
         if (ssb.isEmpty()) return 0f
 
+        // Trim trailing newlines to avoid extra blank line at the end of every paragraph
+        while (ssb.isNotEmpty() && (ssb[ssb.length - 1] == '\n' || ssb[ssb.length - 1] == '\r')) {
+            ssb.delete(ssb.length - 1, ssb.length)
+        }
+        if (ssb.isEmpty()) return 0f
+
         // First Line Indent (Birinci satır girintisi)
         if (para.firstLineIndent != 0f) {
             ssb.setSpan(

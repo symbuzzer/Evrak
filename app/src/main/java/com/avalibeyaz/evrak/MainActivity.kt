@@ -21,6 +21,7 @@ import com.avalibeyaz.evrak.ui.TiffViewerScreen
 import com.avalibeyaz.evrak.ui.PdfViewerScreen
 import com.avalibeyaz.evrak.ui.WordViewerScreen
 import com.avalibeyaz.evrak.ui.UdfViewerScreen
+import com.avalibeyaz.evrak.ui.HtmlViewerScreen
 import com.avalibeyaz.evrak.ui.UnsupportedViewerScreen
 import com.avalibeyaz.evrak.ui.theme.EvrakTheme
 import java.io.File
@@ -114,6 +115,9 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
             
             val isUdf = filePath.endsWith(".udf", true)
             
+            val isHtml = filePath.endsWith(".html", true) || 
+                          filePath.endsWith(".htm", true)
+            
             when {
                 isPdf -> {
                     PdfViewerScreen(
@@ -149,6 +153,14 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                 }
                 isUdf -> {
                     UdfViewerScreen(
+                        filePath = filePath,
+                        displayName = displayName,
+                        onBackClick = onBackSafe,
+                        onShareClick = { shareFile(context, filePath) }
+                    )
+                }
+                isHtml -> {
+                    HtmlViewerScreen(
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
@@ -224,6 +236,7 @@ private fun shareFile(context: android.content.Context, filePath: String) {
         filePath.endsWith(".jpg", true) || filePath.endsWith(".jpeg", true) -> "image/jpeg"
         filePath.endsWith(".gif", true) -> "image/gif"
         filePath.endsWith(".udf", true) -> "application/x-udf"
+        filePath.endsWith(".html", true) || filePath.endsWith(".htm", true) -> "text/html"
         else -> "application/octet-stream"
     }
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
