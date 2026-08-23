@@ -1,6 +1,7 @@
 # Evrak
+[![Github All Releases](https://img.shields.io/github/downloads/symbuzzer/Evrak/total.svg)]()
 
-**Evrak**, avukatların günlük iş akışında en sık karşılaştığı dosya formatlarını —**UDF, TIFF, PDF, DOCX, DOC, JPG, GIF ve PNG**— tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan bir Android uygulamasıdır.
+**Evrak**, avukatların günlük iş akışında en sık karşılaştığı dosya formatlarını —**UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF ve PNG**— tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan bir Android uygulamasıdır.
 
 UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygulamaları aracılığıyla gelen evrakları açmak için genellikle birden fazla farklı uygulamaya ihtiyaç duyulur. Evrak, bu ihtiyacı tek bir yerde, gereksiz karmaşıklık olmadan çözer.
 
@@ -13,12 +14,14 @@ UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygul
 
 ## Özellikler
 
--  **Çoklu format desteği:** UDF, TIFF, PDF, DOCX, DOC, JPG, GIF, PNG
--  **Basit ve hızlı:** Dosyayı aç, görüntüle — başka hiçbir şeye gerek yok
--  **Paylaşma ve kaydetme:** Görüntülenen dosyaları istediğiniz yere kaydedebilir veya doğrudan başka uygulamalarla paylaşabilirsiniz
--  **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
--  **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmeler için istenildiğinde yeniden adlandırılabilir veya silinebilir
--  **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menüsülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
+- **Çoklu format desteği:** UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF, PNG
+- **Basit ve hızlı:** Dosyayı aç, görüntüle — başka hiçbir şeye gerek yok
+- **Paylaşma ve kaydetme:** Görüntülenen dosyaları istediğiniz yere kaydedebilir veya doğrudan başka uygulamalarla paylaşabilirsiniz
+- **UDF ve TIFF dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında isterseniz bu dosyaları PDF'e çevirebilirsiniz
+- **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
+- **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmeler için istenildiğinde yeniden adlandırılabilir veya silinebilir
+- **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menüsülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
+- **Uygulama içerisinden güncelleme:** Uygulama içerisinden güncelleme olup olmadığını kontrol edebilir ve güncelleme yapabilirsiniz
 
 ## Neden Evrak?
 
@@ -36,6 +39,7 @@ UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygul
 | TIFF | `.tif`, `.tiff` | Çok sayfalı görüntü, sayfa sayfa kaydırma ve yakınlaştırma |
 | PDF | `.pdf` | Sayfa sayfa görüntüleme ve yakınlaştırma |
 | Word | `.docx`, `.doc` | Biçimlendirmesi korunarak HTML'e dönüştürülüp görüntülenir |
+| HTML | `.html`, `.htm` | Yakınlaştırma/kaydırma destekli görüntüleyici |
 | Görsel | `.jpg`, `.jpeg`, `.png`, `.gif` | Yakınlaştırma/kaydırma destekli görüntüleyici |
 
 ## Kullanılan Kütüphaneler ve Lisansları
@@ -69,7 +73,7 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 | [tiffrenderer](https://github.com/lucf15/TiffRenderer) — TIFF render motoru                                                                                   | Apache License 2.0 |
 | [docx-preview](https://github.com/volodymyrbaydalka/docxjs) v0.4.0 — DOCX içeriğinin WebView üzerinde render edilmesi (APK içine `assets/js/` altında gömülü) | Apache License 2.0 |
 | [JSZip](https://github.com/Stuk/jszip) — docx-preview'un ZIP (DOCX) ayrıştırma bağımlılığı (CDN üzerinden)                                                    | MIT License (veya GPLv3 — çift lisanslı) |
-| [TiffBitmapFactory](https://github.com/Beyka/Android-TiffBitmapFactory) v0.9.9                                                                                | MIT License |
+| [TiffBitmapFactory](https://github.com/Beyka/Android-TiffBitmapFactory) v0.9.9 — TIFF dosyalarını PDF'e çevirme                                               | MIT License |
 
 ## Gizlilik
 
