@@ -186,6 +186,17 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
     val activityContentResolver = androidx.compose.ui.platform.LocalContext.current.contentResolver
     LaunchedEffect(intent) {
         intent?.let {
+            if (it.getBooleanExtra("from_open_with", false)) {
+                val path = it.getStringExtra("file_path") ?: ""
+                val name = it.getStringExtra("display_name") ?: ""
+                if (path.isNotEmpty()) {
+                    navController.navigate("viewer/${Uri.encode(path)}/${Uri.encode(name)}") {
+                        popUpTo("history")
+                    }
+                }
+                return@LaunchedEffect
+            }
+
             val uri: Uri? = when (it.action) {
                 Intent.ACTION_VIEW -> it.data
                 Intent.ACTION_SEND -> {

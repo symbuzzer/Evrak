@@ -1,5 +1,6 @@
 package com.avalibeyaz.evrak.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.*
@@ -8,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -25,6 +27,13 @@ fun AboutDialog(onDismiss: () -> Unit) {
     
     AlertDialog(
         onDismissRequest = onDismiss,
+        icon = {
+            Image(
+                painter = rememberAsyncImagePainter(model = R.mipmap.ic_launcher),
+                contentDescription = null,
+                modifier = Modifier.size(64.dp)
+            )
+        },
         title = {
             Text(
                 text = "${stringResource(id = R.string.app_name)} v${BuildConfig.VERSION_NAME}",
