@@ -15,12 +15,13 @@ UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygul
 ## Özellikler
 
 - **Çoklu format desteği:** UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF, PNG
-- **Basit ve hızlı:** Dosyayı aç, görüntüle — başka hiçbir şeye gerek yok
+- **Basit ve hızlı:** Dosyayı aç, görüntüle - başka hiçbir şeye gerek yok
 - **Paylaşma ve kaydetme:** Görüntülenen dosyaları istediğiniz yere kaydedebilir veya doğrudan başka uygulamalarla paylaşabilirsiniz
 - **UDF ve TIFF dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında isterseniz bu dosyaları PDF'e çevirebilirsiniz
 - **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
 - **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmeler için istenildiğinde yeniden adlandırılabilir veya silinebilir
 - **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menüsülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
+- **Diğer uygulamalarla uyum içerisinde çalışma:** "Birlikte aç" seçeneği ile Evrak üzerinde görüntülediğiniz dosyaları, destekleyen diğer uygulamalar ile açabilirsiniz
 - **Uygulama içerisinden güncelleme:** Uygulama içerisinden güncelleme olup olmadığını kontrol edebilir ve güncelleme yapabilirsiniz
 
 ## Neden Evrak?
@@ -78,12 +79,12 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 ### Test / Debug
 | Kütüphane                                                                                                                                                     | Lisans |
 |---------------------------------------------------------------------------------------------------------------------------------------------------------------| --- |
-| **[JUnit 4](https://github.com/junit-team/junit4)** — Unit testing framework | EPL 1.0 |
-| **[AndroidX Test JUnit](https://developer.android.com/training/testing/junit-runner)** — Android instrumentation and application testing | Apache License 2.0  |
-| **[Espresso Core](https://developer.android.com/training/testing/espresso)** — Android UI testing framework | Apache License 2.0  |
-| **[Compose UI Test JUnit4](https://developer.android.com/develop/ui/compose/testing)** — Jetpack Compose UI testing with JUnit 4 | Apache License 2.0  |
-| **[Compose UI Tooling](https://developer.android.com/develop/ui/compose/tooling)** — Jetpack Compose UI inspection and debugging | Apache License 2.0  |
-| **[Compose UI Test Manifest](https://developer.android.com/develop/ui/compose/testing)** — Manifest support for Jetpack Compose UI testing | Apache License 2.0  |
+| **[JUnit 4](https://github.com/junit-team/junit4)** | EPL 1.0 |
+| **[AndroidX Test JUnit](https://developer.android.com/training/testing/junit-runner)** | Apache License 2.0  |
+| **[Espresso Core](https://developer.android.com/training/testing/espresso)** | Apache License 2.0  |
+| **[Compose UI Test JUnit4](https://developer.android.com/develop/ui/compose/testing)** | Apache License 2.0  |
+| **[Compose UI Tooling](https://developer.android.com/develop/ui/compose/tooling)** | Apache License 2.0  |
+| **[Compose UI Test Manifest](https://developer.android.com/develop/ui/compose/testing)** | Apache License 2.0  |
 
 ## Gizlilik
 
