@@ -1,5 +1,5 @@
 # Evrak
-[![Github All Releases](https://img.shields.io/github/downloads/symbuzzer/Evrak/total.svg)]()
+![Github All Releases](https://img.shields.io/github/downloads/symbuzzer/Evrak/total.svg)
 
 **Evrak**, avukatların günlük iş akışında en sık karşılaştığı dosya formatlarını —**UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF ve PNG**— tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan bir Android uygulamasıdır.
 
