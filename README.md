@@ -5,12 +5,13 @@
 
 UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygulamaları aracılığıyla gelen evrakları açmak için genellikle birden fazla farklı uygulamaya ihtiyaç duyulur. Evrak, bu ihtiyacı tek bir yerde, gereksiz karmaşıklık olmadan çözer.
 
-<img width="270" height="585" alt="1" src="https://github.com/user-attachments/assets/68f24605-09bc-418c-8673-1b6166528b31" />
-<img width="270" height="585" alt="2" src="https://github.com/user-attachments/assets/2f7a906b-37a8-44f5-b193-22c295bab85f" />
-<img width="270" height="585" alt="3" src="https://github.com/user-attachments/assets/315d1016-36f3-457b-bf1b-d04c10106007" />
-<img width="270" height="585" alt="4" src="https://github.com/user-attachments/assets/a4fa0f9a-d922-4025-912c-725a5d07f521" />
-<img width="270" height="585" alt="5" src="https://github.com/user-attachments/assets/16ad8d58-a749-4f2e-bb2b-50b573f4356e" />
-<img width="270" height="585" alt="6" src="https://github.com/user-attachments/assets/4e43874c-9d33-4354-a4b6-568b0968006f" />
+<img width="270" height="585" src="https://github.com/user-attachments/assets/11a02fad-be30-4320-ac76-c1ddf80f5ebd" />
+<img width="270" height="585" src="https://github.com/user-attachments/assets/819d6633-1c71-4459-9fbc-b47a9d4933ae" />
+<img width="270" height="585" src="https://github.com/user-attachments/assets/315d1016-36f3-457b-bf1b-d04c10106007" />
+<img width="270" height="585" src="https://github.com/user-attachments/assets/a4fa0f9a-d922-4025-912c-725a5d07f521" />
+<img width="270" height="585" src="https://github.com/user-attachments/assets/16ad8d58-a749-4f2e-bb2b-50b573f4356e" />
+<img width="270" height="585" src="https://github.com/user-attachments/assets/4e43874c-9d33-4354-a4b6-568b0968006f" />
+
 
 ## Özellikler
 
@@ -19,6 +20,7 @@ UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygul
 - **Paylaşma ve kaydetme:** Görüntülenen dosyaları istediğiniz yere kaydedebilir veya doğrudan başka uygulamalarla paylaşabilirsiniz
 - **UDF ve TIFF dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında isterseniz bu dosyaları PDF'e çevirebilirsiniz
 - **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
+- **Filtreleme:** Geçmişteki dosyaları dosya türüne göre filtreleyebilirsiniz
 - **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmeler için istenildiğinde yeniden adlandırılabilir veya silinebilir
 - **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menüsülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
 - **Diğer uygulamalarla uyum içerisinde çalışma:** "Birlikte aç" seçeneği ile Evrak üzerinde görüntülediğiniz dosyaları, destekleyen diğer uygulamalar ile açabilirsiniz
