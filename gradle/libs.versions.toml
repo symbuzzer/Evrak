@@ -14,7 +14,6 @@ navigationCompose = "2.9.8"
 room = "2.8.4"
 ksp = "2.3.11"
 poi = "5.5.1"
-mammoth = "1.12.1"
 documentfile = "1.0.1"
 coil = "2.7.0"
 webkit = "1.12.1"
@@ -45,7 +44,6 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 poi = { group = "org.apache.poi", name = "poi", version.ref = "poi" }
 poi-ooxml = { group = "org.apache.poi", name = "poi-ooxml", version.ref = "poi" }
 poi-scratchpad = { group = "org.apache.poi", name = "poi-scratchpad", version.ref = "poi" }
-mammoth = { group = "org.zwobble.mammoth", name = "mammoth", version.ref = "mammoth" }
 androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
 coil-gif = { group = "io.coil-kt", name = "coil-gif", version.ref = "coil" }
