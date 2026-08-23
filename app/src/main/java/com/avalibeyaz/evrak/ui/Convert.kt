@@ -15,7 +15,9 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import android.text.style.AbsoluteSizeSpan
 import android.text.style.ForegroundColorSpan
+import android.text.style.LeadingMarginSpan
 import android.text.style.StyleSpan
+import android.text.style.TypefaceSpan
 import android.text.style.UnderlineSpan
 import android.util.Base64
 import android.util.Log
@@ -130,17 +132,33 @@ object DocumentConverter {
         val italic: Boolean,
         val underline: Boolean,
         val sizePt: Float,
-        val colorArgb: Int
+        val colorArgb: Int,
+        val fontFamily: String? = null
     )
 
     private sealed class Block {
-        data class Para(val runs: List<TextRun>, val alignment: Int) : Block()
+        data class Para(
+            val runs: List<TextRun>,
+            val alignment: Int,
+            val leftIndent: Float = 0f,
+            val rightIndent: Float = 0f,
+            val firstLineIndent: Float = 0f,
+            val spaceAbove: Float = 0f,
+            val spaceBelow: Float = 0f,
+            val lineSpacing: Float = 0f
+        ) : Block()
         data class Img(val bitmap: Bitmap?, val widthPt: Float, val heightPt: Float) : Block()
         data class Tbl(val columnSpans: List<Float>, val rows: List<List<CellData>>) : Block()
         object PageBreak : Block()
     }
 
-    private data class CellData(val colspan: Int, val blocks: List<Block>)
+    private data class CellData(
+        val colspan: Int,
+        val blocks: List<Block>,
+        val borderSpec: Int = 15,
+        val fillColor: Int? = null,
+        val verticalAlign: String? = null
+    )
 
     private data class PageFormat(
         val widthPt: Float,
@@ -154,7 +172,10 @@ object DocumentConverter {
     private const val CELL_PADDING = 5.4f
     private const val DEFAULT_COLOR = -16777216 // siyah, işaretli ARGB
 
+    private val numberedListCounters = mutableMapOf<String, Int>()
+
     fun convertUdfToPdf(inputFile: File, outputFile: File): ConversionResult {
+        numberedListCounters.clear()
         return try {
             val contentXmlBytes = ZipFile(inputFile).use { zip ->
                 val entry = zip.entries().asSequence()
@@ -216,19 +237,74 @@ object DocumentConverter {
 
     private fun parseParagraph(node: Element, fullText: String): List<Block> {
         val alignment = node.getAttribute("Alignment").toIntOrNull() ?: 0
+        val leftIndent = node.attrFloat("LeftIndent", 0f)
+        val rightIndent = node.attrFloat("RightIndent", 0f)
+        val firstLineIndent = node.attrFloat("FirstLineIndent", 0f)
+        val spaceAbove = node.attrFloat("SpaceAbove", 0f)
+        val spaceBelow = node.attrFloat("SpaceBelow", 0f)
+        val lineSpacing = node.attrFloat("LineSpacing", 0f)
+
+        val isNumbered = node.getAttribute("Numbered") == "true"
+        val isBulleted = node.getAttribute("Bulleted") == "true"
+        val listLevel = node.getAttribute("ListLevel").toIntOrNull() ?: 0
+        
+        val effectiveLeftIndent = if (isNumbered || isBulleted) {
+            leftIndent + (listLevel + 1) * 18f
+        } else {
+            leftIndent
+        }
+
         val result = mutableListOf<Block>()
         val runs = mutableListOf<TextRun>()
 
         fun flushRuns() {
             if (runs.isNotEmpty()) {
-                result.add(Block.Para(runs.toList(), alignment))
+                result.add(
+                    Block.Para(
+                        runs.toList(), alignment, effectiveLeftIndent, rightIndent,
+                        firstLineIndent, spaceAbove, spaceBelow, lineSpacing
+                    )
+                )
                 runs.clear()
             }
+        }
+
+        // Liste işareti (prefix) ekle
+        if (isNumbered) {
+            val listId = node.getAttribute("ListId").ifEmpty { "default" }
+            val n = (numberedListCounters[listId] ?: 0) + 1
+            numberedListCounters[listId] = n
+            val marker = numberMarker(n, node.getAttribute("NumberType")) + " "
+            runs.add(
+                TextRun(
+                    marker, bold = false, italic = false, underline = false,
+                    sizePt = node.attrFloat("size", 11f), colorArgb = DEFAULT_COLOR
+                )
+            )
+        } else if (isBulleted) {
+            val marker = bulletMarker(node.getAttribute("BulletType")) + " "
+            runs.add(
+                TextRun(
+                    marker, bold = false, italic = false, underline = false,
+                    sizePt = node.attrFloat("size", 11f), colorArgb = DEFAULT_COLOR
+                )
+            )
         }
 
         forEachChildElement(node) { child ->
             when (child.tagName) {
                 "content", "space" -> runs.add(extractRun(child, fullText))
+                "field" -> {
+                    var run = extractRun(child, fullText)
+                    if (run.text.isEmpty() || run.text == "\u200B") {
+                        val name = child.getAttribute("fieldName").ifEmpty { child.getAttribute("name") }
+                        val default = child.getAttribute("default").ifEmpty { if (name.isNotEmpty()) "[$name]" else "" }
+                        if (default.isNotEmpty()) {
+                            run = run.copy(text = default)
+                        }
+                    }
+                    runs.add(run)
+                }
                 "tab" -> runs.add(
                     TextRun(
                         "\t", bold = false, italic = false, underline = false,
@@ -261,8 +337,54 @@ object DocumentConverter {
             italic = node.getAttribute("italic") == "true",
             underline = node.getAttribute("underline") == "true",
             sizePt = node.attrFloat("size", 11f),
-            colorArgb = node.getAttribute("foreground").toIntOrNull() ?: DEFAULT_COLOR
+            colorArgb = node.getAttribute("foreground").toIntOrNull() ?: DEFAULT_COLOR,
+            fontFamily = node.getAttribute("family").ifBlank { null }
         )
+    }
+
+    // --- Liste İşaretçileri ---
+
+    private fun numberMarker(n: Int, type: String?): String {
+        return when (type) {
+            "1", "decimal" -> "$n."
+            "a" -> "${toAlpha(n, false)}."
+            "A" -> "${toAlpha(n, true)}."
+            "i" -> "${toRoman(n).lowercase()}."
+            "I" -> "${toRoman(n)}."
+            else -> "$n."
+        }
+    }
+
+    private fun bulletMarker(type: String?): String {
+        return when (type) {
+            "disc" -> "●"
+            "circle" -> "○"
+            "square" -> "■"
+            else -> "•"
+        }
+    }
+
+    private fun toAlpha(n: Int, upper: Boolean): String {
+        var num = n - 1
+        val res = StringBuilder()
+        while (num >= 0) {
+            res.insert(0, ('A'.code + (num % 26)).toChar())
+            num = num / 26 - 1
+        }
+        return if (upper) res.toString() else res.toString().lowercase()
+    }
+
+    private fun toRoman(n: Int): String {
+        val map = mapOf(1000 to "M", 900 to "CM", 500 to "D", 400 to "CD", 100 to "C", 90 to "XC", 50 to "L", 40 to "XL", 10 to "X", 9 to "IX", 5 to "V", 4 to "IV", 1 to "I")
+        var num = n
+        val res = StringBuilder()
+        for ((v, s) in map) {
+            while (num >= v) {
+                res.append(s)
+                num -= v
+            }
+        }
+        return res.toString()
     }
 
     private fun parseTable(node: Element, fullText: String): Block.Tbl {
@@ -277,13 +399,39 @@ object DocumentConverter {
                 forEachChildElement(rowNode) { cellNode ->
                     if (cellNode.tagName == "cell") {
                         val colspan = cellNode.getAttribute("colspan").toIntOrNull() ?: 1
-                        cells.add(CellData(colspan, parseBlocks(cellNode, fullText)))
+                        val borderSpec = cellNode.getAttribute("borderSpec").toIntOrNull() ?: 15
+                        val fillColorStr = cellNode.getAttribute("fillColor")
+                        val fillColor = parseUdfColor(fillColorStr)
+                        val vAlign = cellNode.getAttribute("align") // vcenter, bottom
+                        
+                        cells.add(
+                            CellData(
+                                colspan = colspan,
+                                blocks = parseBlocks(cellNode, fullText),
+                                borderSpec = borderSpec,
+                                fillColor = fillColor,
+                                verticalAlign = vAlign
+                            )
+                        )
                     }
                 }
                 rows.add(cells)
             }
         }
         return Block.Tbl(columnSpans, rows)
+    }
+
+    private fun parseUdfColor(value: String?): Int? {
+        if (value.isNullOrBlank()) return null
+        return try {
+            val v = value.trim().toLong()
+            val argb = (v and 0xFFFFFFFFL).toInt()
+            // UDF renkleri bazen şeffaf (255,255,255 gibi) geliyor, 
+            // beyazı şeffaf kabul etmek gerekebilir ama burada doğrudan ARGB dönüyoruz.
+            if (argb == -1) null else argb 
+        } catch (_: Exception) {
+            null
+        }
     }
 
     // --- Block ağacı -> PDF ---------------------------------------------
@@ -315,12 +463,15 @@ object DocumentConverter {
                 continue
             }
             // Önce yükseklik ölç (canvas=null -> sadece ölçüm), sığmıyorsa yeni sayfa aç.
-            val measuredHeight = renderBlock(null, block, format.leftMargin, y, contentWidth)
-            if (y + measuredHeight > format.heightPt - format.bottomMargin && y > format.topMargin) {
+            val spaceAbove = if (block is Block.Para) block.spaceAbove else 0f
+            val spaceBelow = if (block is Block.Para) block.spaceBelow else 0f
+            
+            val measuredHeight = renderBlock(null, block, format.leftMargin, y + spaceAbove, contentWidth)
+            if (y + spaceAbove + measuredHeight + spaceBelow > format.heightPt - format.bottomMargin && y > format.topMargin) {
                 newPage()
             }
-            val drawnHeight = renderBlock(canvas, block, format.leftMargin, y, contentWidth)
-            y += drawnHeight + 6f
+            val drawnHeight = renderBlock(canvas, block, format.leftMargin, y + spaceAbove, contentWidth)
+            y += spaceAbove + drawnHeight + spaceBelow + 2f
         }
 
         pdfDocument.finishPage(page)
@@ -346,6 +497,11 @@ object DocumentConverter {
             ssb.append(run.text)
             val end = ssb.length
             if (end == start) continue
+            
+            // Font seçimi
+            val tf = getUdfTypeface(run.fontFamily, run.bold, run.italic)
+            ssb.setSpan(TypefaceSpan(tf), start, end, flag)
+            
             val style = when {
                 run.bold && run.italic -> Typeface.BOLD_ITALIC
                 run.bold -> Typeface.BOLD
@@ -359,29 +515,66 @@ object DocumentConverter {
         }
         if (ssb.isEmpty()) return 0f
 
+        // First Line Indent (Birinci satır girintisi)
+        if (para.firstLineIndent != 0f) {
+            ssb.setSpan(
+                LeadingMarginSpan.Standard(para.firstLineIndent.toInt(), 0),
+                0, ssb.length, flag
+            )
+        }
+
         val basePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = 14f
+            textSize = 12f
             color = Color.BLACK
         }
+        
         val alignment = when (para.alignment) {
             1 -> Layout.Alignment.ALIGN_CENTER
             2 -> Layout.Alignment.ALIGN_OPPOSITE
-            else -> Layout.Alignment.ALIGN_NORMAL // 3 (iki yana yasla) desteklenmiyor, sola yaslanır
+            else -> Layout.Alignment.ALIGN_NORMAL
         }
-        val safeWidth = width.toInt().coerceAtLeast(1)
+        
+        // Justification (İki yana yasla - Alignment 3)
+        val justification = if (para.alignment == 3) {
+            Layout.JUSTIFICATION_MODE_INTER_WORD
+        } else {
+            Layout.JUSTIFICATION_MODE_NONE
+        }
+
+        val effectiveWidth = (width - para.leftIndent - para.rightIndent).toInt().coerceAtLeast(1)
         val layout = StaticLayout.Builder
-            .obtain(ssb, 0, ssb.length, basePaint, safeWidth)
+            .obtain(ssb, 0, ssb.length, basePaint, effectiveWidth)
             .setAlignment(alignment)
-            .setLineSpacing(1.05f, 1f)
+            .setLineSpacing(0f, 1.0f + para.lineSpacing)
+            .setJustificationMode(justification)
             .build()
 
         if (canvas != null) {
             canvas.save()
-            canvas.translate(x, y)
+            // Girintileri uygula. firstLineIndent sadece ilk satırda uygulanır.
+            // StaticLayout'ta textIndent özelliği doğrudan olmadığı için manuel kaydırma veya 
+            // LeadingMarginSpan gerekebilir ama basitlik için x koordinatını kaydırıyoruz.
+            canvas.translate(x + para.leftIndent, y)
             layout.draw(canvas)
             canvas.restore()
         }
         return layout.height.toFloat()
+    }
+
+    private fun getUdfTypeface(family: String?, bold: Boolean, italic: Boolean): Typeface {
+        val base = when (family?.lowercase()) {
+            "arial" -> Typeface.SANS_SERIF
+            "courier new" -> Typeface.MONOSPACE
+            "times new roman", "serif" -> Typeface.SERIF
+            else -> Typeface.DEFAULT
+        }
+        val style = when {
+            bold && italic -> Typeface.BOLD_ITALIC
+            bold -> Typeface.BOLD
+            italic -> Typeface.ITALIC
+            else -> Typeface.NORMAL
+        }
+        return Typeface.create(base, style)
     }
 
     private fun renderImage(canvas: Canvas?, img: Block.Img, x: Float, y: Float, width: Float): Float {
@@ -403,10 +596,14 @@ object DocumentConverter {
         val totalSpec = table.columnSpans.sum()
         val scale = if (totalSpec > 0f) width / totalSpec else 1f
         val colWidths = table.columnSpans.map { it * scale }
+        
         val borderPaint = Paint().apply {
             style = Paint.Style.STROKE
-            strokeWidth = 1f
+            strokeWidth = 0.5f
             color = Color.BLACK
+        }
+        val fillPaint = Paint().apply {
+            style = Paint.Style.FILL
         }
 
         var curY = y
@@ -417,27 +614,48 @@ object DocumentConverter {
                 colIndex += cell.colspan
                 w
             }
-            // Ölçüm geçişi: satırın yüksekliğini, en yüksek hücreye göre belirle.
-            val cellHeights = row.mapIndexed { i, cell ->
+            
+            // 1. Ölçüm geçişi: Satır yüksekliğini belirle
+            val cellContentHeights = row.mapIndexed { i, cell ->
                 val innerWidth = (cellWidths[i] - CELL_PADDING * 2).coerceAtLeast(1f)
                 var h = 0f
                 for (b in cell.blocks) h += renderBlock(null, b, 0f, 0f, innerWidth) + 2f
-                h + CELL_PADDING * 2
+                h
             }
-            val rowHeight = cellHeights.maxOrNull() ?: 0f
+            val rowHeight = (cellContentHeights.maxOrNull() ?: 0f) + CELL_PADDING * 2
 
-            // Çizim geçişi
+            // 2. Çizim geçişi
             var curX = x
             for ((i, cell) in row.withIndex()) {
                 val cellWidth = cellWidths[i]
+                
                 if (canvas != null) {
-                    canvas.drawRect(curX, curY, curX + cellWidth, curY + rowHeight, borderPaint)
-                }
-                var innerY = curY + CELL_PADDING
-                val innerWidth = (cellWidth - CELL_PADDING * 2).coerceAtLeast(1f)
-                for (b in cell.blocks) {
-                    val h = renderBlock(canvas, b, curX + CELL_PADDING, innerY, innerWidth)
-                    innerY += h + 2f
+                    // Arka plan rengi
+                    cell.fillColor?.let {
+                        fillPaint.color = it
+                        canvas.drawRect(curX, curY, curX + cellWidth, curY + rowHeight, fillPaint)
+                    }
+                    
+                    // Kenarlıklar (borderSpec maskesine göre)
+                    // 1:top, 2:right, 4:bottom, 8:left
+                    if (cell.borderSpec and 1 != 0) canvas.drawLine(curX, curY, curX + cellWidth, curY, borderPaint)
+                    if (cell.borderSpec and 2 != 0) canvas.drawLine(curX + cellWidth, curY, curX + cellWidth, curY + rowHeight, borderPaint)
+                    if (cell.borderSpec and 4 != 0) canvas.drawLine(curX, curY + rowHeight, curX + cellWidth, curY + rowHeight, borderPaint)
+                    if (cell.borderSpec and 8 != 0) canvas.drawLine(curX, curY, curX, curY + rowHeight, borderPaint)
+                    
+                    // İçerik başlangıç Y pozisyonu (Dikey hizalama)
+                    val contentHeight = cellContentHeights[i]
+                    var innerY = when (cell.verticalAlign) {
+                        "vcenter" -> curY + (rowHeight - contentHeight) / 2f
+                        "bottom" -> curY + rowHeight - contentHeight - CELL_PADDING
+                        else -> curY + CELL_PADDING
+                    }
+                    
+                    val innerWidth = (cellWidth - CELL_PADDING * 2).coerceAtLeast(1f)
+                    for (b in cell.blocks) {
+                        val h = renderBlock(canvas, b, curX + CELL_PADDING, innerY, innerWidth)
+                        innerY += h + 2f
+                    }
                 }
                 curX += cellWidth
             }
