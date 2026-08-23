@@ -28,10 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import com.avalibeyaz.evrak.BuildConfig
 import com.avalibeyaz.evrak.R
 import com.avalibeyaz.evrak.data.Evrak
 import kotlinx.coroutines.Dispatchers
@@ -69,6 +67,45 @@ fun MainScreen(
     var isConverting by remember { mutableStateOf(false) }
     var showFormatDialog by remember { mutableStateOf<String?>(null) }
     var conversionError by remember { mutableStateOf<String?>(null) }
+
+    var selectedFilter by remember { mutableStateOf(EvrakFilter.ALL) }
+
+    val availableFilters = remember(historyList) {
+        val filters = mutableListOf(EvrakFilter.ALL)
+        if (historyList.any { it.path.endsWith(".udf", true) }) filters.add(EvrakFilter.UDF)
+        if (historyList.any { it.path.endsWith(".pdf", true) }) filters.add(EvrakFilter.PDF)
+        if (historyList.any { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }) filters.add(EvrakFilter.TIFF)
+        if (historyList.any { it.path.endsWith(".doc", true) || it.path.endsWith(".docx", true) }) filters.add(EvrakFilter.WORD)
+        if (historyList.any {
+                val path = it.path.lowercase()
+                path.endsWith(".html") || path.endsWith(".htm") ||
+                path.endsWith(".jpg") || path.endsWith(".jpeg") ||
+                path.endsWith(".gif") || path.endsWith(".png")
+            }) filters.add(EvrakFilter.OTHER)
+        filters
+    }
+
+    LaunchedEffect(availableFilters) {
+        if (selectedFilter !in availableFilters) {
+            selectedFilter = EvrakFilter.ALL
+        }
+    }
+
+    val filteredList = remember(historyList, selectedFilter) {
+        when (selectedFilter) {
+            EvrakFilter.ALL -> historyList
+            EvrakFilter.UDF -> historyList.filter { it.path.endsWith(".udf", true) }
+            EvrakFilter.PDF -> historyList.filter { it.path.endsWith(".pdf", true) }
+            EvrakFilter.TIFF -> historyList.filter { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }
+            EvrakFilter.WORD -> historyList.filter { it.path.endsWith(".doc", true) || it.path.endsWith(".docx", true) }
+            EvrakFilter.OTHER -> historyList.filter {
+                val path = it.path.lowercase()
+                path.endsWith(".html") || path.endsWith(".htm") ||
+                path.endsWith(".jpg") || path.endsWith(".jpeg") ||
+                path.endsWith(".gif") || path.endsWith(".png")
+            }
+        }
+    }
 
     // Save launchers
     val savePdfLauncher = rememberLauncherForActivityResult(
@@ -124,9 +161,30 @@ fun MainScreen(
         topBar = {
             TopAppBar(
                 title = { 
-                    Text(text = "${stringResource(id = R.string.app_name)} v${BuildConfig.VERSION_NAME}") 
+                    Text(text = stringResource(id = R.string.app_name)) 
                 },
                 actions = {
+                    if (historyList.isNotEmpty()) {
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.delete))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = { showDeleteAllConfirm = true }) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = stringResource(id = R.string.delete),
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
                     TooltipBox(
                         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                             TooltipAnchorPosition.Above
@@ -198,32 +256,26 @@ fun MainScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = stringResource(id = R.string.history),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                            
-                            TextButton(
-                                onClick = { showDeleteAllConfirm = true },
-                                contentPadding = PaddingValues(0.dp)
+
+                    if (historyList.isNotEmpty() && availableFilters.size > 1) {
+                        item {
+                            androidx.compose.foundation.lazy.LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text(
-                                    text = stringResource(id = R.string.delete_all),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.error
-                                )
+                                items(availableFilters) { filter ->
+                                    FilterChip(
+                                        selected = selectedFilter == filter,
+                                        onClick = { selectedFilter = filter },
+                                        label = { Text(text = stringResource(id = filter.labelResId)) }
+                                    )
+                                }
                             }
                         }
                     }
-                    items(historyList) { evrak ->
+                    items(filteredList) { evrak ->
                         EvrakItem(
                             evrak = evrak, 
                             onClick = { onItemClick(evrak) },
@@ -266,7 +318,7 @@ fun MainScreen(
                 
                 OptionItem(
                     icon = Icons.Default.Share,
-                    label = stringResource(id = R.string.send),
+                    label = stringResource(id = R.string.share),
                     onClick = {
                         val path = selectedEvrak!!.path
                         val isConvertible = path.endsWith(".udf", true) || 
@@ -385,7 +437,7 @@ fun MainScreen(
     if (showDeleteAllConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteAllConfirm = false },
-            title = { Text(text = stringResource(id = R.string.delete_all)) },
+            title = { Text(text = stringResource(id = R.string.delete)) },
             text = { Text(text = stringResource(id = R.string.confirm_delete_all_message)) },
             confirmButton = {
                 TextButton(
@@ -578,4 +630,13 @@ fun OptionItem(
         leadingContent = { Icon(icon, contentDescription = null, tint = color) },
         modifier = Modifier.clickable(onClick = onClick)
     )
+}
+
+enum class EvrakFilter(val labelResId: Int) {
+    ALL(R.string.filter_all),
+    UDF(R.string.filter_udf),
+    PDF(R.string.filter_pdf),
+    TIFF(R.string.filter_tiff),
+    WORD(R.string.filter_word),
+    OTHER(R.string.filter_other)
 }

@@ -8,7 +8,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import androidx.navigation.compose.NavHost
@@ -36,7 +41,7 @@ class MainActivity : ComponentActivity() {
         currentIntent = intent
         setContent {
             EvrakTheme {
-                EvrakApp(viewModel, currentIntent)
+                EvrakApp(viewModel, currentIntent, onFinish = { finish() })
             }
         }
     }
@@ -48,12 +53,19 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
+fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
     val navController = rememberNavController()
     val historyList by viewModel.historyList.collectAsState()
     var showAboutDialog by remember { mutableStateOf(false) }
+    
+    val isExternalIntent = remember(intent) {
+        intent?.action == Intent.ACTION_VIEW || intent?.action == Intent.ACTION_SEND
+    }
 
-    NavHost(navController = navController, startDestination = "history") {
+    NavHost(
+        navController = navController, 
+        startDestination = if (isExternalIntent) "intent_processor" else "history"
+    ) {
         composable("history") {
             val context = androidx.compose.ui.platform.LocalContext.current
             val shareAppLabel = stringResource(id = R.string.share_app)
@@ -90,6 +102,14 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                 onAboutClick = { showAboutDialog = true }
             )
         }
+        composable("intent_processor") {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
         composable("viewer/{filePath}/{displayName}") { backStackEntry ->
             val filePath = backStackEntry.arguments?.getString("filePath") ?: ""
             val displayName = backStackEntry.arguments?.getString("displayName") ?: ""
@@ -98,7 +118,9 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
             // Safety check for rapid back clicks
             val onBackSafe = {
                 if (backStackEntry.lifecycle.currentState == androidx.lifecycle.Lifecycle.State.RESUMED) {
-                    navController.popBackStack()
+                    if (!navController.popBackStack()) {
+                        onFinish()
+                    }
                 }
             }
             
@@ -191,7 +213,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                 val name = it.getStringExtra("display_name") ?: ""
                 if (path.isNotEmpty()) {
                     navController.navigate("viewer/${Uri.encode(path)}/${Uri.encode(name)}") {
-                        popUpTo("history")
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
                     }
                 }
                 return@LaunchedEffect
@@ -223,7 +245,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?) {
                 
                 viewModel.openDocument(fileUri, activityContentResolver) { evrak ->
                     navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}") {
-                        popUpTo("history")
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
                     }
                 }
             }

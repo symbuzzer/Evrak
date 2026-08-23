@@ -45,7 +45,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Developer link (Ali BEYAZ only)
@@ -64,7 +64,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 @Suppress("DEPRECATION")
                 ClickableText(
                     text = developerText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 ) { offset ->
                     developerText.getStringAnnotations(tag = "URL", start = offset, end = offset)
                         .firstOrNull()?.let { annotation ->
@@ -89,7 +89,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 @Suppress("DEPRECATION")
                 ClickableText(
                     text = libraryText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 ) { offset ->
                     libraryText.getStringAnnotations(tag = "URL", start = offset, end = offset)
                         .firstOrNull()?.let { annotation ->
@@ -114,7 +114,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 @Suppress("DEPRECATION")
                 ClickableText(
                     text = sourceCodeText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 ) { offset ->
                     sourceCodeText.getStringAnnotations(tag = "URL", start = offset, end = offset)
                         .firstOrNull()?.let { annotation ->
@@ -139,7 +139,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 @Suppress("DEPRECATION")
                 ClickableText(
                     text = contactText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 ) { offset ->
                     contactText.getStringAnnotations(tag = "URL", start = offset, end = offset)
                         .firstOrNull()?.let { annotation ->
