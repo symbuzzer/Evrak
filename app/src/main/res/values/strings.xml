@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Evrak</string>
-    <string name="history">Geçmiş</string>
+
     <string name="update">Güncelleme</string>
     <string name="share_app">Uygulamayı paylaş</string>
     <string name="about">Hakkında</string>
@@ -8,7 +8,6 @@
     <string name="save">Kaydet</string>
     <string name="rename">Yeniden adlandır</string>
     <string name="delete">Sil</string>
-    <string name="send">Gönder</string>
     <string name="confirm_delete">Silmek istediğinize emin misiniz?</string>
     <string name="rename_title">Dosyayı yeniden adlandır</string>
     <string name="rename_hint">Yeni dosya adı</string>
@@ -29,20 +28,28 @@
     <string name="about_source_code">Kaynak kodunu\u0020</string>
     <string name="about_feedback">Görüş ve önerilerinizi\u0020</string>
     <string name="about_report">bildirin</string>
-    <string name="delete_all">Tümünü sil</string>
+
     <string name="confirm_delete_all_message">Bütün geçmişi ve önbelleğe alınmış dosyaları silmek istediğinize emin misiniz?</string>
     <string name="unsupported_format_title">Tanımlanamayan Format</string>
     <string name="unsupported_format_message">Bu dosya formatı şu anda Evrak tarafından desteklenmiyor.</string>
     <string name="error_udf_read">UDF içeriği (content.xml) okunamadı ya da dosya bozuk.</string>
-    <string name="error_udf_invalid">Geçersiz UDF içeriği.</string>
+
     <string name="select_format">Format Seçin</string>
     <string name="format_original">Orijinal Format (%1$s)</string>
     <string name="format_pdf">PDF Olarak (%1$s)</string>
     <string name="converting">Dönüştürülüyor...</string>
     <string name="error_conversion_failed">Dönüştürme hatası: %1$s</string>
-    <string name="error_document_content_not_found">No content found.</string>
+
     <string name="error_file_open_failed">Dosya okunamadı</string>
     <string name="error_format_not_supported_view">Dosya formatı bu görünümde desteklenmiyor.</string>
     <string name="error_tiff_open_failed">TIFF dosyası açılamadı: %1$s</string>
     <string name="share_app_text">Evrak uygulamasını indirin: https://github.com/symbuzzer/Evrak/releases</string>
+
+    <!-- Filters -->
+    <string name="filter_all">Tümü</string>
+    <string name="filter_udf">UDF</string>
+    <string name="filter_pdf">PDF</string>
+    <string name="filter_tiff">TIFF</string>
+    <string name="filter_word">Word</string>
+    <string name="filter_other">Diğer</string>
 </resources>
