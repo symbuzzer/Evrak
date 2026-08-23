@@ -75,7 +75,7 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 | [Coil](https://github.com/coil-kt/coil) (coil-compose, coil-gif) — görsel yükleme (JPG/PNG/GIF)                                                               | Apache License 2.0 |
 | [tiffrenderer](https://github.com/lucf15/TiffRenderer) — TIFF render motoru                                                                                   | Apache License 2.0 |
 | [docx-preview](https://github.com/volodymyrbaydalka/docxjs) v0.4.0 — DOCX içeriğinin WebView üzerinde render edilmesi (APK içine `assets/js/` altında gömülü) | Apache License 2.0 |
-| [JSZip](https://github.com/Stuk/jszip) — docx-preview'un ZIP (DOCX) ayrıştırma bağımlılığı (CDN üzerinden)                                                    | MIT License (veya GPLv3 - çift lisanslı) |
+| [JSZip](https://github.com/Stuk/jszip) — docx-preview'un ZIP (DOCX) ayrıştırma bağımlılığı                                                                    | MIT License (veya GPLv3 - çift lisanslı) |
 | [TiffBitmapFactory](https://github.com/Beyka/Android-TiffBitmapFactory) v0.9.9 — TIFF dosyalarını PDF'e çevirme                                               | MIT License |
 
 ### Test / Debug
