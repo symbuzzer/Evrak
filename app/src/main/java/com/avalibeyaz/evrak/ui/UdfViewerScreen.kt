@@ -623,12 +623,7 @@ private class UdfDocumentParser(private val xml: String) {
                 "image" -> renderImage(el)
                 "tab" -> "<span class=\"udf-tab\">&nbsp;</span>"
                 "space" -> htmlEscape(extractText(el)).ifEmpty { "&nbsp;" }
-                "field" -> {
-                    // Placeholder for template fields not filled by a <data> section.
-                    val name = el.attrOrNull("name") ?: el.attrOrNull("fieldName") ?: ""
-                    val default = el.attrOrNull("default") ?: "[$name]"
-                    htmlEscape(default)
-                }
+                "field" -> renderFieldRun(el)
                 else -> ""
             }
         } catch (e: Exception) {
@@ -658,6 +653,35 @@ private class UdfDocumentParser(private val xml: String) {
 
         val escaped = htmlEscape(text).replace("\n", "<br/>")
         return "<span style=\"$runStyle\">$escaped</span>"
+    }
+
+    private fun renderFieldRun(el: Element): String {
+        // Gerçek UYAP dosyalarında <field> elemanları, <content> ile birebir aynı
+        // şekilde ortak metin havuzuna startOffset/length ile işaret eder.
+        // "default" attribute'u kullanılmıyor - o yalnızca offset boşsa/okunamazsa
+        // düşülecek son çare placeholder'dır.
+        val text = extractText(el)
+        if (text.isNotEmpty() && text != "\u200B") {
+            // content run ile birebir aynı stil mantığını uygula
+            val runStyle = StringBuilder()
+            val family = el.attrOrNull("family") ?: defaultStyle().family
+            val size = el.attrOrNull("size") ?: defaultStyle().size
+            family?.let { runStyle.append("font-family:'$it';") }
+            size?.toDoubleOrNull()?.let { runStyle.append("font-size:${it}pt;") }
+            if (el.attrOrNull("bold")?.toBoolean() == true) runStyle.append("font-weight:bold;")
+            if (el.attrOrNull("italic")?.toBoolean() == true) runStyle.append("font-style:italic;")
+            if (el.attrOrNull("underline")?.toBoolean() == true) runStyle.append("text-decoration:underline;")
+            (colorToHex(el.attrOrNull("foreground")) ?: defaultStyle().foreground)?.let {
+                runStyle.append("color:$it;")
+            }
+            val escaped = htmlEscape(text).replace("\n", "<br/>")
+            return "<span style=\"$runStyle\">$escaped</span>"
+        }
+
+        // Offset yok/okunamıyorsa: gerçekten doldurulmamış şablon alanı - eski davranış
+        val name = el.attrOrNull("fieldName") ?: el.attrOrNull("name") ?: ""
+        val default = el.attrOrNull("default") ?: "[$name]"
+        return htmlEscape(default)
     }
 
     private fun renderImage(el: Element): String {
