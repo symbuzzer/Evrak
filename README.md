@@ -24,7 +24,6 @@ UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygul
 - **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmeler için istenildiğinde yeniden adlandırılabilir veya silinebilir
 - **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menüsülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
 - **Diğer uygulamalarla uyum içerisinde çalışma:** "Birlikte aç" seçeneği ile Evrak üzerinden görüntülediğiniz dosyaları, destekleyen diğer uygulamalar ile açabilirsiniz
-- **Uygulama içerisinden güncelleme:** Uygulama içerisinden güncelleme olup olmadığını kontrol edebilir ve güncelleme yapabilirsiniz
 
 ## Neden Evrak?
 
@@ -91,10 +90,6 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 ## Gizlilik
 
 Evrak, herhangi bir Android izni talep etmez. Açılan dosyalar yalnızca cihazın kendi yerel depolama alanında (uygulamanın kendi önbelleğinde) tutulur; herhangi bir sunucuya veri gönderilmez, hiçbir analitik/takip SDK'sı kullanılmaz. İnternete ve cihazın dosya sistemine hiç bir şekilde erişmez.
-
-Güncelleme butonuna bastığınızda, kurulu olan Evrak uygulaması sürümü ile oluşturulan URL cihazınızın varsayılan tarayıcısı ile açılır.  
-Örneğin cihazınızda Evrak v1.0.4 sürümü yüklü ise, Güncelleme butonuna bastığınızda tarayıcıda şu URL açılır: `https://symbuzzer.github.io/evrak/index.htm?ver=1.0.4` Yani uygulama sürüm numarası dışında başkaca bir veri dışarıyla paylaşılmaz.  
-Paylaşılan sürüm numarasının sadece güncelleme kontrolü için kullanıldığını kontrol etmek için güncelleme sayfası kaynak koduna göz atabilirsiniz: https://github.com/symbuzzer/symbuzzer.github.io/blob/main/evrak/index.htm
 
 ## Katkıda Bulunma
 

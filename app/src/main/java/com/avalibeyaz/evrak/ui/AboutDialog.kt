@@ -71,6 +71,32 @@ fun AboutDialog(onDismiss: () -> Unit) {
                             uriHandler.openUri(annotation.item)
                         }
                 }
+
+                // Celse integration paragraph
+                val celseText = buildAnnotatedString {
+                    append(stringResource(id = R.string.about_celse_integration))
+                    pushStringAnnotation(tag = "URL", annotation = "https://github.com/symbuzzer/UDE_stub")
+                    withStyle(style = SpanStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )) {
+                        append(stringResource(id = R.string.about_realize))
+                    }
+                    pop()
+                    append(".")
+                }
+
+                @Suppress("DEPRECATION")
+                ClickableText(
+                    text = celseText,
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) { offset ->
+                    celseText.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                        .firstOrNull()?.let { annotation ->
+                            uriHandler.openUri(annotation.item)
+                        }
+                }
                 
                 // Library link
                 val libraryText = buildAnnotatedString {
