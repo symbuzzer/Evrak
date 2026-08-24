@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.*
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -49,7 +48,6 @@ fun MainScreen(
     onRenameClick: (Evrak, String) -> Unit,
     onDeleteAllClick: () -> Unit,
     onRefresh: () -> Unit,
-    onUpdateClick: () -> Unit,
     onShareAppClick: () -> Unit,
     onAboutClick: () -> Unit
 ) {
@@ -198,21 +196,6 @@ fun MainScreen(
                     ) {
                         IconButton(onClick = onShareAppClick) {
                             Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share_app))
-                        }
-                    }
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Above
-                        ),
-                        tooltip = {
-                            PlainTooltip {
-                                Text(stringResource(id = R.string.update))
-                            }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = onUpdateClick) {
-                            Icon(Icons.Default.SystemUpdate, contentDescription = stringResource(id = R.string.update))
                         }
                     }
                     TooltipBox(

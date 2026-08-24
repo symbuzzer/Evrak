@@ -86,11 +86,6 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                 onRefresh = {
                     viewModel.refreshHistory()
                 },
-                onUpdateClick = {
-                    val url = "https://symbuzzer.github.io/evrak/index.htm?ver=${BuildConfig.VERSION_NAME}"
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                    context.startActivity(intent)
-                },
                 onShareAppClick = {
                     val shareText = context.getString(R.string.share_app_text)
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
