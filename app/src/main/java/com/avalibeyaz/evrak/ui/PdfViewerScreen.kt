@@ -6,6 +6,7 @@ import android.os.ParcelFileDescriptor
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -25,11 +26,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -92,13 +95,6 @@ fun PdfViewerScreen(
         }
     }
 
-    // Zoom state
-    var scale by remember { mutableFloatStateOf(1f) }
-    val animatedScale by animateFloatAsState(targetValue = scale, label = "scale")
-    val state = rememberTransformableState { zoomChange, _, _ ->
-        scale = (scale * zoomChange).coerceIn(1f, 5f)
-    }
-
     // Track current page based on list scroll position
     LaunchedEffect(listState.firstVisibleItemIndex) {
         currentPage = listState.firstVisibleItemIndex + 1
@@ -137,6 +133,42 @@ fun PdfViewerScreen(
                 .padding(padding)
         ) {
             val viewHeight = maxHeight
+
+            // Zoom and Pan state
+            var scale by remember { mutableFloatStateOf(1f) }
+            var offset by remember { mutableStateOf(Offset.Zero) }
+
+            val animatedScale by animateFloatAsState(targetValue = scale, label = "scale")
+            val animatedOffset by animateOffsetAsState(targetValue = offset, label = "offset")
+
+            val state = rememberTransformableState { zoomChange, panChange, _ ->
+                val newScale = (scale * zoomChange).coerceIn(1f, 5f)
+
+                val newOffset = if (newScale > 1f) {
+                    val rawOffset = offset + panChange * scale
+
+                    // Limit panning based on scale
+                    val maxX = (newScale - 1f) * (constraints.maxWidth / 2f)
+                    val maxY = (newScale - 1f) * (constraints.maxHeight / 2f)
+
+                    Offset(
+                        x = rawOffset.x.coerceIn(-maxX, maxX),
+                        y = rawOffset.y.coerceIn(-maxY, maxY)
+                    )
+                } else {
+                    Offset.Zero
+                }
+
+                scale = newScale
+                offset = newOffset
+            }
+
+            // Reset offset when scaled back to 1
+            LaunchedEffect(scale) {
+                if (scale <= 1f) {
+                    offset = Offset.Zero
+                }
+            }
             
             Box(modifier = Modifier.fillMaxSize()) {
                 // List Container
@@ -145,21 +177,37 @@ fun PdfViewerScreen(
                         .fillMaxSize()
                         .pointerInput(Unit) {
                             detectTapGestures(
-                                onDoubleTap = {
-                                    scale = if (scale > 1.1f) 1f else 3f
+                                onDoubleTap = { tapOffset ->
+                                    if (scale > 1.1f) {
+                                        scale = 1f
+                                        offset = Offset.Zero
+                                    } else {
+                                        scale = 3f
+                                        // Try to center on tap location
+                                        val centerX = size.width / 2f
+                                        val centerY = size.height / 2f
+                                        offset = Offset(
+                                            x = (centerX - tapOffset.x) * 2f,
+                                            y = (centerY - tapOffset.y) * 2f
+                                        )
+                                    }
                                 }
                             )
                         }
                         .transformable(state = state)
                 ) {
+                    val contentModifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(
+                            scaleX = animatedScale,
+                            scaleY = animatedScale,
+                            translationX = animatedOffset.x,
+                            translationY = animatedOffset.y
+                        )
+
                     LazyColumn(
                         state = listState,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(
-                                scaleX = animatedScale,
-                                scaleY = animatedScale
-                            ),
+                        modifier = contentModifier,
                         horizontalAlignment = Alignment.CenterHorizontally,
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = if (pageCount == 1) Arrangement.Center else Arrangement.spacedBy(16.dp)
