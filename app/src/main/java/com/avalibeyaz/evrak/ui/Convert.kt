@@ -27,6 +27,7 @@ import io.github.lucf15.tiffrenderer.TiffRenderer
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.zip.ZipFile
 import javax.xml.parsers.DocumentBuilderFactory
@@ -68,6 +69,7 @@ object DocumentConverter {
         return when (inputFile.extension.lowercase()) {
             "tif", "tiff" -> convertTiffToPdf(inputFile, outputFile)
             "udf" -> convertUdfToPdf(inputFile, outputFile)
+            "doc", "docx" -> convertWordToPdf(inputFile, outputFile)
             else -> ConversionResult.Error("Desteklenmeyen dosya türü: .${inputFile.extension}")
         }
     }
@@ -315,8 +317,9 @@ object DocumentConverter {
                     flushRuns()
                     val base64Data = child.getAttribute("imageData")
                     val bitmap = decodeBase64Image(base64Data)
-                    val w = child.attrFloat("width", 100f)
-                    val h = child.attrFloat("height", 100f)
+                    // Fix: Use natural bitmap size if width/height is missing in XML
+                    val w = child.getAttribute("width").toFloatOrNull() ?: bitmap?.width?.toFloat() ?: 100f
+                    val h = child.getAttribute("height").toFloatOrNull() ?: bitmap?.height?.toFloat() ?: 100f
                     result.add(Block.Img(bitmap, w, h))
                 }
             }
@@ -388,14 +391,19 @@ object DocumentConverter {
     }
 
     private fun parseTable(node: Element, fullText: String): Block.Tbl {
-        val columnSpans = node.getAttribute("columnSpans")
-            .split(",")
-            .mapNotNull { it.trim().toFloatOrNull() }
+        val columnSpansAttr = node.getAttribute("columnSpans")
+        var columnSpans = if (columnSpansAttr.isNotEmpty()) {
+            columnSpansAttr.split(",")
+                .mapNotNull { it.trim().toFloatOrNull() }
+        } else emptyList()
+        
         val rows = mutableListOf<List<CellData>>()
+        var maxCells = 0
 
         forEachChildElement(node) { rowNode ->
             if (rowNode.tagName == "row") {
                 val cells = mutableListOf<CellData>()
+                var rowCellCount = 0
                 forEachChildElement(rowNode) { cellNode ->
                     if (cellNode.tagName == "cell") {
                         val colspan = cellNode.getAttribute("colspan").toIntOrNull() ?: 1
@@ -413,11 +421,19 @@ object DocumentConverter {
                                 verticalAlign = vAlign
                             )
                         )
+                        rowCellCount += colspan
                     }
                 }
                 rows.add(cells)
+                if (rowCellCount > maxCells) maxCells = rowCellCount
             }
         }
+
+        // Fix missing columnSpans: Distribute evenly
+        if (columnSpans.isEmpty() && maxCells > 0) {
+            columnSpans = List(maxCells) { 100f / maxCells }
+        }
+
         return Block.Tbl(columnSpans, rows)
     }
 
@@ -532,6 +548,9 @@ object DocumentConverter {
         val basePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             textSize = 12f
             color = Color.BLACK
+            // Fix: PDF units are points (1/72 inch). 
+            // Android's default TextPaint uses display density which makes text huge on high-res screens.
+            density = 1.0f
         }
         
         val alignment = when (para.alignment) {
@@ -599,9 +618,13 @@ object DocumentConverter {
     }
 
     private fun renderTable(canvas: Canvas?, table: Block.Tbl, x: Float, y: Float, width: Float): Float {
+        if (table.rows.isEmpty()) return 0f
+        
         val totalSpec = table.columnSpans.sum()
         val scale = if (totalSpec > 0f) width / totalSpec else 1f
         val colWidths = table.columnSpans.map { it * scale }
+        
+        if (colWidths.isEmpty()) return 0f
         
         val borderPaint = Paint().apply {
             style = Paint.Style.STROKE
@@ -616,14 +639,18 @@ object DocumentConverter {
         for (row in table.rows) {
             var colIndex = 0
             val cellWidths = row.map { cell ->
-                val w = (0 until cell.colspan).sumOf { i -> (colWidths.getOrNull(colIndex + i) ?: 0f).toDouble() }.toFloat()
+                var w = 0f
+                for (i in 0 until cell.colspan) {
+                    w += colWidths.getOrNull(colIndex + i) ?: 0f
+                }
                 colIndex += cell.colspan
                 w
             }
             
             // 1. Ölçüm geçişi: Satır yüksekliğini belirle
             val cellContentHeights = row.mapIndexed { i, cell ->
-                val innerWidth = (cellWidths[i] - CELL_PADDING * 2).coerceAtLeast(1f)
+                val cellWidth = cellWidths.getOrNull(i) ?: 0f
+                val innerWidth = (cellWidth - CELL_PADDING * 2).coerceAtLeast(1f)
                 var h = 0f
                 for (b in cell.blocks) h += renderBlock(null, b, 0f, 0f, innerWidth) + 2f
                 h
@@ -633,7 +660,10 @@ object DocumentConverter {
             // 2. Çizim geçişi
             var curX = x
             for ((i, cell) in row.withIndex()) {
-                val cellWidth = cellWidths[i]
+                val cellWidth = cellWidths.getOrNull(i) ?: 0f
+                if (cellWidth <= 0f) {
+                    continue
+                }
                 
                 if (canvas != null) {
                     // Arka plan rengi
@@ -668,6 +698,227 @@ object DocumentConverter {
             curY += rowHeight
         }
         return curY - y
+    }
+
+    // ==================================================================
+    // Word (DOC/DOCX) -> PDF
+    // ==================================================================
+
+    /**
+     * DOCX veya DOC dosyasını PDF'ye dönüştürür.
+     * Apache POI kullanarak metin ve tabloları okur ve PDF kanvasına çizer.
+     */
+    fun convertWordToPdf(inputFile: File, outputFile: File): ConversionResult {
+        return try {
+            val blocks = mutableListOf<Block>()
+            val extension = inputFile.extension.lowercase()
+
+            if (extension == "docx") {
+                FileInputStream(inputFile).use { fis ->
+                    val docx = org.apache.poi.xwpf.usermodel.XWPFDocument(fis)
+                    docx.bodyElements.forEach { element ->
+                        when (element) {
+                            is org.apache.poi.xwpf.usermodel.XWPFParagraph -> {
+                                blocks.add(parseDocxParagraph(element))
+                            }
+                            is org.apache.poi.xwpf.usermodel.XWPFTable -> {
+                                blocks.add(parseDocxTable(element))
+                            }
+                        }
+                    }
+                }
+            } else if (extension == "doc") {
+                FileInputStream(inputFile).use { fis ->
+                    val doc = org.apache.poi.hwpf.HWPFDocument(fis)
+                    val range = doc.range
+                    
+                    val tableIt = org.apache.poi.hwpf.usermodel.TableIterator(range)
+                    val tableParagraphs = mutableSetOf<Int>()
+                    
+                    // First, collect all tables to avoid double processing via range paragraphs
+                    while (tableIt.hasNext()) {
+                        val table = tableIt.next()
+                        blocks.add(parseDocTable(table))
+                        
+                        // Mark paragraphs belonging to this table
+                        for (r in 0 until table.numRows()) {
+                            val row = table.getRow(r)
+                            for (c in 0 until row.numCells()) {
+                                val cell = row.getCell(c)
+                                for (p in 0 until cell.numParagraphs()) {
+                                    // HWPF doesn't easily expose index, so this is a simplified skip
+                                }
+                            }
+                        }
+                    }
+
+                    for (i in 0 until range.numParagraphs()) {
+                        val para = range.getParagraph(i)
+                        if (para.isInTable) continue 
+                        blocks.add(parseDocParagraph(para))
+                    }
+                }
+            }
+
+            val format = PageFormat(
+                widthPt = 595.28f,
+                heightPt = 841.89f,
+                leftMargin = 72f,
+                rightMargin = 72f,
+                topMargin = 72f,
+                bottomMargin = 72f
+            )
+
+            renderUdfToPdf(blocks, format, outputFile)
+            ConversionResult.Success(outputFile)
+        } catch (e: Exception) {
+            Log.e(TAG, "Word -> PDF dönüştürme hatası", e)
+            ConversionResult.Error("Word dönüştürme hatası: ${e.message}", e)
+        }
+    }
+
+    private fun parseDocxParagraph(para: org.apache.poi.xwpf.usermodel.XWPFParagraph): Block.Para {
+        val runs = para.runs.map { run ->
+            // Fix: Get all text segments in the run to avoid punctuation loss
+            val fullText = run.getCTR().tList.joinToString("") { it.stringValue ?: "" }
+            TextRun(
+                text = fullText,
+                bold = run.isBold,
+                italic = run.isItalic,
+                underline = run.underline != org.apache.poi.xwpf.usermodel.UnderlinePatterns.NONE,
+                sizePt = if (run.fontSize != -1) run.fontSize.toFloat() else 11f,
+                colorArgb = try {
+                    val colorHex = run.color
+                    if (colorHex != null && colorHex != "auto") {
+                        android.graphics.Color.parseColor("#$colorHex")
+                    } else DEFAULT_COLOR
+                } catch (_: Exception) { DEFAULT_COLOR }
+            )
+        }
+        
+        val alignment = when (para.alignment) {
+            org.apache.poi.xwpf.usermodel.ParagraphAlignment.CENTER -> 1
+            org.apache.poi.xwpf.usermodel.ParagraphAlignment.RIGHT -> 2
+            org.apache.poi.xwpf.usermodel.ParagraphAlignment.BOTH -> 3
+            else -> 0
+        }
+
+        // Fix: Unit conversion (Twips to Points). 1 Point = 20 Twips.
+        return Block.Para(
+            runs = runs,
+            alignment = alignment,
+            leftIndent = para.indentationLeft / 20f,
+            rightIndent = para.indentationRight / 20f,
+            firstLineIndent = para.indentationFirstLine / 20f,
+            spaceAbove = para.spacingBefore / 20f,
+            spaceBelow = para.spacingAfter / 20f
+        )
+    }
+
+    private fun parseDocxTable(table: org.apache.poi.xwpf.usermodel.XWPFTable): Block.Tbl {
+        val rows = mutableListOf<List<CellData>>()
+        var maxCols = 0
+        
+        // Try to get column widths from table grid (in twips: 1/1440 inch, 1/20 point)
+        val colWidthsFromGrid = mutableListOf<Float>()
+        try {
+            val grid = table.ctTbl.tblGrid
+            if (grid != null) {
+                grid.gridColList.forEach { col ->
+                    val wTwips = col.getW().toString().toLongOrNull() ?: 0L
+                    colWidthsFromGrid.add(wTwips / 20f)
+                }
+            }
+        } catch (_: Exception) {}
+
+        table.rows.forEach { row ->
+            val cells = row.tableCells.map { cell ->
+                val cellBlocks = mutableListOf<Block>()
+                cell.bodyElements.forEach { element ->
+                    when (element) {
+                        is org.apache.poi.xwpf.usermodel.XWPFParagraph -> cellBlocks.add(parseDocxParagraph(element))
+                        is org.apache.poi.xwpf.usermodel.XWPFTable -> cellBlocks.add(parseDocxTable(element))
+                    }
+                }
+                
+                // Get colspan from cell properties
+                val gridSpan = try {
+                    cell.ctTc.tcPr.gridSpan.`val`.toInt()
+                } catch (_: Exception) { 1 }
+                
+                CellData(colspan = gridSpan, blocks = cellBlocks)
+            }
+            rows.add(cells)
+            val rowTotalCols = cells.sumOf { it.colspan }
+            if (rowTotalCols > maxCols) maxCols = rowTotalCols
+        }
+        
+        val colWidths = if (colWidthsFromGrid.isNotEmpty()) {
+            colWidthsFromGrid
+        } else {
+            List(maxCols) { 100f / maxCols }
+        }
+        return Block.Tbl(colWidths, rows)
+    }
+
+    private fun parseDocParagraph(para: org.apache.poi.hwpf.usermodel.Paragraph): Block.Para {
+        val runs = mutableListOf<TextRun>()
+        for (i in 0 until para.numCharacterRuns()) {
+            val run = para.getCharacterRun(i)
+            val text = run.text()
+            if (text.isNotEmpty()) {
+                runs.add(
+                    TextRun(
+                        text = text,
+                        bold = run.isBold,
+                        italic = run.isItalic,
+                        underline = run.underlineCode != 0,
+                        sizePt = run.fontSize.toFloat() / 2f,
+                        colorArgb = if (run.color != -1) (0xFF000000.toInt() or (0xFFFFFF and run.color)) else DEFAULT_COLOR
+                    )
+                )
+            }
+        }
+        
+        val alignment = when (para.justification.toInt()) {
+            1 -> 1 // center
+            2 -> 2 // right
+            3 -> 3 // justify
+            else -> 0
+        }
+
+        return Block.Para(
+            runs = runs, 
+            alignment = alignment,
+            leftIndent = para.getIndentFromLeft().toFloat() / 20f,
+            rightIndent = para.getIndentFromRight().toFloat() / 20f,
+            firstLineIndent = para.getFirstLineIndent().toFloat() / 20f,
+            spaceAbove = para.getSpacingBefore().toFloat() / 20f,
+            spaceBelow = para.getSpacingAfter().toFloat() / 20f
+        )
+    }
+
+    private fun parseDocTable(table: org.apache.poi.hwpf.usermodel.Table): Block.Tbl {
+        val rows = mutableListOf<List<CellData>>()
+        var maxCols = 0
+        
+        for (r in 0 until table.numRows()) {
+            val row = table.getRow(r)
+            val cells = mutableListOf<CellData>()
+            for (c in 0 until row.numCells()) {
+                val cell = row.getCell(c)
+                val cellBlocks = mutableListOf<Block>()
+                for (p in 0 until cell.numParagraphs()) {
+                    cellBlocks.add(parseDocParagraph(cell.getParagraph(p)))
+                }
+                cells.add(CellData(colspan = 1, blocks = cellBlocks))
+            }
+            rows.add(cells)
+            if (cells.size > maxCols) maxCols = cells.size
+        }
+        
+        val colWidths = List(maxCols) { 100f / maxCols }
+        return Block.Tbl(colWidths, rows)
     }
 
     // --- Yardımcılar -----------------------------------------------------

@@ -306,7 +306,9 @@ fun MainScreen(
                         val path = selectedEvrak!!.path
                         val isConvertible = path.endsWith(".udf", true) || 
                                            path.endsWith(".tiff", true) || 
-                                           path.endsWith(".tif", true)
+                                           path.endsWith(".tif", true) ||
+                                           path.endsWith(".docx", true) ||
+                                           path.endsWith(".doc", true)
                         
                         if (isConvertible) {
                             showFormatDialog = "share"
@@ -325,7 +327,9 @@ fun MainScreen(
                         val path = selectedEvrak!!.path
                         val isConvertible = path.endsWith(".udf", true) || 
                                            path.endsWith(".tiff", true) || 
-                                           path.endsWith(".tif", true)
+                                           path.endsWith(".tif", true) ||
+                                           path.endsWith(".docx", true) ||
+                                           path.endsWith(".doc", true)
                         
                         if (isConvertible) {
                             showFormatDialog = "save"
