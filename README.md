@@ -7,23 +7,24 @@
 UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygulamaları aracılığıyla gelen evrakları açmak için genellikle birden fazla farklı uygulamaya ihtiyaç duyulur. Evrak, bu ihtiyacı tek bir yerde, gereksiz karmaşıklık olmadan çözer.
 
 <img width="270" height="585" src="https://github.com/user-attachments/assets/11a02fad-be30-4320-ac76-c1ddf80f5ebd" />
-<img width="270" height="585" src="https://github.com/user-attachments/assets/819d6633-1c71-4459-9fbc-b47a9d4933ae" />
+<img width="270" height="585" src="https://github.com/user-attachments/assets/b6c6f40f-5b62-49a1-bed8-45e8ea1bdbc3" />
+<img width="270" height="585" src="https://github.com/user-attachments/assets/26d5f677-59a5-420a-9d7c-52779530279e" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/315d1016-36f3-457b-bf1b-d04c10106007" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/a4fa0f9a-d922-4025-912c-725a5d07f521" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/16ad8d58-a749-4f2e-bb2b-50b573f4356e" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/4e43874c-9d33-4354-a4b6-568b0968006f" />
-
 
 ## Özellikler
 
 - **Çoklu format desteği:** UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF, PNG
 - **Basit ve hızlı:** Dosyayı aç, görüntüle - başka hiçbir şeye gerek yok
 - **Paylaşma ve kaydetme:** Görüntülenen dosyaları istediğiniz yere kaydedebilir veya doğrudan başka uygulamalarla paylaşabilirsiniz
-- **UDF ve TIFF dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında isterseniz bu dosyaları PDF'e çevirebilirsiniz
+- **UDF, TIFF ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında isterseniz bu dosyaları PDF'e çevirebilirsiniz
+- **Yazdırma:** Bütün dosya türlerini Android'in kendi yazdırma özelliği ile doğrudan cihazınızdan yazdırabilirsiniz
 - **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
 - **Filtreleme:** Geçmişteki dosyaları dosya türüne göre filtreleyebilirsiniz
-- **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmeler için istenildiğinde yeniden adlandırılabilir veya silinebilir
-- **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menüsülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
+- **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmelerİ için istenildiğinde yeniden adlandırılabilir veya silinebilir
+- **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
 - **Diğer uygulamalarla uyum içerisinde çalışma:** "Birlikte aç" seçeneği ile Evrak üzerinden görüntülediğiniz dosyaları, destekleyen diğer uygulamalar ile açabilirsiniz
 
 ## Neden Evrak?
@@ -34,16 +35,21 @@ UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygul
 - ✅ **Açık kaynak kodlu**
 - ✅ **Hiçbir izin istemez** — bildirim izni dahil, uygulamanın çalışması için herhangi bir Android izni gerekmez
 
+## Celse Android uygulaması entegrasyonu
+
+Evrak uygulamasının, Celse ile Uyap Doküman Editör'ü uygulaması olmadan doğrudan çalışabilmesi için [şu adımları izleyin.](https://github.com/symbuzzer/UDE_stub)
+
+
 ## Desteklenen Dosya Formatları
 
-| Format | Uzantı | Görüntüleme Şekli |
-| --- | --- | --- |
-| UYAP UDF | `.udf` | Zengin metin (paragraf, tablo, resim, liste) HTML olarak render edilir |
-| TIFF | `.tif`, `.tiff` | Çok sayfalı görüntü, sayfa sayfa kaydırma ve yakınlaştırma |
-| PDF | `.pdf` | Sayfa sayfa görüntüleme ve yakınlaştırma |
-| Word | `.docx`, `.doc` | Biçimlendirmesi korunarak HTML'e dönüştürülüp görüntülenir |
-| HTML | `.html`, `.htm` | Yakınlaştırma/kaydırma destekli görüntüleyici |
-| Görsel | `.jpg`, `.jpeg`, `.png`, `.gif` | Yakınlaştırma/kaydırma destekli görüntüleyici |
+| Format | Uzantı |
+| --- | --- |
+| UYAP UDF | `.udf` |
+| TIFF | `.tif`, `.tiff` |
+| PDF | `.pdf` |
+| Word | `.docx`, `.doc` |
+| HTML | `.html`, `.htm` |
+| Görsel | `.jpg`, `.jpeg`, `.png`, `.gif` |
 
 ## Kullanılan Kütüphaneler ve Lisansları
 
