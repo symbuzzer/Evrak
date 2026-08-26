@@ -29,6 +29,12 @@ import com.avalibeyaz.evrak.ui.UdfViewerScreen
 import com.avalibeyaz.evrak.ui.HtmlViewerScreen
 import com.avalibeyaz.evrak.ui.UnsupportedViewerScreen
 import com.avalibeyaz.evrak.ui.theme.EvrakTheme
+import com.avalibeyaz.evrak.ui.DocumentConverter
+import androidx.lifecycle.lifecycleScope
+import androidx.print.PrintHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class MainActivity : ComponentActivity() {
@@ -36,6 +42,9 @@ class MainActivity : ComponentActivity() {
     private var currentIntent by mutableStateOf<Intent?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // WebView içeriğinin PDF'e tam ve doğru çizilmesi için gerekli
+        android.webkit.WebView.enableSlowWholeDocumentDraw()
+        
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         currentIntent = intent
@@ -93,6 +102,9 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         putExtra(Intent.EXTRA_TEXT, shareText)
                     }
                     context.startActivity(Intent.createChooser(shareIntent, shareAppLabel))
+                },
+                onPrintClick = { evrak, onConvertingChange ->
+                    printFile(context, evrak.path, evrak.name, onConvertingChange)
                 },
                 onAboutClick = { showAboutDialog = true }
             )
@@ -273,4 +285,102 @@ private fun shareFile(context: android.content.Context, filePath: String) {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share)))
+}
+
+private fun printFile(
+    context: android.content.Context, 
+    filePath: String, 
+    displayName: String,
+    onConvertingChange: (Boolean) -> Unit = {}
+) {
+    val file = File(filePath)
+    if (!file.exists()) return
+
+    val isImage = filePath.endsWith(".jpg", true) ||
+            filePath.endsWith(".jpeg", true) ||
+            filePath.endsWith(".png", true) ||
+            filePath.endsWith(".gif", true)
+
+    if (filePath.endsWith(".pdf", true)) {
+        doPrint(context, file, displayName)
+    } else if (isImage) {
+        doPrintImage(context, file, displayName)
+    } else {
+        // Convert to PDF then print
+        if (context is ComponentActivity) {
+            context.lifecycleScope.launch(Dispatchers.IO) {
+                withContext(Dispatchers.Main) { onConvertingChange(true) }
+                try {
+                    val tempPdf = File(context.cacheDir, "print_temp_${System.currentTimeMillis()}.pdf")
+                    val result = DocumentConverter.convert(file, tempPdf, context)
+                    if (result is DocumentConverter.ConversionResult.Success) {
+                        withContext(Dispatchers.Main) {
+                            doPrint(context, tempPdf, displayName)
+                        }
+                    } else if (result is DocumentConverter.ConversionResult.Error) {
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(context, context.getString(R.string.error_conversion_failed, result.message), android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } finally {
+                    withContext(Dispatchers.Main) { onConvertingChange(false) }
+                }
+            }
+        }
+    }
+}
+
+private fun doPrintImage(context: android.content.Context, file: File, displayName: String) {
+    val printHelper = PrintHelper(context)
+    printHelper.scaleMode = PrintHelper.SCALE_MODE_FIT
+    val bitmap = android.graphics.BitmapFactory.decodeFile(file.absolutePath)
+    if (bitmap != null) {
+        printHelper.printBitmap(displayName, bitmap)
+    }
+}
+
+private fun doPrint(context: android.content.Context, file: File, displayName: String) {
+    val printManager = context.getSystemService(android.content.Context.PRINT_SERVICE) as android.print.PrintManager
+    val jobName = "${context.getString(R.string.app_name)} - $displayName"
+
+    val pfd = android.os.ParcelFileDescriptor.open(file, android.os.ParcelFileDescriptor.MODE_READ_ONLY)
+
+    printManager.print(
+        jobName, 
+        object : android.print.PrintDocumentAdapter() {
+            override fun onLayout(
+            oldAttributes: android.print.PrintAttributes?,
+            newAttributes: android.print.PrintAttributes?,
+            cancellationSignal: android.os.CancellationSignal?,
+            callback: LayoutResultCallback?,
+            extras: android.os.Bundle?
+        ) {
+            if (cancellationSignal?.isCanceled == true) {
+                callback?.onLayoutCancelled()
+                return
+            }
+
+            val info = android.print.PrintDocumentInfo.Builder(displayName)
+                .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+                .build()
+            callback?.onLayoutFinished(info, true)
+        }
+
+        override fun onWrite(
+            pages: Array<out android.print.PageRange>?,
+            destination: android.os.ParcelFileDescriptor?,
+            cancellationSignal: android.os.CancellationSignal?,
+            callback: WriteResultCallback?
+        ) {
+            try {
+                val input = android.os.ParcelFileDescriptor.AutoCloseInputStream(pfd)
+                val output = java.io.FileOutputStream(destination?.fileDescriptor)
+                input.copyTo(output)
+                callback?.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
+            } catch (e: Exception) {
+                e.printStackTrace()
+                callback?.onWriteFailed(e.message)
+            }
+        }
+    }, null)
 }

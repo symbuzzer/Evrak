@@ -145,7 +145,7 @@ fun WordViewerScreen(
                 isConverting = true
                 try {
                     val tempPdf = File(context.cacheDir, "temp_word_convert.pdf")
-                    val result = DocumentConverter.convertWordToPdf(File(filePath), tempPdf)
+                    val result = DocumentConverter.convert(File(filePath), tempPdf, context)
                     if (result is DocumentConverter.ConversionResult.Success) {
                         context.contentResolver.openOutputStream(destUri)?.use { output ->
                             tempPdf.inputStream().use { input -> input.copyTo(output) }
@@ -258,9 +258,9 @@ fun WordViewerScreen(
                             try {
                                 val pdfName = displayName.substringBeforeLast(".") + ".pdf"
                                 val tempPdf = File(context.cacheDir, pdfName)
-                                val result = DocumentConverter.convertWordToPdf(File(filePath), tempPdf)
+                                val result = DocumentConverter.convert(File(filePath), tempPdf, context)
                                 if (result is DocumentConverter.ConversionResult.Success) {
-                                    shareConvertedFile(context, tempPdf, "application/pdf")
+                                    DocumentConverter.shareFile(context, tempPdf, "application/pdf")
                                 }
                             } finally {
                                 isConverting = false
@@ -275,19 +275,6 @@ fun WordViewerScreen(
     }
 }
 
-private fun shareConvertedFile(context: android.content.Context, file: File, mimeType: String) {
-    val uri = FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.fileprovider",
-        file
-    )
-    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-        type = mimeType
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share)))
-}
 
 private fun processParagraph(para: XWPFParagraph, isList: Boolean): String {
     val align = when (para.alignment) {

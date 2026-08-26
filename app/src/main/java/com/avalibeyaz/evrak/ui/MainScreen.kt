@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.*
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -49,6 +50,7 @@ fun MainScreen(
     onDeleteAllClick: () -> Unit,
     onRefresh: () -> Unit,
     onShareAppClick: () -> Unit,
+    onPrintClick: (Evrak, (Boolean) -> Unit) -> Unit,
     onAboutClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -115,7 +117,7 @@ fun MainScreen(
                     isConverting = true
                     try {
                         val tempPdf = File(context.cacheDir, "temp_main_convert.pdf")
-                        val result = DocumentConverter.convert(File(evrak.path), tempPdf)
+                        val result = DocumentConverter.convert(File(evrak.path), tempPdf, context)
                         if (result is DocumentConverter.ConversionResult.Success) {
                             context.contentResolver.openOutputStream(destUri)?.use { output ->
                                 tempPdf.inputStream().use { input -> input.copyTo(output) }
@@ -281,14 +283,15 @@ fun MainScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp)
+                    .padding(bottom = 12.dp) // Bottom padding'i biraz daha daraltalım
             ) {
                 Text(
                     text = selectedEvrak!!.name,
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.titleMedium
                 )
                 HorizontalDivider()
+                Spacer(modifier = Modifier.height(4.dp)) // İlk öğe ile başlık arasına çok az boşluk
 
                 OptionItem(
                     icon = Icons.AutoMirrored.Filled.OpenInNew,
@@ -308,7 +311,9 @@ fun MainScreen(
                                            path.endsWith(".tiff", true) || 
                                            path.endsWith(".tif", true) ||
                                            path.endsWith(".docx", true) ||
-                                           path.endsWith(".doc", true)
+                                           path.endsWith(".doc", true) ||
+                                           path.endsWith(".html", true) ||
+                                           path.endsWith(".htm", true)
                         
                         if (isConvertible) {
                             showFormatDialog = "share"
@@ -329,7 +334,9 @@ fun MainScreen(
                                            path.endsWith(".tiff", true) || 
                                            path.endsWith(".tif", true) ||
                                            path.endsWith(".docx", true) ||
-                                           path.endsWith(".doc", true)
+                                           path.endsWith(".doc", true) ||
+                                           path.endsWith(".html", true) ||
+                                           path.endsWith(".htm", true)
                         
                         if (isConvertible) {
                             showFormatDialog = "save"
@@ -337,6 +344,17 @@ fun MainScreen(
                         } else {
                             showSheet = false
                             saveOriginalLauncher.launch(selectedEvrak!!.name)
+                        }
+                    }
+                )
+
+                OptionItem(
+                    icon = Icons.Default.Print,
+                    label = stringResource(id = R.string.print),
+                    onClick = {
+                        showSheet = false
+                        onPrintClick(selectedEvrak!!) { converting ->
+                            isConverting = converting
                         }
                     }
                 )
@@ -466,9 +484,13 @@ fun MainScreen(
                             try {
                                 val pdfName = selectedEvrak!!.name.substringBeforeLast(".") + ".pdf"
                                 val tempPdf = File(context.cacheDir, pdfName)
-                                val result = DocumentConverter.convert(File(selectedEvrak!!.path), tempPdf)
+                                val result = DocumentConverter.convert(File(selectedEvrak!!.path), tempPdf, context)
                                 if (result is DocumentConverter.ConversionResult.Success) {
-                                    shareConvertedFile(context, tempPdf, "application/pdf")
+                                    DocumentConverter.shareFile(context, tempPdf, "application/pdf")
+                                } else if (result is DocumentConverter.ConversionResult.Error) {
+                                    withContext(Dispatchers.Main) {
+                                        conversionError = context.getString(R.string.error_conversion_failed, result.message)
+                                    }
                                 }
                             } finally {
                                 isConverting = false
@@ -567,23 +589,12 @@ private fun getMimeType(path: String): String {
     }
 }
 
-private fun shareConvertedFile(context: android.content.Context, file: File, mimeType: String) {
-    val uri = FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.fileprovider",
-        file
-    )
-    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-        type = mimeType
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share)))
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EvrakItem(evrak: Evrak, onClick: () -> Unit, onLongClick: () -> Unit) {
+    val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy - hh:mm a", Locale.getDefault()) }
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -597,8 +608,7 @@ fun EvrakItem(evrak: Evrak, onClick: () -> Unit, onLongClick: () -> Unit) {
             Text(text = evrak.name, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = SimpleDateFormat("dd/MM/yyyy - hh:mm a", Locale.getDefault())
-                    .format(Date(evrak.dateOpened)),
+                text = dateFormat.format(Date(evrak.dateOpened)),
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -612,11 +622,27 @@ fun OptionItem(
     onClick: () -> Unit,
     color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface
 ) {
-    ListItem(
-        headlineContent = { Text(text = label, color = color) },
-        leadingContent = { Icon(icon, contentDescription = null, tint = color) },
-        modifier = Modifier.clickable(onClick = onClick)
-    )
+    // ListItem yerine daha kompakt bir Row yapısı kullanalım
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 10.dp), // Dikey boşluğu azalttık
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon, 
+            contentDescription = null, 
+            tint = color, 
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+            text = label, 
+            color = color, 
+            style = MaterialTheme.typography.bodyLarge // bodyMedium yerine bodyLarge daha okunaklı ama yer kazandırır
+        )
+    }
 }
 
 enum class EvrakFilter(val labelResId: Int) {

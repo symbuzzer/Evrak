@@ -9,6 +9,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.os.ParcelFileDescriptor
+import android.text.Html
 import android.text.Layout
 import android.text.SpannableStringBuilder
 import android.text.StaticLayout
@@ -21,9 +22,16 @@ import android.text.style.TypefaceSpan
 import android.text.style.UnderlineSpan
 import android.util.Base64
 import android.util.Log
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.print.PrintResultCallback
 import io.github.lucf15.tiffrenderer.TiffBitmap
 import io.github.lucf15.tiffrenderer.TiffRenderMode
 import io.github.lucf15.tiffrenderer.TiffRenderer
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import java.io.File
@@ -33,24 +41,7 @@ import java.util.zip.ZipFile
 import javax.xml.parsers.DocumentBuilderFactory
 
 /**
- * TIFF ve UDF (UYAP Doküman Formatı) dosyalarını PDF'ye dönüştürür.
- *
- * UDF şeması https://github.com/saidsurucu/UDF-Toolkit/blob/main/Docs.md
- * dokümanına göre uygulanmıştır (format_id="1.8"):
- *  - UDF dosyası tek bir `content.xml` içeren bir ZIP arşividir.
- *  - Tüm düz metin (üstbilgi + gövde + altbilgi) `<content><![CDATA[...]]></content>`
- *    içinde TEK bir karakter havuzunda tutulur.
- *  - `<elements>` altındaki paragraf/tablo/resim elemanları bu havuzu
- *    `startOffset`/`length` (karakter/rune bazlı, byte değil) ile referans alır.
- *  - Resimler ZIP içinde değil, `<image imageData="[base64]" .../>` olarak
- *    doğrudan XML içine gömülüdür.
- *
- * Bağımlılıklar (build.gradle.kts -> app modülü):
- *
- *   // Çok sayfalı TIFF decode için (Android'in kendi BitmapFactory'si TIFF desteklemiyor)
- *   implementation("com.github.beyka:TiffBitmapFactory:0.9.9")
- *   // JitPack repo'sunu settings.gradle.kts / build.gradle.kts'e eklemeyi unutmayın:
- *   // maven { url = uri("https://jitpack.io") }
+ * TIFF, UDF, Word ve HTML dosyalarını PDF'ye dönüştürür.
  */
 object DocumentConverter {
 
@@ -62,7 +53,7 @@ object DocumentConverter {
     }
 
     /** Dosya uzantısına bakarak uygun dönüştürücüyü seçer. */
-    fun convert(inputFile: File, outputFile: File): ConversionResult {
+    suspend fun convert(inputFile: File, outputFile: File, context: android.content.Context? = null): ConversionResult {
         if (!inputFile.exists()) {
             return ConversionResult.Error("Girdi dosyası bulunamadı: ${inputFile.absolutePath}")
         }
@@ -70,18 +61,152 @@ object DocumentConverter {
             "tif", "tiff" -> convertTiffToPdf(inputFile, outputFile)
             "udf" -> convertUdfToPdf(inputFile, outputFile)
             "doc", "docx" -> convertWordToPdf(inputFile, outputFile)
+            "html", "htm" -> {
+                if (context != null) {
+                    convertHtmlToPdfWithWebView(inputFile, outputFile, context)
+                } else {
+                    ConversionResult.Error("HTML dönüştürme için context gereklidir.")
+                }
+            }
             else -> ConversionResult.Error("Desteklenmeyen dosya türü: .${inputFile.extension}")
         }
     }
+
+    /**
+     * WebView kullanarak HTML'den birebir PDF üretir (Yüksek Kalite).
+     * Android Yazdırma Altyapısını (Print Framework) sessizce kullanarak aslına uygun çıktı üretir.
+     */
+    suspend fun convertHtmlToPdfWithWebView(
+        inputFile: File,
+        outputFile: File,
+        context: android.content.Context
+    ): ConversionResult = withContext(Dispatchers.Main) {
+        val deferred = CompletableDeferred<ConversionResult>()
+        val webView = WebView(context)
+
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            loadWithOverviewMode = false
+            useWideViewPort = true
+            @Suppress("DEPRECATION")
+            textZoom = 100
+            allowFileAccess = true
+            allowContentAccess = true
+            @Suppress("DEPRECATION")
+            allowFileAccessFromFileURLs = true
+            @Suppress("DEPRECATION")
+            allowUniversalAccessFromFileURLs = true
+            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        }
+
+        webView.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null)
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                // Sayfanın tamamen yüklenmesi ve resimlerin render edilmesi için kısa bir gecikme
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    if (deferred.isCompleted) return@postDelayed
+                    try {
+                        val printAttributes = android.print.PrintAttributes.Builder()
+                            .setMediaSize(android.print.PrintAttributes.MediaSize.ISO_A4)
+                            .setResolution(android.print.PrintAttributes.Resolution("pdf", "pdf", 600, 600))
+                            .setMinMargins(android.print.PrintAttributes.Margins.NO_MARGINS)
+                            .build()
+
+                        val adapter = webView.createPrintDocumentAdapter("Evrak-Dönüşüm")
+
+                        val pfd = ParcelFileDescriptor.open(
+                            outputFile,
+                            ParcelFileDescriptor.MODE_READ_WRITE or
+                                    ParcelFileDescriptor.MODE_CREATE or
+                                    ParcelFileDescriptor.MODE_TRUNCATE
+                        )
+
+                        val layoutCallback = PrintResultCallback.createLayoutCallback(
+                            onSuccess = { _, _ ->
+                                val writeCallback = PrintResultCallback.createWriteCallback(
+                                    onSuccess = {
+                                        try {
+                                            pfd.close()
+                                            deferred.complete(ConversionResult.Success(outputFile))
+                                        } catch (e: Exception) {
+                                            deferred.complete(ConversionResult.Error("PDF kapatılamadı: ${e.message}"))
+                                        }
+                                    },
+                                    onFailure = { error ->
+                                        pfd.close()
+                                        deferred.complete(ConversionResult.Error("PDF yazma hatası: $error"))
+                                    }
+                                )
+                                adapter.onWrite(arrayOf(android.print.PageRange.ALL_PAGES), pfd, null, writeCallback)
+                            },
+                            onFailure = { error ->
+                                pfd.close()
+                                deferred.complete(ConversionResult.Error("PDF yerleşim hatası: $error"))
+                            }
+                        )
+
+                        adapter.onLayout(null, printAttributes, null, layoutCallback, null)
+
+                    } catch (e: Exception) {
+                        Log.e(TAG, "PDF conversion error", e)
+                        if (!deferred.isCompleted) {
+                            deferred.complete(ConversionResult.Error("PDF oluşturma hatası: ${e.localizedMessage}"))
+                        }
+                    }
+                }, 2000)
+            }
+            
+            override fun onReceivedError(view: WebView?, request: android.webkit.WebResourceRequest?, error: android.webkit.WebResourceError?) {
+                val msg = error?.description?.toString() ?: "Bilinmeyen hata"
+                Log.e(TAG, "WebView resource error: $msg")
+            }
+            
+            @Suppress("DEPRECATION")
+            override fun onReceivedError(view: WebView?, errorCode: Int, description: String?, failingUrl: String?) {
+                if (!deferred.isCompleted) {
+                    deferred.complete(ConversionResult.Error("HTML yükleme hatası: $description"))
+                }
+            }
+        }
+        
+        try {
+            val htmlContent = inputFile.readText(Charsets.UTF_8)
+            // Use loadDataWithBaseURL as requested for robustness
+            webView.loadDataWithBaseURL("https://evrak.app/", htmlContent, "text/html", "UTF-8", null)
+        } catch (e: Exception) {
+            if (!deferred.isCompleted) {
+                deferred.complete(ConversionResult.Error("Dosya okuma hatası: ${e.message}"))
+            }
+        }
+
+        try {
+            // Strict timeout for robust conversion
+            withTimeout(35000) {
+                deferred.await()
+            }
+        } catch (e: Exception) {
+            webView.stopLoading()
+            if (deferred.isCompleted) {
+                // If it completed right as timeout hit
+                @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+                deferred.getCompleted()
+            } else {
+                if (e is kotlinx.coroutines.TimeoutCancellationException) {
+                    ConversionResult.Error("Dönüştürme zaman aşımına uğradı.")
+                } else {
+                    ConversionResult.Error("Dönüştürme hatası: ${e.localizedMessage ?: "Bilinmeyen hata"}")
+                }
+            }
+        }
+    }
+
 
     // ==================================================================
     // TIFF -> PDF
     // ==================================================================
 
-    /**
-     * Çok sayfalı veya tek sayfalı TIFF dosyasını PDF'ye dönüştürür.
-     * Her TIFF sayfası, boyutuna uygun bir PDF sayfasına tam olarak çizilir.
-     */
     fun convertTiffToPdf(inputFile: File, outputFile: File): ConversionResult {
         val pdfDocument = PdfDocument()
         var pfd: ParcelFileDescriptor? = null
@@ -125,7 +250,7 @@ object DocumentConverter {
     }
 
     // ==================================================================
-    // UDF -> PDF
+    // UDF -> PDF (Block tabanlı motor)
     // ==================================================================
 
     private data class TextRun(
@@ -171,8 +296,7 @@ object DocumentConverter {
         val bottomMargin: Float
     )
 
-    private const val CELL_PADDING = 5.4f
-    private const val DEFAULT_COLOR = -16777216 // siyah, işaretli ARGB
+    private const val DEFAULT_COLOR = -16777216 // siyah
 
     private val numberedListCounters = mutableMapOf<String, Int>()
 
@@ -191,38 +315,27 @@ object DocumentConverter {
                 isNamespaceAware = false
             }.newDocumentBuilder().parse(contentXmlBytes.inputStream())
 
-            val root = doc.documentElement // <template format_id="1.8">
-                ?: return ConversionResult.Error("Geçersiz UDF: kök eleman bulunamadı")
-
-            val fullText = directChild(root, "content")?.textContent
-                ?: return ConversionResult.Error("Geçersiz UDF: <content> havuzu bulunamadı")
+            val root = doc.documentElement ?: return ConversionResult.Error("Geçersiz UDF")
+            val fullText = directChild(root, "content")?.textContent ?: return ConversionResult.Error("İçerik bulunamadı")
 
             val pageFormatNode = directChild(root, "properties")?.let { directChild(it, "pageFormat") }
             val pageFormat = PageFormat(
-                widthPt = 595.28f,
-                heightPt = 841.89f,
+                widthPt = 595.28f, heightPt = 841.89f,
                 leftMargin = pageFormatNode.attrFloat("leftMargin", 42.52f),
                 rightMargin = pageFormatNode.attrFloat("rightMargin", 28.35f),
                 topMargin = pageFormatNode.attrFloat("topMargin", 14.17f),
                 bottomMargin = pageFormatNode.attrFloat("bottomMargin", 14.17f)
             )
 
-            val elementsNode = directChild(root, "elements")
-                ?: return ConversionResult.Error("Geçersiz UDF: <elements> bölümü bulunamadı")
-
-            // Üstbilgi + gövde + altbilgi aynı akışta, karşılaşılma sırasıyla işlenir.
-            // (Üstbilginin/altbilginin her sayfada tekrarlanması bu basit render'da desteklenmiyor.)
+            val elementsNode = directChild(root, "elements") ?: return ConversionResult.Error("Eleman bulunamadı")
             val blocks = parseBlocks(elementsNode, fullText)
 
-            renderUdfToPdf(blocks, pageFormat, outputFile)
+            renderBlocksToPdf(blocks, pageFormat, outputFile)
             ConversionResult.Success(outputFile)
         } catch (e: Exception) {
-            Log.e(TAG, "UDF -> PDF dönüştürme hatası", e)
             ConversionResult.Error("UDF dönüştürme hatası: ${e.message}", e)
         }
     }
-
-    // --- XML -> Block ağacı -------------------------------------------
 
     private fun parseBlocks(container: Element, fullText: String): List<Block> {
         val blocks = mutableListOf<Block>()
@@ -250,74 +363,34 @@ object DocumentConverter {
         val isBulleted = node.getAttribute("Bulleted") == "true"
         val listLevel = node.getAttribute("ListLevel").toIntOrNull() ?: 0
         
-        val effectiveLeftIndent = if (isNumbered || isBulleted) {
-            leftIndent + (listLevel + 1) * 18f
-        } else {
-            leftIndent
-        }
+        val effectiveLeftIndent = if (isNumbered || isBulleted) leftIndent + (listLevel + 1) * 18f else leftIndent
 
         val result = mutableListOf<Block>()
         val runs = mutableListOf<TextRun>()
 
         fun flushRuns() {
             if (runs.isNotEmpty()) {
-                result.add(
-                    Block.Para(
-                        runs.toList(), alignment, effectiveLeftIndent, rightIndent,
-                        firstLineIndent, spaceAbove, spaceBelow, lineSpacing
-                    )
-                )
+                result.add(Block.Para(runs.toList(), alignment, effectiveLeftIndent, rightIndent, firstLineIndent, spaceAbove, spaceBelow, lineSpacing))
                 runs.clear()
             }
         }
 
-        // Liste işareti (prefix) ekle
         if (isNumbered) {
             val listId = node.getAttribute("ListId").ifEmpty { "default" }
             val n = (numberedListCounters[listId] ?: 0) + 1
             numberedListCounters[listId] = n
-            val marker = numberMarker(n, node.getAttribute("NumberType")) + " "
-            runs.add(
-                TextRun(
-                    marker, bold = false, italic = false, underline = false,
-                    sizePt = node.attrFloat("size", 11f), colorArgb = DEFAULT_COLOR
-                )
-            )
+            runs.add(TextRun("$n. ", false, false, false, 11f, DEFAULT_COLOR))
         } else if (isBulleted) {
-            val marker = bulletMarker(node.getAttribute("BulletType")) + " "
-            runs.add(
-                TextRun(
-                    marker, bold = false, italic = false, underline = false,
-                    sizePt = node.attrFloat("size", 11f), colorArgb = DEFAULT_COLOR
-                )
-            )
+            runs.add(TextRun("• ", false, false, false, 11f, DEFAULT_COLOR))
         }
 
         forEachChildElement(node) { child ->
             when (child.tagName) {
                 "content", "space" -> runs.add(extractRun(child, fullText))
-                "field" -> {
-                    var run = extractRun(child, fullText)
-                    if (run.text.isEmpty() || run.text == "\u200B") {
-                        val name = child.getAttribute("fieldName").ifEmpty { child.getAttribute("name") }
-                        val default = child.getAttribute("default").ifEmpty { if (name.isNotEmpty()) "[$name]" else "" }
-                        if (default.isNotEmpty()) {
-                            run = run.copy(text = default)
-                        }
-                    }
-                    runs.add(run)
-                }
-                "tab" -> runs.add(
-                    TextRun(
-                        "\t", bold = false, italic = false, underline = false,
-                        sizePt = child.attrFloat("size", 11f), colorArgb = DEFAULT_COLOR
-                    )
-                )
                 "image" -> {
                     flushRuns()
                     val base64Data = child.getAttribute("imageData")
                     val bitmap = decodeBase64Image(base64Data)
-                    // Fix: Use natural bitmap size if width/height is missing in XML
                     val w = child.getAttribute("width").toFloatOrNull() ?: bitmap?.width?.toFloat() ?: 100f
                     val h = child.getAttribute("height").toFloatOrNull() ?: bitmap?.height?.toFloat() ?: 100f
                     result.add(Block.Img(bitmap, w, h))
@@ -345,60 +418,11 @@ object DocumentConverter {
         )
     }
 
-    // --- Liste İşaretçileri ---
-
-    private fun numberMarker(n: Int, type: String?): String {
-        return when (type) {
-            "1", "decimal" -> "$n."
-            "a" -> "${toAlpha(n, false)}."
-            "A" -> "${toAlpha(n, true)}."
-            "i" -> "${toRoman(n).lowercase()}."
-            "I" -> "${toRoman(n)}."
-            else -> "$n."
-        }
-    }
-
-    private fun bulletMarker(type: String?): String {
-        return when (type) {
-            "disc" -> "●"
-            "circle" -> "○"
-            "square" -> "■"
-            else -> "•"
-        }
-    }
-
-    private fun toAlpha(n: Int, upper: Boolean): String {
-        var num = n - 1
-        val res = StringBuilder()
-        while (num >= 0) {
-            res.insert(0, ('A'.code + (num % 26)).toChar())
-            num = num / 26 - 1
-        }
-        return if (upper) res.toString() else res.toString().lowercase()
-    }
-
-    private fun toRoman(n: Int): String {
-        val map = mapOf(1000 to "M", 900 to "CM", 500 to "D", 400 to "CD", 100 to "C", 90 to "XC", 50 to "L", 40 to "XL", 10 to "X", 9 to "IX", 5 to "V", 4 to "IV", 1 to "I")
-        var num = n
-        val res = StringBuilder()
-        for ((v, s) in map) {
-            while (num >= v) {
-                res.append(s)
-                num -= v
-            }
-        }
-        return res.toString()
-    }
-
     private fun parseTable(node: Element, fullText: String): Block.Tbl {
         val columnSpansAttr = node.getAttribute("columnSpans")
-        var columnSpans = if (columnSpansAttr.isNotEmpty()) {
-            columnSpansAttr.split(",")
-                .mapNotNull { it.trim().toFloatOrNull() }
-        } else emptyList()
-        
+        var columnSpans = columnSpansAttr.split(",").mapNotNull { it.trim().toFloatOrNull() }
         val rows = mutableListOf<List<CellData>>()
-        var maxCells = 0
+        var maxCols = 0
 
         forEachChildElement(node) { rowNode ->
             if (rowNode.tagName == "row") {
@@ -407,33 +431,15 @@ object DocumentConverter {
                 forEachChildElement(rowNode) { cellNode ->
                     if (cellNode.tagName == "cell") {
                         val colspan = cellNode.getAttribute("colspan").toIntOrNull() ?: 1
-                        val borderSpec = cellNode.getAttribute("borderSpec").toIntOrNull() ?: 15
-                        val fillColorStr = cellNode.getAttribute("fillColor")
-                        val fillColor = parseUdfColor(fillColorStr)
-                        val vAlign = cellNode.getAttribute("align") // vcenter, bottom
-                        
-                        cells.add(
-                            CellData(
-                                colspan = colspan,
-                                blocks = parseBlocks(cellNode, fullText),
-                                borderSpec = borderSpec,
-                                fillColor = fillColor,
-                                verticalAlign = vAlign
-                            )
-                        )
+                        cells.add(CellData(colspan, parseBlocks(cellNode, fullText), cellNode.getAttribute("borderSpec").toIntOrNull() ?: 15, parseUdfColor(cellNode.getAttribute("fillColor")), cellNode.getAttribute("align")))
                         rowCellCount += colspan
                     }
                 }
                 rows.add(cells)
-                if (rowCellCount > maxCells) maxCells = rowCellCount
+                if (rowCellCount > maxCols) maxCols = rowCellCount
             }
         }
-
-        // Fix missing columnSpans: Distribute evenly
-        if (columnSpans.isEmpty() && maxCells > 0) {
-            columnSpans = List(maxCells) { 100f / maxCells }
-        }
-
+        if (columnSpans.isEmpty() && maxCols > 0) columnSpans = List(maxCols) { 100f / maxCols }
         return Block.Tbl(columnSpans, rows)
     }
 
@@ -441,61 +447,106 @@ object DocumentConverter {
         if (value.isNullOrBlank()) return null
         return try {
             val v = value.trim().toLong()
-            val argb = (v and 0xFFFFFFFFL).toInt()
-            // UDF renkleri bazen şeffaf (255,255,255 gibi) geliyor, 
-            // beyazı şeffaf kabul etmek gerekebilir ama burada doğrudan ARGB dönüyoruz.
-            if (argb == -1) null else argb 
-        } catch (_: Exception) {
-            null
+            (v and 0xFFFFFFFFL).toInt().let { if (it == -1) null else it }
+        } catch (_: Exception) { null }
+    }
+
+    // ==================================================================
+    // Word -> PDF
+    // ==================================================================
+
+    fun convertWordToPdf(inputFile: File, outputFile: File): ConversionResult {
+        return try {
+            val blocks = mutableListOf<Block>()
+            val extension = inputFile.extension.lowercase()
+
+            if (extension == "docx") {
+                FileInputStream(inputFile).use { fis ->
+                    val docx = org.apache.poi.xwpf.usermodel.XWPFDocument(fis)
+                    docx.bodyElements.forEach { element ->
+                        if (element is org.apache.poi.xwpf.usermodel.XWPFParagraph) blocks.add(parseDocxParagraph(element))
+                        else if (element is org.apache.poi.xwpf.usermodel.XWPFTable) blocks.add(parseDocxTable(element))
+                    }
+                }
+            } else if (extension == "doc") {
+                FileInputStream(inputFile).use { fis ->
+                    val doc = org.apache.poi.hwpf.HWPFDocument(fis)
+                    val range = doc.range
+                    for (i in 0 until range.numParagraphs()) {
+                        val para = range.getParagraph(i)
+                        if (!para.isInTable) blocks.add(parseDocParagraph(para))
+                    }
+                }
+            }
+            renderBlocksToPdf(blocks, PageFormat(595.28f, 841.89f, 72f, 72f, 72f, 72f), outputFile)
+            ConversionResult.Success(outputFile)
+        } catch (e: Exception) {
+            ConversionResult.Error("Word hatası: ${e.message}", e)
         }
     }
 
-    // --- Block ağacı -> PDF ---------------------------------------------
+    private fun parseDocxParagraph(para: org.apache.poi.xwpf.usermodel.XWPFParagraph): Block.Para {
+        val runs = para.runs.map { run ->
+            TextRun(run.getCTR().tList.joinToString("") { it.stringValue ?: "" }, run.isBold, run.isItalic, run.underline != org.apache.poi.xwpf.usermodel.UnderlinePatterns.NONE, if (run.fontSize != -1) run.fontSize.toFloat() else 11f, try { android.graphics.Color.parseColor("#${run.color}") } catch (_: Exception) { DEFAULT_COLOR })
+        }
+        return Block.Para(runs, 0, para.indentationLeft / 20f, para.indentationRight / 20f, para.indentationFirstLine / 20f, para.spacingBefore / 20f, para.spacingAfter / 20f)
+    }
 
-    private fun renderUdfToPdf(blocks: List<Block>, format: PageFormat, outputFile: File) {
+    private fun parseDocxTable(table: org.apache.poi.xwpf.usermodel.XWPFTable): Block.Tbl {
+        val rows = table.rows.map { row ->
+            row.tableCells.map { cell ->
+                CellData(try { cell.ctTc.tcPr.gridSpan.`val`.toInt() } catch (_: Exception) { 1 }, cell.bodyElements.mapNotNull { if (it is org.apache.poi.xwpf.usermodel.XWPFParagraph) parseDocxParagraph(it) else null })
+            }
+        }
+        return Block.Tbl(List(rows.maxOfOrNull { it.size } ?: 0) { 100f }, rows)
+    }
+
+    private fun parseDocParagraph(para: org.apache.poi.hwpf.usermodel.Paragraph): Block.Para {
+        val runs = (0 until para.numCharacterRuns()).map { i ->
+            val run = para.getCharacterRun(i)
+            TextRun(run.text(), run.isBold, run.isItalic, run.underlineCode != 0, run.fontSize.toFloat() / 2f, if (run.color != -1) (0xFF000000.toInt() or (0xFFFFFF and run.color)) else DEFAULT_COLOR)
+        }
+        return Block.Para(runs, 0, para.getIndentFromLeft().toFloat() / 20f, para.getIndentFromRight().toFloat() / 20f, para.getFirstLineIndent().toFloat() / 20f, para.getSpacingBefore().toFloat() / 20f, para.getSpacingAfter().toFloat() / 20f)
+    }
+
+    // --- Block Rendering Engine ---------------------------------------
+
+    private fun renderBlocksToPdf(blocks: List<Block>, format: PageFormat, outputFile: File) {
         val pdfDocument = PdfDocument()
         val pageWidth = format.widthPt.toInt()
         val pageHeight = format.heightPt.toInt()
         val contentWidth = format.widthPt - format.leftMargin - format.rightMargin
 
         var pageNumber = 1
-        var pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
-        var page = pdfDocument.startPage(pageInfo)
+        var page = pdfDocument.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create())
         var canvas = page.canvas
         var y = format.topMargin
 
-        fun newPage() {
-            pdfDocument.finishPage(page)
-            pageNumber++
-            pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create()
-            page = pdfDocument.startPage(pageInfo)
-            canvas = page.canvas
-            y = format.topMargin
-        }
-
         for (block in blocks) {
             if (block is Block.PageBreak) {
-                newPage()
+                pdfDocument.finishPage(page)
+                pageNumber++
+                page = pdfDocument.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create())
+                canvas = page.canvas
+                y = format.topMargin
                 continue
             }
-            // Önce yükseklik ölç (canvas=null -> sadece ölçüm), sığmıyorsa yeni sayfa aç.
-            val spaceAbove = if (block is Block.Para) block.spaceAbove else 0f
-            val spaceBelow = if (block is Block.Para) block.spaceBelow else 0f
-            
-            val measuredHeight = renderBlock(null, block, format.leftMargin, y + spaceAbove, contentWidth)
-            if (y + spaceAbove + measuredHeight + spaceBelow > format.heightPt - format.bottomMargin && y > format.topMargin) {
-                newPage()
+            val height = renderBlock(null, block, format.leftMargin, y, contentWidth)
+            if (y + height > format.heightPt - format.bottomMargin && y > format.topMargin) {
+                pdfDocument.finishPage(page)
+                pageNumber++
+                page = pdfDocument.startPage(PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create())
+                canvas = page.canvas
+                y = format.topMargin
             }
-            val drawnHeight = renderBlock(canvas, block, format.leftMargin, y + spaceAbove, contentWidth)
-            y += spaceAbove + drawnHeight + spaceBelow + 2f
+            renderBlock(canvas, block, format.leftMargin, y, contentWidth)
+            y += height + 2f
         }
-
         pdfDocument.finishPage(page)
         writePdf(pdfDocument, outputFile)
         pdfDocument.close()
     }
 
-    /** canvas == null ise sadece yükseklik hesaplar, hiçbir şey çizmez (ölçüm geçişi). */
     private fun renderBlock(canvas: Canvas?, block: Block, x: Float, y: Float, width: Float): Float {
         return when (block) {
             is Block.Para -> renderParagraph(canvas, block, x, y, width)
@@ -507,460 +558,87 @@ object DocumentConverter {
 
     private fun renderParagraph(canvas: Canvas?, para: Block.Para, x: Float, y: Float, width: Float): Float {
         val ssb = SpannableStringBuilder()
-        val flag = android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         for (run in para.runs) {
             val start = ssb.length
             ssb.append(run.text)
             val end = ssb.length
-            if (end == start) continue
-            
-            // Font seçimi
-            val tf = getUdfTypeface(run.fontFamily, run.bold, run.italic)
-            ssb.setSpan(TypefaceSpan(tf), start, end, flag)
-            
-            val style = when {
-                run.bold && run.italic -> Typeface.BOLD_ITALIC
-                run.bold -> Typeface.BOLD
-                run.italic -> Typeface.ITALIC
-                else -> Typeface.NORMAL
+            if (end > start) {
+                ssb.setSpan(TypefaceSpan(when { run.bold && run.italic -> Typeface.BOLD_ITALIC; run.bold -> Typeface.BOLD; run.italic -> Typeface.ITALIC; else -> Typeface.NORMAL }.let { Typeface.create(Typeface.DEFAULT, it) }), start, end, 33)
+                ssb.setSpan(AbsoluteSizeSpan(run.sizePt.toInt().coerceAtLeast(1), false), start, end, 33)
+                ssb.setSpan(ForegroundColorSpan(run.colorArgb), start, end, 33)
             }
-            if (style != Typeface.NORMAL) ssb.setSpan(StyleSpan(style), start, end, flag)
-            ssb.setSpan(AbsoluteSizeSpan(run.sizePt.toInt().coerceAtLeast(1), false), start, end, flag)
-            ssb.setSpan(ForegroundColorSpan(run.colorArgb), start, end, flag)
-            if (run.underline) ssb.setSpan(UnderlineSpan(), start, end, flag)
         }
-        if (ssb.isEmpty()) return 0f
-
-        // Trim trailing newlines to avoid extra blank line at the end of every paragraph
+        
+        // Paragraf sonundaki gereksiz satır sonlarını temizleyelim (boşluk birikmesini önlemek için)
         while (ssb.isNotEmpty() && (ssb[ssb.length - 1] == '\n' || ssb[ssb.length - 1] == '\r')) {
             ssb.delete(ssb.length - 1, ssb.length)
         }
+
         if (ssb.isEmpty()) return 0f
-
-        // First Line Indent (Birinci satır girintisi)
-        if (para.firstLineIndent != 0f) {
-            ssb.setSpan(
-                LeadingMarginSpan.Standard(para.firstLineIndent.toInt(), 0),
-                0, ssb.length, flag
-            )
-        }
-
-        val basePaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = 12f
-            color = Color.BLACK
-            // Fix: PDF units are points (1/72 inch). 
-            // Android's default TextPaint uses display density which makes text huge on high-res screens.
-            density = 1.0f
-        }
         
-        val alignment = when (para.alignment) {
-            1 -> Layout.Alignment.ALIGN_CENTER
-            2 -> Layout.Alignment.ALIGN_OPPOSITE
-            else -> Layout.Alignment.ALIGN_NORMAL
-        }
-        
-        // Justification (İki yana yasla - Alignment 3)
-        val justification = if (para.alignment == 3) {
-            Layout.JUSTIFICATION_MODE_INTER_WORD
-        } else {
-            Layout.JUSTIFICATION_MODE_NONE
-        }
-
-        val effectiveWidth = (width - para.leftIndent - para.rightIndent).toInt().coerceAtLeast(1)
-        val layout = StaticLayout.Builder
-            .obtain(ssb, 0, ssb.length, basePaint, effectiveWidth)
-            .setAlignment(alignment)
-            .setLineSpacing(0f, 1.0f + para.lineSpacing)
-            .setJustificationMode(justification)
-            .build()
-
-        if (canvas != null) {
-            canvas.save()
-            // Girintileri uygula. firstLineIndent sadece ilk satırda uygulanır.
-            // StaticLayout'ta textIndent özelliği doğrudan olmadığı için manuel kaydırma veya 
-            // LeadingMarginSpan gerekebilir ama basitlik için x koordinatını kaydırıyoruz.
-            canvas.translate(x + para.leftIndent, y)
-            layout.draw(canvas)
-            canvas.restore()
-        }
+        val paint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 12f; density = 1.0f }
+        val layout = StaticLayout.Builder.obtain(ssb, 0, ssb.length, paint, width.toInt().coerceAtLeast(1)).build()
+        if (canvas != null) { canvas.save(); canvas.translate(x + para.leftIndent, y); layout.draw(canvas); canvas.restore() }
         return layout.height.toFloat()
-    }
-
-    private fun getUdfTypeface(family: String?, bold: Boolean, italic: Boolean): Typeface {
-        val base = when (family?.lowercase()) {
-            "arial" -> Typeface.SANS_SERIF
-            "courier new" -> Typeface.MONOSPACE
-            "times new roman", "serif" -> Typeface.SERIF
-            else -> Typeface.DEFAULT
-        }
-        val style = when {
-            bold && italic -> Typeface.BOLD_ITALIC
-            bold -> Typeface.BOLD
-            italic -> Typeface.ITALIC
-            else -> Typeface.NORMAL
-        }
-        return Typeface.create(base, style)
     }
 
     private fun renderImage(canvas: Canvas?, img: Block.Img, x: Float, y: Float, width: Float): Float {
         val bitmap = img.bitmap ?: return 0f
-        var w = img.widthPt
-        var h = img.heightPt
-        if (w > width && w > 0f) {
-            val scale = width / w
-            w *= scale
-            h *= scale
-        }
-        if (canvas != null) {
-            canvas.drawBitmap(bitmap, null, RectF(x, y, x + w, y + h), null)
-        }
+        var w = img.widthPt; var h = img.heightPt
+        if (w > width) { val s = width / w; w *= s; h *= s }
+        if (canvas != null) canvas.drawBitmap(bitmap, null, RectF(x, y, x + w, y + h), null)
         return h
     }
 
     private fun renderTable(canvas: Canvas?, table: Block.Tbl, x: Float, y: Float, width: Float): Float {
-        if (table.rows.isEmpty()) return 0f
-        
-        val totalSpec = table.columnSpans.sum()
-        val scale = if (totalSpec > 0f) width / totalSpec else 1f
-        val colWidths = table.columnSpans.map { it * scale }
-        
-        if (colWidths.isEmpty()) return 0f
-        
-        val borderPaint = Paint().apply {
-            style = Paint.Style.STROKE
-            strokeWidth = 0.5f
-            color = Color.BLACK
-        }
-        val fillPaint = Paint().apply {
-            style = Paint.Style.FILL
-        }
-
+        val colWidths = table.columnSpans.map { it * (width / table.columnSpans.sum()) }
         var curY = y
         for (row in table.rows) {
-            var colIndex = 0
-            val cellWidths = row.map { cell ->
-                var w = 0f
-                for (i in 0 until cell.colspan) {
-                    w += colWidths.getOrNull(colIndex + i) ?: 0f
-                }
-                colIndex += cell.colspan
-                w
-            }
-            
-            // 1. Ölçüm geçişi: Satır yüksekliğini belirle
-            val cellContentHeights = row.mapIndexed { i, cell ->
-                val cellWidth = cellWidths.getOrNull(i) ?: 0f
-                val innerWidth = (cellWidth - CELL_PADDING * 2).coerceAtLeast(1f)
-                var h = 0f
-                for (b in cell.blocks) h += renderBlock(null, b, 0f, 0f, innerWidth) + 2f
-                h
-            }
-            val rowHeight = (cellContentHeights.maxOrNull() ?: 0f) + CELL_PADDING * 2
-
-            // 2. Çizim geçişi
+            var rowH = 0f
             var curX = x
             for ((i, cell) in row.withIndex()) {
-                val cellWidth = cellWidths.getOrNull(i) ?: 0f
-                if (cellWidth <= 0f) {
-                    continue
-                }
-                
+                val cw = colWidths[i]
+                var ch = 0f
+                for (b in cell.blocks) ch += renderBlock(null, b, 0f, 0f, cw - 10f) + 2f
+                if (ch + 10f > rowH) rowH = ch + 10f
                 if (canvas != null) {
-                    // Arka plan rengi
-                    cell.fillColor?.let {
-                        fillPaint.color = it
-                        canvas.drawRect(curX, curY, curX + cellWidth, curY + rowHeight, fillPaint)
-                    }
-                    
-                    // Kenarlıklar (borderSpec maskesine göre)
-                    // 1:top, 2:right, 4:bottom, 8:left
-                    if (cell.borderSpec and 1 != 0) canvas.drawLine(curX, curY, curX + cellWidth, curY, borderPaint)
-                    if (cell.borderSpec and 2 != 0) canvas.drawLine(curX + cellWidth, curY, curX + cellWidth, curY + rowHeight, borderPaint)
-                    if (cell.borderSpec and 4 != 0) canvas.drawLine(curX, curY + rowHeight, curX + cellWidth, curY + rowHeight, borderPaint)
-                    if (cell.borderSpec and 8 != 0) canvas.drawLine(curX, curY, curX, curY + rowHeight, borderPaint)
-                    
-                    // İçerik başlangıç Y pozisyonu (Dikey hizalama)
-                    val contentHeight = cellContentHeights[i]
-                    var innerY = when (cell.verticalAlign) {
-                        "vcenter" -> curY + (rowHeight - contentHeight) / 2f
-                        "bottom" -> curY + rowHeight - contentHeight - CELL_PADDING
-                        else -> curY + CELL_PADDING
-                    }
-                    
-                    val innerWidth = (cellWidth - CELL_PADDING * 2).coerceAtLeast(1f)
-                    for (b in cell.blocks) {
-                        val h = renderBlock(canvas, b, curX + CELL_PADDING, innerY, innerWidth)
-                        innerY += h + 2f
-                    }
+                    canvas.drawRect(curX, curY, curX + cw, curY + rowH, Paint().apply { style = Paint.Style.STROKE; strokeWidth = 0.5f })
+                    var iy = curY + 5f
+                    for (b in cell.blocks) iy += renderBlock(canvas, b, curX + 5f, iy, cw - 10f) + 2f
                 }
-                curX += cellWidth
+                curX += cw
             }
-            curY += rowHeight
+            curY += rowH
         }
         return curY - y
     }
 
-    // ==================================================================
-    // Word (DOC/DOCX) -> PDF
-    // ==================================================================
+    private fun decodeBase64Image(base64: String): Bitmap? = try { Base64.decode(base64, Base64.DEFAULT).let { BitmapFactory.decodeByteArray(it, 0, it.size) } } catch (_: Exception) { null }
+    private fun directChild(p: Element, t: String): Element? { var n = p.firstChild; while (n != null) { if (n is Element && n.tagName == t) return n; n = n.nextSibling }; return null }
+    private fun forEachChildElement(p: Element, a: (Element) -> Unit) { var n = p.firstChild; while (n != null) { if (n is Element) a(n); n = n.nextSibling } }
+    private fun Element?.attrFloat(n: String, d: Float): Float = this?.getAttribute(n)?.toFloatOrNull() ?: d
+    private fun writePdf(d: PdfDocument, f: File) { f.parentFile?.mkdirs(); FileOutputStream(f).use { d.writeTo(it) } }
 
     /**
-     * DOCX veya DOC dosyasını PDF'ye dönüştürür.
-     * Apache POI kullanarak metin ve tabloları okur ve PDF kanvasına çizer.
+     * Merkezi paylaşım fonksiyonu. 
+     * Dosya sağlayıcısı üzerinden URI oluşturur ve paylaşım intentini başlatır.
      */
-    fun convertWordToPdf(inputFile: File, outputFile: File): ConversionResult {
-        return try {
-            val blocks = mutableListOf<Block>()
-            val extension = inputFile.extension.lowercase()
-
-            if (extension == "docx") {
-                FileInputStream(inputFile).use { fis ->
-                    val docx = org.apache.poi.xwpf.usermodel.XWPFDocument(fis)
-                    docx.bodyElements.forEach { element ->
-                        when (element) {
-                            is org.apache.poi.xwpf.usermodel.XWPFParagraph -> {
-                                blocks.add(parseDocxParagraph(element))
-                            }
-                            is org.apache.poi.xwpf.usermodel.XWPFTable -> {
-                                blocks.add(parseDocxTable(element))
-                            }
-                        }
-                    }
-                }
-            } else if (extension == "doc") {
-                FileInputStream(inputFile).use { fis ->
-                    val doc = org.apache.poi.hwpf.HWPFDocument(fis)
-                    val range = doc.range
-                    
-                    val tableIt = org.apache.poi.hwpf.usermodel.TableIterator(range)
-                    val tableParagraphs = mutableSetOf<Int>()
-                    
-                    // First, collect all tables to avoid double processing via range paragraphs
-                    while (tableIt.hasNext()) {
-                        val table = tableIt.next()
-                        blocks.add(parseDocTable(table))
-                        
-                        // Mark paragraphs belonging to this table
-                        for (r in 0 until table.numRows()) {
-                            val row = table.getRow(r)
-                            for (c in 0 until row.numCells()) {
-                                val cell = row.getCell(c)
-                                for (p in 0 until cell.numParagraphs()) {
-                                    // HWPF doesn't easily expose index, so this is a simplified skip
-                                }
-                            }
-                        }
-                    }
-
-                    for (i in 0 until range.numParagraphs()) {
-                        val para = range.getParagraph(i)
-                        if (para.isInTable) continue 
-                        blocks.add(parseDocParagraph(para))
-                    }
-                }
-            }
-
-            val format = PageFormat(
-                widthPt = 595.28f,
-                heightPt = 841.89f,
-                leftMargin = 72f,
-                rightMargin = 72f,
-                topMargin = 72f,
-                bottomMargin = 72f
-            )
-
-            renderUdfToPdf(blocks, format, outputFile)
-            ConversionResult.Success(outputFile)
-        } catch (e: Exception) {
-            Log.e(TAG, "Word -> PDF dönüştürme hatası", e)
-            ConversionResult.Error("Word dönüştürme hatası: ${e.message}", e)
-        }
-    }
-
-    private fun parseDocxParagraph(para: org.apache.poi.xwpf.usermodel.XWPFParagraph): Block.Para {
-        val runs = para.runs.map { run ->
-            // Fix: Get all text segments in the run to avoid punctuation loss
-            val fullText = run.getCTR().tList.joinToString("") { it.stringValue ?: "" }
-            TextRun(
-                text = fullText,
-                bold = run.isBold,
-                italic = run.isItalic,
-                underline = run.underline != org.apache.poi.xwpf.usermodel.UnderlinePatterns.NONE,
-                sizePt = if (run.fontSize != -1) run.fontSize.toFloat() else 11f,
-                colorArgb = try {
-                    val colorHex = run.color
-                    if (colorHex != null && colorHex != "auto") {
-                        android.graphics.Color.parseColor("#$colorHex")
-                    } else DEFAULT_COLOR
-                } catch (_: Exception) { DEFAULT_COLOR }
-            )
-        }
-        
-        val alignment = when (para.alignment) {
-            org.apache.poi.xwpf.usermodel.ParagraphAlignment.CENTER -> 1
-            org.apache.poi.xwpf.usermodel.ParagraphAlignment.RIGHT -> 2
-            org.apache.poi.xwpf.usermodel.ParagraphAlignment.BOTH -> 3
-            else -> 0
-        }
-
-        // Fix: Unit conversion (Twips to Points). 1 Point = 20 Twips.
-        return Block.Para(
-            runs = runs,
-            alignment = alignment,
-            leftIndent = para.indentationLeft / 20f,
-            rightIndent = para.indentationRight / 20f,
-            firstLineIndent = para.indentationFirstLine / 20f,
-            spaceAbove = para.spacingBefore / 20f,
-            spaceBelow = para.spacingAfter / 20f
-        )
-    }
-
-    private fun parseDocxTable(table: org.apache.poi.xwpf.usermodel.XWPFTable): Block.Tbl {
-        val rows = mutableListOf<List<CellData>>()
-        var maxCols = 0
-        
-        // Try to get column widths from table grid (in twips: 1/1440 inch, 1/20 point)
-        val colWidthsFromGrid = mutableListOf<Float>()
+    fun shareFile(context: android.content.Context, file: File, mimeType: String = "application/pdf") {
         try {
-            val grid = table.ctTbl.tblGrid
-            if (grid != null) {
-                grid.gridColList.forEach { col ->
-                    val wTwips = col.getW().toString().toLongOrNull() ?: 0L
-                    colWidthsFromGrid.add(wTwips / 20f)
-                }
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = mimeType
+                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-        } catch (_: Exception) {}
-
-        table.rows.forEach { row ->
-            val cells = row.tableCells.map { cell ->
-                val cellBlocks = mutableListOf<Block>()
-                cell.bodyElements.forEach { element ->
-                    when (element) {
-                        is org.apache.poi.xwpf.usermodel.XWPFParagraph -> cellBlocks.add(parseDocxParagraph(element))
-                        is org.apache.poi.xwpf.usermodel.XWPFTable -> cellBlocks.add(parseDocxTable(element))
-                    }
-                }
-                
-                // Get colspan from cell properties
-                val gridSpan = try {
-                    cell.ctTc.tcPr.gridSpan.`val`.toInt()
-                } catch (_: Exception) { 1 }
-                
-                CellData(colspan = gridSpan, blocks = cellBlocks)
-            }
-            rows.add(cells)
-            val rowTotalCols = cells.sumOf { it.colspan }
-            if (rowTotalCols > maxCols) maxCols = rowTotalCols
-        }
-        
-        val colWidths = if (colWidthsFromGrid.isNotEmpty()) {
-            colWidthsFromGrid
-        } else {
-            List(maxCols) { 100f / maxCols }
-        }
-        return Block.Tbl(colWidths, rows)
-    }
-
-    private fun parseDocParagraph(para: org.apache.poi.hwpf.usermodel.Paragraph): Block.Para {
-        val runs = mutableListOf<TextRun>()
-        for (i in 0 until para.numCharacterRuns()) {
-            val run = para.getCharacterRun(i)
-            val text = run.text()
-            if (text.isNotEmpty()) {
-                runs.add(
-                    TextRun(
-                        text = text,
-                        bold = run.isBold,
-                        italic = run.isItalic,
-                        underline = run.underlineCode != 0,
-                        sizePt = run.fontSize.toFloat() / 2f,
-                        colorArgb = if (run.color != -1) (0xFF000000.toInt() or (0xFFFFFF and run.color)) else DEFAULT_COLOR
-                    )
-                )
-            }
-        }
-        
-        val alignment = when (para.justification.toInt()) {
-            1 -> 1 // center
-            2 -> 2 // right
-            3 -> 3 // justify
-            else -> 0
-        }
-
-        return Block.Para(
-            runs = runs, 
-            alignment = alignment,
-            leftIndent = para.getIndentFromLeft().toFloat() / 20f,
-            rightIndent = para.getIndentFromRight().toFloat() / 20f,
-            firstLineIndent = para.getFirstLineIndent().toFloat() / 20f,
-            spaceAbove = para.getSpacingBefore().toFloat() / 20f,
-            spaceBelow = para.getSpacingAfter().toFloat() / 20f
-        )
-    }
-
-    private fun parseDocTable(table: org.apache.poi.hwpf.usermodel.Table): Block.Tbl {
-        val rows = mutableListOf<List<CellData>>()
-        var maxCols = 0
-        
-        for (r in 0 until table.numRows()) {
-            val row = table.getRow(r)
-            val cells = mutableListOf<CellData>()
-            for (c in 0 until row.numCells()) {
-                val cell = row.getCell(c)
-                val cellBlocks = mutableListOf<Block>()
-                for (p in 0 until cell.numParagraphs()) {
-                    cellBlocks.add(parseDocParagraph(cell.getParagraph(p)))
-                }
-                cells.add(CellData(colspan = 1, blocks = cellBlocks))
-            }
-            rows.add(cells)
-            if (cells.size > maxCols) maxCols = cells.size
-        }
-        
-        val colWidths = List(maxCols) { 100f / maxCols }
-        return Block.Tbl(colWidths, rows)
-    }
-
-    // --- Yardımcılar -----------------------------------------------------
-
-    private fun decodeBase64Image(base64: String): Bitmap? {
-        if (base64.isBlank()) return null
-        return try {
-            val bytes = Base64.decode(base64, Base64.DEFAULT)
-            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            context.startActivity(android.content.Intent.createChooser(shareIntent, context.getString(com.avalibeyaz.evrak.R.string.share)))
         } catch (e: Exception) {
-            Log.w(TAG, "Resim decode edilemedi", e)
-            null
-        }
-    }
-
-    private fun directChild(parent: Element, tagName: String): Element? {
-        var node: Node? = parent.firstChild
-        while (node != null) {
-            if (node is Element && node.tagName == tagName) return node
-            node = node.nextSibling
-        }
-        return null
-    }
-
-    private inline fun forEachChildElement(parent: Element, action: (Element) -> Unit) {
-        var node: Node? = parent.firstChild
-        while (node != null) {
-            if (node is Element) action(node)
-            node = node.nextSibling
-        }
-    }
-
-    private fun Element?.attrFloat(name: String, default: Float): Float {
-        if (this == null) return default
-        val v = getAttribute(name)
-        return v.toFloatOrNull() ?: default
-    }
-
-    private fun writePdf(pdfDocument: PdfDocument, outputFile: File) {
-        outputFile.parentFile?.mkdirs()
-        FileOutputStream(outputFile).use { out ->
-            pdfDocument.writeTo(out)
+            e.printStackTrace()
+            android.widget.Toast.makeText(context, "Paylaşım başarısız oldu", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 }

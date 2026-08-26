@@ -45,7 +45,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Developer link (Ali BEYAZ only)
@@ -64,12 +64,26 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 @Suppress("DEPRECATION")
                 ClickableText(
                     text = developerText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 ) { offset ->
                     developerText.getStringAnnotations(tag = "URL", start = offset, end = offset)
                         .firstOrNull()?.let { annotation ->
                             uriHandler.openUri(annotation.item)
                         }
+                }
+
+                // Supported formats group (tightly coupled)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = stringResource(id = R.string.about_supported_formats),
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = stringResource(id = R.string.about_supported_formats_list),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center
+                    )
                 }
 
                 // Celse integration paragraph
@@ -89,10 +103,34 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 @Suppress("DEPRECATION")
                 ClickableText(
                     text = celseText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant),
-                    modifier = Modifier.padding(top = 8.dp)
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 ) { offset ->
                     celseText.getStringAnnotations(tag = "URL", start = offset, end = offset)
+                        .firstOrNull()?.let { annotation ->
+                            uriHandler.openUri(annotation.item)
+                        }
+                }
+
+                // Play Store link
+                val playStoreText = buildAnnotatedString {
+                    append(stringResource(id = R.string.about_view_on_play_store))
+                    pushStringAnnotation(tag = "URL", annotation = "https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak")
+                    withStyle(style = SpanStyle(
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )) {
+                        append(stringResource(id = R.string.about_view_on_play_store_link))
+                    }
+                    pop()
+                    append(".")
+                }
+
+                @Suppress("DEPRECATION")
+                ClickableText(
+                    text = playStoreText,
+                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                ) { offset ->
+                    playStoreText.getStringAnnotations(tag = "URL", start = offset, end = offset)
                         .firstOrNull()?.let { annotation ->
                             uriHandler.openUri(annotation.item)
                         }

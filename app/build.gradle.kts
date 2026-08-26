@@ -12,8 +12,8 @@ android {
         applicationId = "com.avalibeyaz.evrak"
         minSdk = 30
         targetSdk = 37
-        versionCode = 10
-        versionName = "1.2.3"
+        versionCode = 12
+        versionName = "1.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.poi.scratchpad)
     implementation(libs.androidx.documentfile)
     implementation(libs.androidx.webkit)
+    implementation("androidx.print:print:1.0.0")
     implementation(libs.coil.compose)
     implementation(libs.coil.gif)
     implementation(libs.tiff.renderer)

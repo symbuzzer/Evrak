@@ -43,12 +43,21 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         // 3. Robust Copy and Sniffing Fallback
         val cacheFile = copyUriToInternalStorageWithSniffing(uri, cr) { sniffedExt ->
             // If sniffer found a better extension, use it
-            // FIX: If we already have .udf and sniffer finds .docx (ZIP), keep .udf
             if (sniffedExt != null) {
                 val isExistingUdf = extension?.equals(".udf", ignoreCase = true) == true
                 val isSniffedZip = sniffedExt.equals(".docx", ignoreCase = true)
                 
-                if (!(isExistingUdf && isSniffedZip)) {
+                // Keep .udf if sniffer says .docx (ZIP)
+                if (isExistingUdf && isSniffedZip) return@copyUriToInternalStorageWithSniffing
+                
+                // NEW: If existing extension is already a common image type, don't let sniffer change it to another image type
+                val imageExtensions = setOf(".png", ".jpg", ".jpeg", ".gif")
+                val isExistingImage = extension?.lowercase() in imageExtensions
+                val isSniffedImage = sniffedExt.lowercase() in imageExtensions
+                
+                if (isExistingImage && isSniffedImage) {
+                    // Do nothing, trust original extension/MIME
+                } else {
                     extension = sniffedExt
                 }
             }
@@ -88,8 +97,13 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     private fun getExtensionFromMime(mimeType: String?, uri: Uri): String? {
         if (mimeType != null) {
             if (mimeType == "application/x-udf") return ".udf"
+            if (mimeType == "image/png") return ".png"
+            if (mimeType == "image/jpeg") return ".jpg"
+            if (mimeType == "image/gif") return ".gif"
             val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
-            if (ext != null) return ".$ext"
+            if (ext != null) {
+                return if (ext == "jpeg") ".jpg" else ".$ext"
+            }
         }
         val path = uri.path ?: return null
         val lastDot = path.lastIndexOf('.')
