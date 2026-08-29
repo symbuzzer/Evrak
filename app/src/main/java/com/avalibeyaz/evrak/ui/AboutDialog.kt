@@ -1,30 +1,35 @@
 package com.avalibeyaz.evrak.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.IntegrationInstructions
+import androidx.compose.material.icons.filled.Shop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
-import coil.compose.rememberAsyncImagePainter
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.rememberAsyncImagePainter
 import com.avalibeyaz.evrak.BuildConfig
 import com.avalibeyaz.evrak.R
 
 @Composable
 fun AboutDialog(onDismiss: () -> Unit) {
     val uriHandler = LocalUriHandler.current
-    
+    val scrollState = rememberScrollState()
+
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {
@@ -35,45 +40,39 @@ fun AboutDialog(onDismiss: () -> Unit) {
             )
         },
         title = {
-            Text(
-                text = "${stringResource(id = R.string.app_name)} v${BuildConfig.VERSION_NAME}",
-                style = MaterialTheme.typography.titleLarge,
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "${stringResource(id = R.string.about_title)} v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp
+                    ),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(id = R.string.about_developed_by),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Developer link (Ali BEYAZ only)
-                val developerText = buildAnnotatedString {
-                    pushStringAnnotation(tag = "URL", annotation = "https://github.com/symbuzzer")
-                    withStyle(style = SpanStyle(
-                        color = MaterialTheme.colorScheme.primary, 
-                        fontWeight = FontWeight.Bold
-                    )) {
-                        append("Ali BEYAZ")
-                    }
-                    pop()
-                    append(stringResource(id = R.string.about_developed_by, ""))
-                }
-
-                @Suppress("DEPRECATION")
-                ClickableText(
-                    text = developerText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                ) { offset ->
-                    developerText.getStringAnnotations(tag = "URL", start = offset, end = offset)
-                        .firstOrNull()?.let { annotation ->
-                            uriHandler.openUri(annotation.item)
-                        }
-                }
-
-                // Supported formats group (tightly coupled)
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // Supported formats group (centered)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                ) {
                     Text(
                         text = stringResource(id = R.string.about_supported_formats),
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
@@ -86,132 +85,69 @@ fun AboutDialog(onDismiss: () -> Unit) {
                     )
                 }
 
-                // Celse integration paragraph
-                val celseText = buildAnnotatedString {
-                    append(stringResource(id = R.string.about_celse_integration))
-                    pushStringAnnotation(tag = "URL", annotation = "https://github.com/symbuzzer/UDE_stub")
-                    withStyle(style = SpanStyle(
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )) {
-                        append(stringResource(id = R.string.about_realize))
-                    }
-                    pop()
-                    append(".")
-                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                @Suppress("DEPRECATION")
-                ClickableText(
-                    text = celseText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                ) { offset ->
-                    celseText.getStringAnnotations(tag = "URL", start = offset, end = offset)
-                        .firstOrNull()?.let { annotation ->
-                            uriHandler.openUri(annotation.item)
-                        }
-                }
+                AboutLinkItem(
+                    icon = Icons.Default.IntegrationInstructions,
+                    description = stringResource(id = R.string.about_celse_integration_desc),
+                    onClick = { uriHandler.openUri("https://github.com/symbuzzer/UDE_stub") }
+                )
 
-                // Play Store link
-                val playStoreText = buildAnnotatedString {
-                    append(stringResource(id = R.string.about_view_on_play_store))
-                    pushStringAnnotation(tag = "URL", annotation = "https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak")
-                    withStyle(style = SpanStyle(
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )) {
-                        append(stringResource(id = R.string.about_view_on_play_store_link))
-                    }
-                    pop()
-                    append(".")
-                }
+                AboutLinkItem(
+                    icon = Icons.Default.Shop,
+                    description = stringResource(id = R.string.about_view_on_play_store_desc),
+                    onClick = { uriHandler.openUri("https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak") }
+                )
 
-                @Suppress("DEPRECATION")
-                ClickableText(
-                    text = playStoreText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                ) { offset ->
-                    playStoreText.getStringAnnotations(tag = "URL", start = offset, end = offset)
-                        .firstOrNull()?.let { annotation ->
-                            uriHandler.openUri(annotation.item)
-                        }
-                }
-                
-                // Library link
-                val libraryText = buildAnnotatedString {
-                    append(stringResource(id = R.string.about_view_libraries))
-                    pushStringAnnotation(tag = "URL", annotation = "https://github.com/symbuzzer/Evrak#kullan%C4%B1lan-k%C3%BCt%C3%BCphaneler-ve-lisanslar%C4%B1")
-                    withStyle(style = SpanStyle(
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )) {
-                        append(stringResource(id = R.string.about_view))
-                    }
-                    pop()
-                    append(".")
-                }
+                AboutLinkItem(
+                    icon = Icons.AutoMirrored.Filled.Article,
+                    description = stringResource(id = R.string.about_view_libraries_desc),
+                    onClick = { uriHandler.openUri("https://github.com/symbuzzer/Evrak#kullan%C4%B1lan-k%C3%BCt%C3%BCphaneler-ve-lisanslar%C4%B1") }
+                )
 
-                @Suppress("DEPRECATION")
-                ClickableText(
-                    text = libraryText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                ) { offset ->
-                    libraryText.getStringAnnotations(tag = "URL", start = offset, end = offset)
-                        .firstOrNull()?.let { annotation ->
-                            uriHandler.openUri(annotation.item)
-                        }
-                }
-
-                // Source code link
-                val sourceCodeText = buildAnnotatedString {
-                    append(stringResource(id = R.string.about_source_code))
-                    pushStringAnnotation(tag = "URL", annotation = "https://github.com/symbuzzer/Evrak")
-                    withStyle(style = SpanStyle(
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )) {
-                        append(stringResource(id = R.string.about_view))
-                    }
-                    pop()
-                    append(".")
-                }
-
-                @Suppress("DEPRECATION")
-                ClickableText(
-                    text = sourceCodeText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                ) { offset ->
-                    sourceCodeText.getStringAnnotations(tag = "URL", start = offset, end = offset)
-                        .firstOrNull()?.let { annotation ->
-                            uriHandler.openUri(annotation.item)
-                        }
-                }
-                
-                // Contact link (bildirin only)
-                val contactText = buildAnnotatedString {
-                    append(stringResource(id = R.string.about_feedback))
-                    pushStringAnnotation(tag = "URL", annotation = "https://wa.me/905392552070")
-                    withStyle(style = SpanStyle(
-                        color = MaterialTheme.colorScheme.primary, 
-                        fontWeight = FontWeight.Bold
-                    )) {
-                        append(stringResource(id = R.string.about_report))
-                    }
-                    pop()
-                    append(".")
-                }
-
-                @Suppress("DEPRECATION")
-                ClickableText(
-                    text = contactText,
-                    style = TextStyle(textAlign = TextAlign.Center, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                ) { offset ->
-                    contactText.getStringAnnotations(tag = "URL", start = offset, end = offset)
-                        .firstOrNull()?.let { annotation ->
-                            uriHandler.openUri(annotation.item)
-                        }
-                }
+                AboutLinkItem(
+                    icon = Icons.Default.Code,
+                    description = stringResource(id = R.string.about_source_code_desc),
+                    onClick = { uriHandler.openUri("https://github.com/symbuzzer/Evrak") }
+                )
             }
         },
-        confirmButton = {}
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = stringResource(id = R.string.close),
+                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)
+                )
+            }
+        }
     )
+}
+
+@Composable
+private fun AboutLinkItem(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(28.dp),
+            tint = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+    }
 }

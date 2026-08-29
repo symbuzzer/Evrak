@@ -22,23 +22,22 @@
     <string name="error">Hata</string>
     <string name="error_file_not_found">Dosya bulunamadı</string>
     <string name="error_unknown">Bilinmeyen hata</string>
-    <string name="about_developed_by">"%1$s tarafından geliştirilmiştir."</string>
-    <string name="about_supported_formats">Desteklenen dosya türleri:</string>
-    <string name="about_supported_formats_list">UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF, PNG</string>
-    <string name="about_view_on_play_store">Play Store\'da\u0020</string>
-    <string name="about_view_on_play_store_link">görüntüleyin</string>
-    <string name="about_celse_integration">Celse uygulaması entegrasyonunu\u0020</string>
-    <string name="about_realize">gerçekleştirin</string>
-    <string name="about_view_libraries">Kullanılan kütüphaneleri\u0020</string>
-    <string name="about_view">görüntüleyin</string>
-    <string name="about_source_code">Kaynak kodunu\u0020</string>
-    <string name="about_feedback">Görüş ve önerilerinizi\u0020</string>
-    <string name="about_report">bildirin</string>
+    <string name="about_title">Evrak</string>
+    <string name="about_developed_by">Ali BEYAZ tarafından geliştirilmiştir.</string>
+    <string name="about_supported_formats">Desteklenen formatlar:</string>
+    <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC HTML JPG GIF PNG</string>
+
+    <string name="about_celse_integration_desc">CELSE uygulaması entegrasyonunu gerçekleştirin.</string>
+    <string name="about_view_on_play_store_desc">Uygulamayı Play Store üzerinden değerlendirin.</string>
+    <string name="about_view_libraries_desc">Uygulamada kullanılan açık kaynak kütüphaneleri görüntüleyin.</string>
+    <string name="about_source_code_desc">Uygulamanın kaynak kodunu GitHub üzerinden inceleyin.</string>
+
+    <string name="close">Kapat</string>
 
     <string name="confirm_delete_all_message">Bütün geçmişi ve önbelleğe alınmış dosyaları silmek istediğinize emin misiniz?</string>
     <string name="unsupported_format_title">Tanımlanamayan format</string>
-    <string name="unsupported_format_message">Bu dosya formatı şu anda Evrak tarafından desteklenmiyor.</string>
-    <string name="error_udf_read">UDF içeriği (content.xml) okunamadı ya da dosya bozuk.</string>
+    <string name="unsupported_format_message">Bu dosya formatı şu anda desteklenmiyor.</string>
+    <string name="error_udf_read">UDF içeriği okunamadı ya da dosya bozuk.</string>
 
     <string name="select_format">Format seçin</string>
     <string name="format_original">Orijinal format (%1$s)</string>
