@@ -57,4 +57,33 @@
     <string name="filter_tiff">TIFF</string>
     <string name="filter_word">Word</string>
     <string name="filter_other">Diğer</string>
+
+    <!-- Conversion Errors -->
+    <string name="error_input_file_not_found">Girdi dosyası bulunamadı: %1$s</string>
+    <string name="error_context_required">Dönüştürme için context gereklidir</string>
+    <string name="error_activity_required">Dönüştürme için activity gereklidir</string>
+    <string name="error_unsupported_type">Desteklenmeyen dosya türü: %1$s</string>
+    <string name="error_pdf_close_failed">PDF kapatılamadı: %1$s</string>
+    <string name="error_pdf_write_failed">PDF yazma hatası: %1$s</string>
+    <string name="error_pdf_layout_failed">PDF yerleşim hatası: %1$s</string>
+    <string name="error_pdf_creation_failed">PDF oluşturma hatası: %1$s</string>
+    <string name="error_file_read_failed">Dosya okuma hatası: %1$s</string>
+    <string name="error_conversion_timeout">Dönüştürme zaman aşımına uğradı</string>
+    <string name="error_udf_parse_failed">UDF içeriği ayrıştırılamadı</string>
+    <string name="error_udf_conversion_failed">UDF dönüştürme hatası: %1$s</string>
+    <string name="error_tiff_error">TIFF hatası: %1$s</string>
+    <string name="error_libreoffice_failed">LibreOffice dönüşüm hatası</string>
+    <string name="error_word_conversion_failed">Word dönüştürme hatası: %1$s</string>
+    <string name="error_pdf_not_created">PDF dosyası oluşturulamadı</string>
+    <string name="error_during_conversion">Dönüştürme sırasında hata</string>
+    <string name="error_libreoffice_not_initialized">LibreOffice başlatılamadı, dönüştürme yapılamaz</string>
+
+    <string name="msg_copying_assets">Gerekli assetler kopyalanıyor...</string>
+    <string name="msg_libreoffice_ready">LibreOfficeKit başarıyla başlatıldı</string>
+    <string name="print_adapter_name">Evrak-Dönüşüm</string>
+
+    <string name="unknown_document">Bilinmeyen belge</string>
+    <string name="udf_verification_bar">UYAP Bilişim Sistemindeki bu dokümana http://vatandas.uyap.gov.tr adresinden &lt;strong&gt;%1$s&lt;/strong&gt; ile erişebilirsiniz.</string>
+    <string name="udf_invalid_content">Geçersiz içerik</string>
+    <string name="udf_no_content">İçerik bulunamadı</string>
 </resources>

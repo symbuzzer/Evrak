@@ -107,7 +107,6 @@ fun MainScreen(
         }
     }
 
-    // Save launchers
     val savePdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri ->
@@ -225,7 +224,7 @@ fun MainScreen(
                 scope.launch {
                     isRefreshing = true
                     onRefresh()
-                    delay(1000) // Minimum delay for smooth animation
+                    delay(1000)
                     isRefreshing = false
                 }
             },
@@ -283,7 +282,7 @@ fun MainScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp) // Bottom padding'i biraz daha daraltalım
+                    .padding(bottom = 12.dp)
             ) {
                 Text(
                     text = selectedEvrak!!.name,
@@ -291,7 +290,7 @@ fun MainScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
                 HorizontalDivider()
-                Spacer(modifier = Modifier.height(4.dp)) // İlk öğe ile başlık arasına çok az boşluk
+                Spacer(modifier = Modifier.height(4.dp))
 
                 OptionItem(
                     icon = Icons.AutoMirrored.Filled.OpenInNew,
@@ -477,7 +476,6 @@ fun MainScreen(
                         saveOriginalLauncher.launch(selectedEvrak!!.name)
                     }
                 } else {
-                    // share
                     scope.launch(Dispatchers.IO) {
                         if (usePdf) {
                             isConverting = true
@@ -563,7 +561,6 @@ private fun openFileWith(context: android.content.Context, evrak: Evrak) {
         putExtra("display_name", evrak.name)
     }
 
-    // Check if there are other apps to handle this intent
     val packageManager = context.packageManager
     val activities = packageManager.queryIntentActivities(intent, 0)
     val isOtherAppAvailable = activities.any { it.activityInfo.packageName != context.packageName }
@@ -622,12 +619,11 @@ fun OptionItem(
     onClick: () -> Unit,
     color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface
 ) {
-    // ListItem yerine daha kompakt bir Row yapısı kullanalım
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp), // Dikey boşluğu azalttık
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -640,7 +636,7 @@ fun OptionItem(
         Text(
             text = label, 
             color = color, 
-            style = MaterialTheme.typography.bodyLarge // bodyMedium yerine bodyLarge daha okunaklı ama yer kazandırır
+            style = MaterialTheme.typography.bodyLarge
         )
     }
 }

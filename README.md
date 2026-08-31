@@ -75,14 +75,11 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 
 ### Dosya Görüntüleme / Dönüştürme
 
-| Kütüphane                                                                                                                                                     | Lisans |
-|---------------------------------------------------------------------------------------------------------------------------------------------------------------| --- |
-| [Apache POI](https://poi.apache.org/) (poi, poi-ooxml, poi-scratchpad) — DOC/DOCX ayrıştırma                                                                  | Apache License 2.0 |
-| [Coil](https://github.com/coil-kt/coil) (coil-compose, coil-gif) — görsel yükleme (JPG/PNG/GIF)                                                               | Apache License 2.0 |
-| [tiffrenderer](https://github.com/lucf15/TiffRenderer) — TIFF render motoru                                                                                   | Apache License 2.0 |
-| [docx-preview](https://github.com/volodymyrbaydalka/docxjs) v0.4.0 — DOCX içeriğinin WebView üzerinde render edilmesi (APK içine `assets/js/` altında gömülü) | Apache License 2.0 |
-| [JSZip](https://github.com/Stuk/jszip) — docx-preview'un ZIP (DOCX) ayrıştırma bağımlılığı                                                                    | MIT License (veya GPLv3 - çift lisanslı) |
-| [TiffBitmapFactory](https://github.com/Beyka/Android-TiffBitmapFactory) v0.9.9 — TIFF dosyalarını PDF'e çevirme                                               | MIT License |
+| Kütüphane                                                                                                                                                    | Lisans |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------| --- |
+| [Coil](https://github.com/coil-kt/coil) (coil-compose, coil-gif) — görsel yükleme (JPG/PNG/GIF)                                                              | Apache License 2.0 |
+| [tiffrenderer](https://github.com/lucf15/TiffRenderer) — TIFF render motoru ve PDF dönüşümü                                                                  | Apache License 2.0 |
+| [LibreOffice Core](https://www.libreoffice.org/) (LibreOfficeKit) — DOC/DOCX görüntüleme ve PDF dönüşümü                                                     | Mozilla Public License 2.0 |
 
 ### Test / Debug
 | Kütüphane                                                                                                                                                     | Lisans |
@@ -96,7 +93,9 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 
 ## Gizlilik
 
-Evrak, herhangi bir Android izni talep etmez. Açılan dosyalar yalnızca cihazın kendi yerel depolama alanında (uygulamanın kendi önbelleğinde) tutulur; herhangi bir sunucuya veri gönderilmez, hiçbir analitik/takip SDK'sı kullanılmaz. İnternete ve cihazın dosya sistemine hiç bir şekilde erişmez.
+Evrak, herhangi bir Android izni talep etmez. Açılan dosyalar yalnızca cihazın kendi yerel depolama alanında (uygulamanın kendi önbelleğinde) tutulur; herhangi bir sunucuya veri gönderilmez, hiçbir analitik/takip SDK'sı kullanılmaz. 
+
+**Önemli:** Uygulama içindeki tüm dönüştürme ve görüntüleme işlemleri (UDF, TIFF, DOCX vb.) tamamen cihaz üzerinde, **çevrimdışı (offline)** olarak gerçekleştirilir. İnternet bağlantısı gerektirmez ve verilerinizi hiçbir şekilde internete aktarmaz.
 
 ## Katkıda Bulunma
 

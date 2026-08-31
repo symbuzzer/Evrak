@@ -23,10 +23,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/**
- * Viewer for UYAP UDF (Ulusal Yargı Ağı Projesi Doküman Formatı) files.
- * Uses UdfHtmlConverter for high-fidelity rendering.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UdfViewerScreen(
@@ -51,7 +47,7 @@ fun UdfViewerScreen(
                 if (!file.exists()) {
                     wrapUdfHtmlError(context, context.getString(R.string.error_file_not_found))
                 } else {
-                    val html = UdfHtmlConverter.convertUdfToHtml(file)
+                    val html = UdfHtmlConverter.convertUdfToHtml(file, context)
                     if (html.isEmpty()) {
                         wrapUdfHtmlError(context, context.getString(R.string.error_udf_read))
                     } else {
@@ -67,7 +63,6 @@ fun UdfViewerScreen(
         }
     }
 
-    // Save launchers
     val saveUdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
@@ -196,7 +191,6 @@ fun UdfViewerScreen(
                         saveUdfLauncher.launch(displayName)
                     }
                 } else {
-                    // share
                     scope.launch(Dispatchers.IO) {
                         if (usePdf) {
                             isConverting = true

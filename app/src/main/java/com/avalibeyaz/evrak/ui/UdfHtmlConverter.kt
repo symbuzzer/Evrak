@@ -1,14 +1,13 @@
 package com.avalibeyaz.evrak.ui
 
+import android.content.Context
+import com.avalibeyaz.evrak.R
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import java.io.File
 import java.util.zip.ZipFile
 import javax.xml.parsers.DocumentBuilderFactory
 
-/**
- * UYAP UDF (Ulusal Yargı Ağı Projesi Doküman Formatı) dosyalarını HTML'e dönüştüren merkezi motor.
- */
 object UdfHtmlConverter {
 
     data class UdfBody(
@@ -56,9 +55,9 @@ object UdfHtmlConverter {
         }
     }
 
-    fun convertUdfToHtml(file: File): String {
+    fun convertUdfToHtml(file: File, context: Context): String {
         val udfData = readUdfFileData(file) ?: return ""
-        val body = UdfDocumentParser(udfData.xml, udfData.backgroundImageBase64).parseToHtmlBody()
+        val body = UdfDocumentParser(udfData.xml, context, udfData.backgroundImageBase64).parseToHtmlBody()
         return wrapUdfHtml(
             body.html,
             body.pageWidthPt,
@@ -189,6 +188,7 @@ object UdfHtmlConverter {
 
     private class UdfDocumentParser(
         private val xml: String,
+        private val context: Context,
         private var backgroundImageBase64: String? = null
     ) {
         private var contentPool: String = ""
@@ -197,7 +197,7 @@ object UdfHtmlConverter {
         private val numberedListCounters = mutableMapOf<String, Int>()
         private val dataMap = mutableMapOf<String, String>()
         private var webId: String? = null
-        private var defaultHanging: Double = 142.0 // Discovery result
+        private var defaultHanging: Double = 142.0
 
         fun parseToHtmlBody(): UdfBody {
             val factory = DocumentBuilderFactory.newInstance().apply {
@@ -208,7 +208,7 @@ object UdfHtmlConverter {
             }
             val builder = factory.newDocumentBuilder()
             val doc = builder.parse(xml.byteInputStream(Charsets.UTF_8))
-            val root = doc.documentElement ?: return UdfBody("<div class='error'><p>Invalid content.</p></div>", 595.28, 841.89, 56.7, 56.7, 56.7, 56.7)
+            val root = doc.documentElement ?: return UdfBody("<div class='error'><p>${context.getString(R.string.udf_invalid_content)}</p></div>", 595.28, 841.89, 56.7, 56.7, 56.7, 56.7)
 
             var pageWidthPt = 595.28
             var pageHeightPt = 841.89
@@ -238,7 +238,6 @@ object UdfHtmlConverter {
             stylesEl?.let { parseStyles(it) }
             dataEl?.let { parseData(it) }
 
-            // Doküman bazlı varsayılan hizalama (Hanging) değerini keşfet
             val hangingValues = mutableListOf<Double>()
             elementsEl?.let { elements ->
                 forEachChildElement(elements) { child ->
@@ -249,7 +248,6 @@ object UdfHtmlConverter {
                     }
                 }
             }
-            // En sık kullanılan Hanging değerini veya makul bir varsayılanı (142pt) seç
             defaultHanging = hangingValues.groupBy { it }.maxByOrNull { it.value.size }?.key ?: 142.0
 
             propertiesEl?.let { props ->
@@ -263,10 +261,10 @@ object UdfHtmlConverter {
                         val w = 595.28
                         val h = 841.89
 
-                        if (orientation == "0" || orientation == "2") { // Landscape
+                        if (orientation == "0" || orientation == "2") {
                             pageWidthPt = h
                             pageHeightPt = w
-                        } else { // Portrait
+                        } else {
                             pageWidthPt = w
                             pageHeightPt = h
                         }
@@ -296,13 +294,12 @@ object UdfHtmlConverter {
             }
 
             if (elementsSb.isEmpty()) {
-                elementsSb.append("<div class='info'><p>No content found.</p></div>")
+                elementsSb.append("<div class='info'><p>${context.getString(R.string.udf_no_content)}</p></div>")
             }
 
             webId?.let {
                 elementsSb.append("<div class='udf-verification-bar'>")
-                elementsSb.append("UYAP Bilişim Sistemindeki bu dokümana http://vatandas.uyap.gov.tr adresinden ")
-                elementsSb.append("<strong>$it</strong> ile erişebilirsiniz.")
+                elementsSb.append(context.getString(R.string.udf_verification_bar, it))
                 elementsSb.append("</div>")
             }
 
@@ -386,7 +383,6 @@ object UdfHtmlConverter {
             val isBulleted = p.attrOrNull("Bulleted")?.toBoolean() == true
             val hangingAttr = p.attrOrNull("Hanging")?.toDoubleOrNull() ?: 0.0
             
-            // Tab karakteri veya elementinin varlığını kontrol et
             var hasTab = false
             forEachChildElement(p) { child ->
                 if (child.tagName == "tab") hasTab = true
@@ -395,7 +391,6 @@ object UdfHtmlConverter {
                 }
             }
 
-            // Listeler, asılı girintili paragraflar veya TAB içeren satırlar için özel grid düzeni kullan
             if (isNumbered || isBulleted || hangingAttr > 0 || (hasTab && p.attrOrNull("Alignment") != "1")) {
                 val marker: String
                 val markerWidth: Double
@@ -418,8 +413,6 @@ object UdfHtmlConverter {
                     val split = renderParagraphWithHangingSplit(p, hangingAttr)
                     if (split != null) {
                         marker = split.first
-                        // Tab başta ise (marker metni boşsa) 28pt girinti, aksi halde 216pt kolon hizalama kullan
-                        // HTML etiketlerini temizleyip sadece metin var mı diye bakıyoruz
                         val plainMarker = marker.replace(Regex("<[^>]*>"), "").replace("&nbsp;", "").trim()
                         val isIndentOnly = plainMarker.isEmpty()
                         
@@ -502,10 +495,10 @@ object UdfHtmlConverter {
             "NUMBER_TYPE_CHAR_SMALL_PARENTHESIS" -> "${toAlpha(n, false)})"
             "NUMBER_TYPE_CHAR_BIG_DOT" -> "${toAlpha(n, true)}."
             "NUMBER_TYPE_CHAR_BIG_PARENTHESIS" -> "${toAlpha(n, true)})"
-            "NUMBER_TYPE_ROMAN_SMALL_DOT" -> "${toRoman(n).lowercase()}."
-            "NUMBER_TYPE_ROMAN_SMALL_PARENTHESIS" -> "${toRoman(n).lowercase()})"
-            "NUMBER_TYPE_ROMAN_BIG_DOT" -> "${toRoman(n)}."
-            "NUMBER_TYPE_ROMAN_BIG_PARENTHESIS" -> "${toRoman(n)})"
+            "NUMBER_TYPE_ROMAN_SMALL_DOT" -> "${toAlpha(n, false).lowercase()}."
+            "NUMBER_TYPE_ROMAN_SMALL_PARENTHESIS" -> "${toAlpha(n, false).lowercase()})"
+            "NUMBER_TYPE_ROMAN_BIG_DOT" -> "${toAlpha(n, true).uppercase()}."
+            "NUMBER_TYPE_ROMAN_BIG_PARENTHESIS" -> "${toAlpha(n, true).uppercase()})"
             else -> "$n." 
         }
 
@@ -528,21 +521,6 @@ object UdfHtmlConverter {
                 num = (num - 1) / 26
             }
             return if (upper) sb.toString().uppercase() else sb.toString()
-        }
-
-        private fun toRoman(n: Int): String {
-            if (n <= 0) return n.toString()
-            val values = intArrayOf(1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1)
-            val symbols = arrayOf("M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I")
-            var num = n
-            val sb = StringBuilder()
-            for (i in values.indices) {
-                while (num >= values[i]) {
-                    num -= values[i]
-                    sb.append(symbols[i])
-                }
-            }
-            return sb.toString()
         }
 
         private fun renderInlineElement(el: Element): String {

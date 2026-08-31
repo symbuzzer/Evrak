@@ -59,7 +59,6 @@ fun PdfViewerScreen(
     var currentPage by remember { mutableIntStateOf(1) }
     val listState = rememberLazyListState()
 
-    // PdfRenderer management
     var renderer by remember { mutableStateOf<PdfRenderer?>(null) }
     val mutex = remember { Mutex() }
 
@@ -78,7 +77,6 @@ fun PdfViewerScreen(
         }
     }
 
-    // Save launcher
     val saveLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri ->
@@ -95,7 +93,6 @@ fun PdfViewerScreen(
         }
     }
 
-    // Track current page based on list scroll position
     LaunchedEffect(listState.firstVisibleItemIndex) {
         currentPage = listState.firstVisibleItemIndex + 1
     }
@@ -134,7 +131,6 @@ fun PdfViewerScreen(
         ) {
             val viewHeight = maxHeight
 
-            // Zoom and Pan state
             var scale by remember { mutableFloatStateOf(1f) }
             var offset by remember { mutableStateOf(Offset.Zero) }
 
@@ -147,7 +143,6 @@ fun PdfViewerScreen(
                 val newOffset = if (newScale > 1f) {
                     val rawOffset = offset + panChange * scale
 
-                    // Limit panning based on scale
                     val maxX = (newScale - 1f) * (constraints.maxWidth / 2f)
                     val maxY = (newScale - 1f) * (constraints.maxHeight / 2f)
 
@@ -163,7 +158,6 @@ fun PdfViewerScreen(
                 offset = newOffset
             }
 
-            // Reset offset when scaled back to 1
             LaunchedEffect(scale) {
                 if (scale <= 1f) {
                     offset = Offset.Zero
@@ -171,7 +165,6 @@ fun PdfViewerScreen(
             }
             
             Box(modifier = Modifier.fillMaxSize()) {
-                // List Container
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -183,7 +176,6 @@ fun PdfViewerScreen(
                                         offset = Offset.Zero
                                     } else {
                                         scale = 3f
-                                        // Try to center on tap location
                                         val centerX = size.width / 2f
                                         val centerY = size.height / 2f
                                         offset = Offset(
@@ -218,12 +210,10 @@ fun PdfViewerScreen(
                     }
                 }
 
-                // SUPER ROBUST DRAGGABLE SCROLLBAR
                 if (pageCount > 1) {
                     val thumbHeight = (viewHeight.value / pageCount).coerceAtLeast(60f).dp
                     val scrollableTrackHeight = viewHeight - thumbHeight
                     
-                    // Track list position to update thumb
                     val listProgress by remember {
                         derivedStateOf {
                             if (pageCount > 1) {
@@ -234,11 +224,9 @@ fun PdfViewerScreen(
                         }
                     }
                     
-                    // Drag state
                     var isDragging by remember { mutableStateOf(false) }
                     var dragOffset by remember { mutableFloatStateOf(0f) }
                     
-                    // The actual visible thumb offset depends on whether we are dragging or not
                     val thumbOffset = if (isDragging) {
                         dragOffset.dp
                     } else {
@@ -249,12 +237,11 @@ fun PdfViewerScreen(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
                             .fillMaxHeight()
-                            .width(60.dp) // Massive hit area for reliable touch
+                            .width(60.dp)
                             .pointerInput(pageCount, viewHeight) {
                                 detectVerticalDragGestures(
                                     onDragStart = { offset ->
                                         isDragging = true
-                                        // Initialize dragOffset based on current list position
                                         dragOffset = (listProgress * scrollableTrackHeight.toPx()).toDp().value
                                     },
                                     onDragEnd = { isDragging = false },
@@ -266,7 +253,6 @@ fun PdfViewerScreen(
                                         val newOffsetPx = (currentOffsetPx + dragAmount).coerceIn(0f, totalPx)
                                         dragOffset = newOffsetPx.toDp().value
                                         
-                                        // Scroll the list
                                         val newProgress = if (totalPx > 0) newOffsetPx / totalPx else 0f
                                         val targetIndex = (newProgress * (pageCount - 1)).toInt()
                                         
@@ -277,7 +263,6 @@ fun PdfViewerScreen(
                                 )
                             }
                     ) {
-                        // Track Visual (Optional but helpful)
                         Box(
                             modifier = Modifier
                                 .fillMaxHeight()
@@ -287,7 +272,6 @@ fun PdfViewerScreen(
                                 .background(Color.Gray.copy(alpha = 0.05f))
                         )
 
-                        // Visible Thumb
                         Box(
                             modifier = Modifier
                                 .size(width = 10.dp, height = thumbHeight)

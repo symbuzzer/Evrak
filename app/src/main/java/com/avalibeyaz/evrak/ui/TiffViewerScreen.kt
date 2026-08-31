@@ -63,9 +63,8 @@ fun TiffViewerScreen(
     val listState = rememberLazyListState()
     
     var isConverting by remember { mutableStateOf(false) }
-    var showFormatDialog by remember { mutableStateOf<String?>(null) } // "save" or "share"
+    var showFormatDialog by remember { mutableStateOf<String?>(null) }
 
-    // TiffRenderer management
     var renderer by remember { mutableStateOf<TiffRenderer?>(null) }
     val mutex = remember { Mutex() }
 
@@ -95,7 +94,6 @@ fun TiffViewerScreen(
         }
     }
 
-    // Save launchers
     val saveTiffLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("image/tiff")
     ) { uri ->
@@ -141,14 +139,12 @@ fun TiffViewerScreen(
         }
     }
 
-    // Zoom state
     var scale by remember { mutableFloatStateOf(1f) }
     val animatedScale by animateFloatAsState(targetValue = scale, label = "scale")
     val state = rememberTransformableState { zoomChange, _, _ ->
         scale = (scale * zoomChange).coerceIn(1f, 5f)
     }
 
-    // Track current page based on list scroll position
     LaunchedEffect(listState.firstVisibleItemIndex) {
         currentPage = listState.firstVisibleItemIndex + 1
     }
@@ -215,7 +211,6 @@ fun TiffViewerScreen(
                 }
             } else {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    // List Container
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -246,12 +241,10 @@ fun TiffViewerScreen(
                         }
                     }
 
-                    // SUPER ROBUST DRAGGABLE SCROLLBAR
                     if (pageCount > 1) {
                         val thumbHeight = (viewHeight.value / pageCount).coerceAtLeast(60f).dp
                         val scrollableTrackHeight = viewHeight - thumbHeight
                         
-                        // Track list position to update thumb
                         val listProgress by remember {
                             derivedStateOf {
                                 if (pageCount > 1) {
@@ -262,11 +255,9 @@ fun TiffViewerScreen(
                             }
                         }
                         
-                        // Drag state
                         var isDragging by remember { mutableStateOf(false) }
                         var dragOffset by remember { mutableFloatStateOf(0f) }
                         
-                        // The actual visible thumb offset depends on whether we are dragging or not
                         val thumbOffset = if (isDragging) {
                             dragOffset.dp
                         } else {
@@ -277,12 +268,11 @@ fun TiffViewerScreen(
                             modifier = Modifier
                                 .align(Alignment.CenterEnd)
                                 .fillMaxHeight()
-                                .width(60.dp) // Massive hit area for reliable touch
+                                .width(60.dp)
                                 .pointerInput(pageCount, viewHeight) {
                                     detectVerticalDragGestures(
                                         onDragStart = { offset ->
                                             isDragging = true
-                                            // Initialize dragOffset based on current list position
                                             dragOffset = (listProgress * scrollableTrackHeight.toPx()).toDp().value
                                         },
                                         onDragEnd = { isDragging = false },
@@ -294,7 +284,6 @@ fun TiffViewerScreen(
                                             val newOffsetPx = (currentOffsetPx + dragAmount).coerceIn(0f, totalPx)
                                             dragOffset = newOffsetPx.toDp().value
                                             
-                                            // Scroll the list
                                             val newProgress = if (totalPx > 0) newOffsetPx / totalPx else 0f
                                             val targetIndex = (newProgress * (pageCount - 1)).toInt()
                                             
@@ -305,7 +294,6 @@ fun TiffViewerScreen(
                                     )
                                 }
                         ) {
-                            // Track Visual (Optional but helpful)
                             Box(
                                 modifier = Modifier
                                     .fillMaxHeight()
@@ -315,7 +303,6 @@ fun TiffViewerScreen(
                                     .background(Color.Gray.copy(alpha = 0.05f))
                             )
 
-                            // Visible Thumb
                             Box(
                                 modifier = Modifier
                                     .size(width = 10.dp, height = thumbHeight)
@@ -348,7 +335,6 @@ fun TiffViewerScreen(
                         saveTiffLauncher.launch(displayName)
                     }
                 } else {
-                    // share
                     scope.launch(Dispatchers.IO) {
                         if (usePdf) {
                             isConverting = true
@@ -381,11 +367,8 @@ fun TiffPageItem(renderer: TiffRenderer?, index: Int, mutex: Mutex) {
             mutex.withLock {
                 try {
                     val page = renderer.openPage(index)
-                    // Create bitmap for Android
                     val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
-                    // Wrap it for TiffRenderer
                     val tiffBitmap = TiffBitmap(bitmap)
-                    // Render
                     page.render(tiffBitmap, null, null, TiffRenderMode.FOR_DISPLAY)
                     page.close()
                     bitmap

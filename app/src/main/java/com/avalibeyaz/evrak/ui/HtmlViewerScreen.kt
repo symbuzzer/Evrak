@@ -39,7 +39,6 @@ fun HtmlViewerScreen(
     var showFormatDialog by remember { mutableStateOf<String?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
 
-    // Save launcher
     val saveHtmlLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/html")
     ) { uri ->
@@ -128,7 +127,6 @@ fun HtmlViewerScreen(
                         useWideViewPort = true
                         builtInZoomControls = true
                         displayZoomControls = false
-                        // Enable file and content access as requested
                         allowFileAccess = true
                         allowContentAccess = true
                         domStorageEnabled = true
@@ -136,14 +134,13 @@ fun HtmlViewerScreen(
                     }
                     
                     if (htmlContent != null) {
-                        // Use loadDataWithBaseURL for robustness and to fix ERR_ACCESS_DENIED
                         loadDataWithBaseURL("https://evrak.app/", htmlContent, "text/html", "UTF-8", null)
                     } else {
                         loadUrl("file://$filePath")
                     }
                 }
             },
-            update = { /* Content is loaded in factory */ },
+            update = { },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -190,7 +187,6 @@ fun HtmlViewerScreen(
                         saveHtmlLauncher.launch(displayName)
                     }
                 } else {
-                    // share
                     scope.launch(Dispatchers.IO) {
                         if (usePdf) {
                             isConverting = true

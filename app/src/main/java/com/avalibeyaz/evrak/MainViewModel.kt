@@ -56,7 +56,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refreshHistory() {
         viewModelScope.launch {
-            // Logic to clean up entries if files are missing from disk
             val currentList = historyList.value
             currentList.forEach { evrak ->
                 if (!java.io.File(evrak.path).exists()) {

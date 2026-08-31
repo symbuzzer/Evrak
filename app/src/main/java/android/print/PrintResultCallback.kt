@@ -2,13 +2,6 @@ package android.print
 
 import android.os.ParcelFileDescriptor
 
-/**
- * Bu sınıf, android.print paketindeki yapıcıları package-private olan 
- * LayoutResultCallback ve WriteResultCallback sınıflarına erişmek için 
- * aynı pakette (android.print) tanımlanmıştır.
- * 
- * Bu sayede WebView içeriğini sessizce (diyalogsuz) PDF'e dönüştürebiliyoruz.
- */
 object PrintResultCallback {
 
     abstract class Layout : PrintDocumentAdapter.LayoutResultCallback()

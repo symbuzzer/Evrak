@@ -42,7 +42,6 @@ class MainActivity : ComponentActivity() {
     private var currentIntent by mutableStateOf<Intent?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // WebView içeriğinin PDF'e tam ve doğru çizilmesi için gerekli
         android.webkit.WebView.enableSlowWholeDocumentDraw()
         
         super.onCreate(savedInstanceState)
@@ -122,7 +121,6 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
             val displayName = backStackEntry.arguments?.getString("displayName") ?: ""
             val context = androidx.compose.ui.platform.LocalContext.current
             
-            // Safety check for rapid back clicks
             val onBackSafe = {
                 if (backStackEntry.lifecycle.currentState == androidx.lifecycle.Lifecycle.State.RESUMED) {
                     if (!navController.popBackStack()) {
@@ -211,7 +209,6 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
         AboutDialog { showAboutDialog = false }
     }
 
-    // Handle Incoming Intent (Samsung/Global)
     val activityContentResolver = androidx.compose.ui.platform.LocalContext.current.contentResolver
     LaunchedEffect(intent) {
         intent?.let {
@@ -240,14 +237,12 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
             }
 
             uri?.let { fileUri ->
-                // Attempt to take persistable permission
                 try {
                     activityContentResolver.takePersistableUriPermission(
                         fileUri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
                     )
                 } catch (_: Exception) {
-                    // Ignore failure if not persistable
                 }
                 
                 viewModel.openDocument(fileUri, activityContentResolver) { evrak ->
@@ -306,7 +301,6 @@ private fun printFile(
     } else if (isImage) {
         doPrintImage(context, file, displayName)
     } else {
-        // Convert to PDF then print
         if (context is ComponentActivity) {
             context.lifecycleScope.launch(Dispatchers.IO) {
                 withContext(Dispatchers.Main) { onConvertingChange(true) }

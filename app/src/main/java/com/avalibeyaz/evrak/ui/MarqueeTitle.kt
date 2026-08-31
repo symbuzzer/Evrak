@@ -38,7 +38,7 @@ fun MarqueeTitle(
             overflow = TextOverflow.Visible,
             modifier = Modifier.basicMarquee(
                 iterations = Int.MAX_VALUE,
-                velocity = 40.dp // Slow marquee
+                velocity = 40.dp
             )
         )
     }
