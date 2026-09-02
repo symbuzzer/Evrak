@@ -45,8 +45,6 @@
     <string name="converting">Dönüştürülüyor...</string>
     <string name="error_conversion_failed">Dönüştürme hatası: %1$s</string>
 
-    <string name="error_file_open_failed">Dosya okunamadı</string>
-    <string name="error_format_not_supported_view">Dosya formatı bu görünümde desteklenmiyor.</string>
     <string name="error_tiff_open_failed">TIFF dosyası açılamadı: %1$s</string>
     <string name="share_app_text">Evrak uygulamasını indirin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
 

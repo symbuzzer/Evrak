@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,7 +52,11 @@ fun PdfViewerScreen(
     filePath: String,
     displayName: String,
     onBackClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    onSaveClick: (() -> Unit)? = null,
+    saveFilePath: String = filePath,
+    saveDisplayName: String = displayName,
+    saveMimeType: String = "application/pdf"
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -78,12 +83,12 @@ fun PdfViewerScreen(
     }
 
     val saveLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/pdf")
+        contract = ActivityResultContracts.CreateDocument(saveMimeType)
     ) { uri ->
         uri?.let {
             try {
                 context.contentResolver.openOutputStream(it)?.use { output ->
-                    File(filePath).inputStream().use { input ->
+                    File(saveFilePath).inputStream().use { input ->
                         input.copyTo(output)
                     }
                 }
@@ -112,13 +117,41 @@ fun PdfViewerScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        saveLauncher.launch(displayName)
-                    }) {
-                        Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                        tooltip = {
+                            PlainTooltip {
+                                Text(stringResource(id = R.string.save))
+                            }
+                        },
+                        state = rememberTooltipState()
+                    ) {
+                        IconButton(onClick = {
+                            if (onSaveClick != null) {
+                                onSaveClick()
+                            } else {
+                                saveLauncher.launch(saveDisplayName)
+                            }
+                        }) {
+                            Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
+                        }
                     }
-                    IconButton(onClick = onShareClick) {
-                        Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                        tooltip = {
+                            PlainTooltip {
+                                Text(stringResource(id = R.string.share))
+                            }
+                        },
+                        state = rememberTooltipState()
+                    ) {
+                        IconButton(onClick = onShareClick) {
+                            Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
+                        }
                     }
                 }
             )

@@ -12,13 +12,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -259,13 +254,60 @@ fun MainScreen(
                             }
                         }
                     }
-                    items(filteredList) { evrak ->
-                        EvrakItem(
-                            evrak = evrak, 
-                            onClick = { onItemClick(evrak) },
-                            onLongClick = {
-                                selectedEvrak = evrak
-                                showSheet = true
+                    items(filteredList, key = { it.id }) { evrak ->
+                        val dismissState = rememberSwipeToDismissBoxState(
+                            confirmValueChange = { value ->
+                                if (value != SwipeToDismissBoxValue.Settled) {
+                                    selectedEvrak = evrak
+                                    showSheet = true
+                                    false
+                                } else {
+                                    true
+                                }
+                            }
+                        )
+
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            backgroundContent = {
+                                val direction = dismissState.dismissDirection
+                                val color = when (direction) {
+                                    SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
+                                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
+                                    else -> androidx.compose.ui.graphics.Color.Transparent
+                                }
+                                val alignment = when (direction) {
+                                    SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                                    SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+                                    else -> Alignment.Center
+                                }
+                                val icon = Icons.Default.Menu
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(color, MaterialTheme.shapes.medium)
+                                        .padding(horizontal = 24.dp),
+                                    contentAlignment = alignment
+                                ) {
+                                    if (direction != SwipeToDismissBoxValue.Settled) {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                            },
+                            content = {
+                                EvrakItem(
+                                    evrak = evrak,
+                                    onClick = { onItemClick(evrak) },
+                                    onLongClick = {
+                                        selectedEvrak = evrak
+                                        showSheet = true
+                                    }
+                                )
                             }
                         )
                     }
@@ -536,9 +578,8 @@ private fun shareFile(context: android.content.Context, evrak: Evrak) {
         "${context.packageName}.fileprovider",
         file
     )
-    val mimeType = getMimeType(evrak.path)
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
-        type = mimeType
+        type = getMimeType(evrak.path)
         putExtra(Intent.EXTRA_STREAM, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
@@ -552,9 +593,8 @@ private fun openFileWith(context: android.content.Context, evrak: Evrak) {
         "${context.packageName}.fileprovider",
         file
     )
-    val mimeType = getMimeType(evrak.path)
     val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(uri, mimeType)
+        setDataAndType(uri, getMimeType(evrak.path))
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         putExtra("from_open_with", true)
         putExtra("file_path", evrak.path)
@@ -572,19 +612,6 @@ private fun openFileWith(context: android.content.Context, evrak: Evrak) {
     context.startActivity(Intent.createChooser(intent, context.getString(R.string.open_with)))
 }
 
-private fun getMimeType(path: String): String {
-    return when {
-        path.endsWith(".pdf", true) -> "application/pdf"
-        path.endsWith(".docx", true) -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        path.endsWith(".doc", true) -> "application/msword"
-        path.endsWith(".png", true) -> "image/png"
-        path.endsWith(".jpg", true) || path.endsWith(".jpeg", true) -> "image/jpeg"
-        path.endsWith(".gif", true) -> "image/gif"
-        path.endsWith(".udf", true) -> "application/x-udf"
-        path.endsWith(".tiff", true) || path.endsWith(".tif", true) -> "image/tiff"
-        else -> "application/octet-stream"
-    }
-}
 
 
 @OptIn(ExperimentalFoundationApi::class)

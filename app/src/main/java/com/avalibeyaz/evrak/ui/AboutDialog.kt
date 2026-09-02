@@ -79,7 +79,8 @@ fun AboutDialog(onDismiss: () -> Unit) {
                     )
                     Text(
                         text = stringResource(id = R.string.about_supported_formats_list),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                 }

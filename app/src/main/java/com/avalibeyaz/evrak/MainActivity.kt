@@ -24,7 +24,8 @@ import com.avalibeyaz.evrak.ui.MainScreen
 import com.avalibeyaz.evrak.ui.ImageViewerScreen
 import com.avalibeyaz.evrak.ui.TiffViewerScreen
 import com.avalibeyaz.evrak.ui.PdfViewerScreen
-import com.avalibeyaz.evrak.ui.WordViewerScreen
+import com.avalibeyaz.evrak.ui.WordToPdfLoader
+import com.avalibeyaz.evrak.ui.getMimeType
 import com.avalibeyaz.evrak.ui.UdfViewerScreen
 import com.avalibeyaz.evrak.ui.HtmlViewerScreen
 import com.avalibeyaz.evrak.ui.UnsupportedViewerScreen
@@ -171,7 +172,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                     )
                 }
                 isWord -> {
-                    WordViewerScreen(
+                    WordToPdfLoader(
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
@@ -262,20 +263,8 @@ private fun shareFile(context: android.content.Context, filePath: String) {
         "${context.packageName}.fileprovider",
         file
     )
-    val mimeType = when {
-        filePath.endsWith(".pdf", ignoreCase = true) -> "application/pdf"
-        filePath.endsWith(".docx", ignoreCase = true) -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        filePath.endsWith(".doc", ignoreCase = true) -> "application/msword"
-        filePath.endsWith(".tif", ignoreCase = true) || filePath.endsWith(".tiff", ignoreCase = true) -> "image/tiff"
-        filePath.endsWith(".png", true) -> "image/png"
-        filePath.endsWith(".jpg", true) || filePath.endsWith(".jpeg", true) -> "image/jpeg"
-        filePath.endsWith(".gif", true) -> "image/gif"
-        filePath.endsWith(".udf", true) -> "application/x-udf"
-        filePath.endsWith(".html", true) || filePath.endsWith(".htm", true) -> "text/html"
-        else -> "application/octet-stream"
-    }
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
-        type = mimeType
+        type = getMimeType(filePath)
         putExtra(Intent.EXTRA_STREAM, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }

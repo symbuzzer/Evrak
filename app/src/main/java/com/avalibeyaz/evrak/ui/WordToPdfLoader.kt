@@ -1,9 +1,8 @@
 package com.avalibeyaz.evrak.ui
 
-import android.app.Activity
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -22,7 +21,7 @@ import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WordViewerScreen(
+fun WordToPdfLoader(
     filePath: String,
     displayName: String,
     onBackClick: () -> Unit,
@@ -97,15 +96,9 @@ fun WordViewerScreen(
             scope.launch(Dispatchers.IO) {
                 isConverting = true
                 try {
-                    val pdfFile = tempPdfPath?.let { File(it) } ?: run {
-                        val tempPdf = File(context.cacheDir, "temp_save_${System.currentTimeMillis()}.pdf")
-                        val activity = context.findActivity()
-                        if (activity != null && LibreOfficeManager.convertToPdf(File(filePath), tempPdf, activity)) tempPdf else null
-                    }
-
-                    pdfFile?.let { file ->
+                    tempPdfPath?.let { path ->
                         context.contentResolver.openOutputStream(destUri)?.use { output ->
-                            file.inputStream().use { input -> input.copyTo(output) }
+                            File(path).inputStream().use { input -> input.copyTo(output) }
                         }
                     }
                 } catch (e: Exception) {
@@ -139,9 +132,8 @@ fun WordViewerScreen(
             filePath = tempPdfPath!!,
             displayName = displayName,
             onBackClick = onBackClick,
-            onShareClick = { 
-                showFormatDialog = "share"
-            }
+            onShareClick = { showFormatDialog = "share" },
+            onSaveClick = { showFormatDialog = "save" }
         )
     } else {
         Scaffold(
@@ -183,8 +175,8 @@ fun WordViewerScreen(
                 } else {
                     scope.launch(Dispatchers.IO) {
                         if (usePdf) {
-                            tempPdfPath?.let { 
-                                DocumentConverter.shareFile(context, File(it), "application/pdf")
+                            tempPdfPath?.let { path ->
+                                DocumentConverter.shareFile(context, File(path), "application/pdf")
                             }
                         } else {
                             onShareClick()
@@ -193,5 +185,18 @@ fun WordViewerScreen(
                 }
             }
         )
+    }
+
+    if (isConverting) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = stringResource(id = R.string.converting), color = androidx.compose.ui.graphics.Color.White)
+            }
+        }
     }
 }

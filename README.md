@@ -2,9 +2,9 @@
 [<img width="220" height="66" src="https://github.com/user-attachments/assets/7c2fadad-e134-4566-a5cb-9f4a0f32732a" />](https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak)
 
 
-**Evrak**, avukatların günlük iş akışında en sık karşılaştığı dosya formatlarını —**UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF ve PNG**— tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan bir Android uygulamasıdır.
+**Evrak**, avukatların ve arabulucuların günlük iş akışında en sık karşılaştığı dosya formatlarını **-UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF ve PNG-** tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan bir Android uygulamasıdır.
 
-UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygulamaları aracılığıyla gelen evrakları açmak için genellikle birden fazla farklı uygulamaya ihtiyaç duyulur. Evrak, bu ihtiyacı tek bir yerde, gereksiz karmaşıklık olmadan çözer.
+UYAP, CELSE, e-arabulucu, e-Adalet vb. uygulamalar üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygulamaları aracılığıyla gelen evrakları açmak için genellikle birden fazla farklı uygulamaya ihtiyaç duyulur. Evrak Android, bu ihtiyacı tek bir yerde, gereksiz karmaşıklık olmadan çözer.
 
 <img width="270" height="585" src="https://github.com/user-attachments/assets/11a02fad-be30-4320-ac76-c1ddf80f5ebd" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/b6c6f40f-5b62-49a1-bed8-45e8ea1bdbc3" />
@@ -19,7 +19,7 @@ UYAP ve Celse uygulaması üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygul
 - **Çoklu format desteği:** UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF, PNG
 - **Basit ve hızlı:** Dosyayı aç, görüntüle - başka hiçbir şeye gerek yok
 - **Paylaşma ve kaydetme:** Görüntülenen dosyaları istediğiniz yere kaydedebilir veya doğrudan başka uygulamalarla paylaşabilirsiniz
-- **UDF, TIFF ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında isterseniz bu dosyaları PDF'e çevirebilirsiniz
+- **UDF, TIFF, DOCX, DOC ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında isterseniz bu dosyaları PDF'e çevirebilirsiniz
 - **Yazdırma:** Bütün dosya türlerini Android'in kendi yazdırma özelliği ile doğrudan cihazınızdan yazdırabilirsiniz
 - **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
 - **Filtreleme:** Geçmişteki dosyaları dosya türüne göre filtreleyebilirsiniz
