@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
 fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
     val navController = rememberNavController()
     val historyList by viewModel.historyList.collectAsState()
+    val folderSelectionEnabled by viewModel.folderSelectionEnabled.collectAsState()
     var showAboutDialog by remember { mutableStateOf(false) }
     
     val isExternalIntent = remember(intent) {
@@ -106,7 +107,14 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                 onPrintClick = { evrak, onConvertingChange ->
                     printFile(context, evrak.path, evrak.name, onConvertingChange)
                 },
-                onAboutClick = { showAboutDialog = true }
+                onAboutClick = { showAboutDialog = true },
+                onFilePicked = { uri ->
+                    viewModel.openDocument(uri, context.contentResolver) { evrak ->
+                        navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
+                    }
+                },
+                folderSelectionEnabled = folderSelectionEnabled,
+                onDisableFolderSelection = { viewModel.disableFolderSelection() }
             )
         }
         composable("intent_processor") {

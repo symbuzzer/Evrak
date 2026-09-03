@@ -16,6 +16,7 @@
     <string name="ok">Tamam</string>
     <string name="cancel">İptal</string>
     <string name="open_with">Birlikte aç</string>
+    <string name="open_file">Dosya aç</string>
     <string name="no_other_apps">Bu dosyayı açmak için başka uygulama yok</string>
 
     <!-- New Strings -->
@@ -23,7 +24,8 @@
     <string name="error_file_not_found">Dosya bulunamadı</string>
     <string name="error_unknown">Bilinmeyen hata</string>
     <string name="about_title">Evrak</string>
-    <string name="about_developed_by">Ali BEYAZ tarafından geliştirilmiştir.</string>
+    <string name="about_developed_by"> tarafından geliştirilmiştir.</string>
+    <string name="about_developer_name">Ali BEYAZ</string>
     <string name="about_supported_formats">Desteklenen formatlar:</string>
     <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC HTML JPG GIF PNG</string>
 
@@ -39,9 +41,11 @@
     <string name="unsupported_format_message">Bu dosya formatı şu anda desteklenmiyor.</string>
     <string name="error_udf_read">UDF içeriği okunamadı ya da dosya bozuk.</string>
 
-    <string name="select_format">Format seçin</string>
+    <string name="select_format">Format seçin:</string>
     <string name="format_original">Orijinal format (%1$s)</string>
     <string name="format_pdf">PDF olarak (%1$s)</string>
+    <string name="optimize">Optimize et</string>
+    <string name="optimizing">Optimize ediliyor...</string>
     <string name="converting">Dönüştürülüyor...</string>
     <string name="error_conversion_failed">Dönüştürme hatası: %1$s</string>
 
@@ -84,4 +88,10 @@
     <string name="udf_verification_bar">UYAP Bilişim Sistemindeki bu dokümana http://vatandas.uyap.gov.tr adresinden &lt;strong&gt;%1$s&lt;/strong&gt; ile erişebilirsiniz.</string>
     <string name="udf_invalid_content">Geçersiz içerik</string>
     <string name="udf_no_content">İçerik bulunamadı</string>
+
+    <!-- Folder Selection -->
+    <string name="downloads">İndirilenler</string>
+    <string name="documents">Belgeler</string>
+    <string name="select_folder_header">Klasör seçin:</string>
+    <string name="error_folder_selection_not_supported">Dosya yöneticiniz belirli bir klasörü açmayı desteklemiyor. Bundan sonra doğrudan dosya yöneticisi açılacaktır.</string>
 </resources>

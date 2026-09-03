@@ -1,6 +1,10 @@
 package com.avalibeyaz.evrak.ui
 
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.provider.DocumentsContract
+import android.text.format.DateFormat
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,6 +15,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.*
@@ -21,8 +26,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.avalibeyaz.evrak.R
@@ -46,7 +54,10 @@ fun MainScreen(
     onRefresh: () -> Unit,
     onShareAppClick: () -> Unit,
     onPrintClick: (Evrak, (Boolean) -> Unit) -> Unit,
-    onAboutClick: () -> Unit
+    onAboutClick: () -> Unit,
+    onFilePicked: (Uri) -> Unit,
+    folderSelectionEnabled: Boolean,
+    onDisableFolderSelection: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -64,6 +75,20 @@ fun MainScreen(
     var conversionError by remember { mutableStateOf<String?>(null) }
 
     var selectedFilter by remember { mutableStateOf(EvrakFilter.ALL) }
+    var showFolderDialog by remember { mutableStateOf(false) }
+    var isButtonExpanded by remember { mutableStateOf(false) }
+    var initialUri by remember { mutableStateOf<Uri?>(null) }
+    var buttonWidth by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+
+    // Menü açıkken genişliği takip et, kapandığında büzülmemesi için son genişliği koru
+    var menuWidth by remember { mutableStateOf(0.dp) }
+    if (isButtonExpanded) {
+        val currentWidth = with(density) { buttonWidth.toDp() }
+        if (currentWidth > 0.dp) {
+            menuWidth = currentWidth
+        }
+    }
 
     val availableFilters = remember(historyList) {
         val filters = mutableListOf(EvrakFilter.ALL)
@@ -78,6 +103,45 @@ fun MainScreen(
                 path.endsWith(".gif") || path.endsWith(".png")
             }) filters.add(EvrakFilter.OTHER)
         filters
+    }
+
+    val openDocumentLauncher = rememberLauncherForActivityResult(
+        contract = object : ActivityResultContracts.OpenDocument() {
+            override fun createIntent(context: Context, input: Array<String>): Intent {
+                val intent = super.createIntent(context, input)
+                initialUri?.let {
+                    intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, it)
+                }
+                return intent
+            }
+        }
+    ) { uri ->
+        uri?.let { onFilePicked(it) }
+    }
+
+    fun launchFilePicker(folderUri: Uri? = null) {
+        val mimeTypes = arrayOf(
+            "application/pdf",
+            "image/tiff",
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "text/html",
+            "application/octet-stream" // for UDF
+        )
+        initialUri = folderUri
+        try {
+            openDocumentLauncher.launch(mimeTypes)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, context.getString(R.string.error_folder_selection_not_supported), Toast.LENGTH_LONG).show()
+            onDisableFolderSelection()
+            // Try launching without initial URI
+            initialUri = null
+            openDocumentLauncher.launch(mimeTypes)
+        }
     }
 
     LaunchedEffect(availableFilters) {
@@ -158,6 +222,94 @@ fun MainScreen(
                     Text(text = stringResource(id = R.string.app_name)) 
                 },
                 actions = {
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                        tooltip = {
+                            PlainTooltip {
+                                Text(stringResource(id = R.string.open_file))
+                            }
+                        },
+                        state = rememberTooltipState()
+                    ) {
+                        Box {
+                            Surface(
+                                onClick = { 
+                                    if (folderSelectionEnabled) {
+                                        isButtonExpanded = true
+                                        showFolderDialog = true
+                                    } else {
+                                        launchFilePicker()
+                                    }
+                                },
+                                shape = if (isButtonExpanded) {
+                                    RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+                                } else {
+                                    RoundedCornerShape(12.dp)
+                                },
+                                color = if (isButtonExpanded) MaterialTheme.colorScheme.surfaceVariant else androidx.compose.ui.graphics.Color.Transparent,
+                                modifier = Modifier
+                                    .height(48.dp)
+                                    .onGloballyPositioned { coordinates ->
+                                        buttonWidth = coordinates.size.width
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.FileOpen,
+                                        contentDescription = stringResource(id = R.string.open_file),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    if (folderSelectionEnabled && isButtonExpanded) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = stringResource(id = R.string.select_folder_header),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
+
+                            DropdownMenu(
+                                expanded = showFolderDialog,
+                                onDismissRequest = { 
+                                    showFolderDialog = false
+                                    scope.launch {
+                                        delay(150) // Menünün sönme animasyonu bitene kadar butonu geniş tut
+                                        isButtonExpanded = false
+                                    }
+                                },
+                                offset = DpOffset(x = 0.dp, y = 0.dp),
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
+                                modifier = Modifier.width(menuWidth)
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.downloads)) },
+                                    leadingIcon = { Icon(Icons.Default.Download, contentDescription = null) },
+                                    onClick = {
+                                        showFolderDialog = false
+                                        launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADownload"))
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.documents)) },
+                                    leadingIcon = { Icon(Icons.Default.Description, contentDescription = null) },
+                                    onClick = {
+                                        showFolderDialog = false
+                                        launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments"))
+                                    }
+                                )
+                            }
+                        }
+                    }
                     if (historyList.isNotEmpty()) {
                         TooltipBox(
                             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
@@ -617,7 +769,19 @@ private fun openFileWith(context: android.content.Context, evrak: Evrak) {
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun EvrakItem(evrak: Evrak, onClick: () -> Unit, onLongClick: () -> Unit) {
-    val dateFormat = remember { SimpleDateFormat("dd/MM/yyyy - hh:mm a", Locale.getDefault()) }
+    val context = LocalContext.current
+    val dateText = remember(evrak.dateOpened) {
+        val date = Date(evrak.dateOpened)
+        val dateFormat = DateFormat.getDateFormat(context)
+        
+        // Cihazın 24 saatlik saat formatı ayarını kontrol et
+        val is24Hour = DateFormat.is24HourFormat(context)
+        // 12 saatlik formatta 'a' (ÖÖ/ÖS) her zaman sonda olacak şekilde pattern belirle
+        val timePattern = if (is24Hour) "HH:mm" else "h:mm a"
+        val timeFormat = SimpleDateFormat(timePattern, Locale.getDefault())
+        
+        "${dateFormat.format(date)} - ${timeFormat.format(date)}"
+    }
     
     Card(
         modifier = Modifier
@@ -632,7 +796,7 @@ fun EvrakItem(evrak: Evrak, onClick: () -> Unit, onLongClick: () -> Unit) {
             Text(text = evrak.name, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = dateFormat.format(Date(evrak.dateOpened)),
+                text = dateText,
                 style = MaterialTheme.typography.bodySmall
             )
         }
