@@ -15,7 +15,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.*
@@ -75,20 +74,8 @@ fun MainScreen(
     var conversionError by remember { mutableStateOf<String?>(null) }
 
     var selectedFilter by remember { mutableStateOf(EvrakFilter.ALL) }
-    var showFolderDialog by remember { mutableStateOf(false) }
-    var isButtonExpanded by remember { mutableStateOf(false) }
     var initialUri by remember { mutableStateOf<Uri?>(null) }
-    var buttonWidth by remember { mutableIntStateOf(0) }
-    val density = LocalDensity.current
-
-    // Menü açıkken genişliği takip et, kapandığında büzülmemesi için son genişliği koru
-    var menuWidth by remember { mutableStateOf(0.dp) }
-    if (isButtonExpanded) {
-        val currentWidth = with(density) { buttonWidth.toDp() }
-        if (currentWidth > 0.dp) {
-            menuWidth = currentWidth
-        }
-    }
+    var showFolderMenu by remember { mutableStateOf(false) }
 
     val availableFilters = remember(historyList) {
         val filters = mutableListOf(EvrakFilter.ALL)
@@ -234,68 +221,29 @@ fun MainScreen(
                         state = rememberTooltipState()
                     ) {
                         Box {
-                            Surface(
-                                onClick = { 
-                                    if (folderSelectionEnabled) {
-                                        isButtonExpanded = true
-                                        showFolderDialog = true
-                                    } else {
-                                        launchFilePicker()
-                                    }
-                                },
-                                shape = if (isButtonExpanded) {
-                                    RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+                            IconButton(onClick = { 
+                                if (folderSelectionEnabled) {
+                                    showFolderMenu = true
                                 } else {
-                                    RoundedCornerShape(12.dp)
-                                },
-                                color = if (isButtonExpanded) MaterialTheme.colorScheme.surfaceVariant else androidx.compose.ui.graphics.Color.Transparent,
-                                modifier = Modifier
-                                    .height(48.dp)
-                                    .onGloballyPositioned { coordinates ->
-                                        buttonWidth = coordinates.size.width
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        Icons.Default.FileOpen,
-                                        contentDescription = stringResource(id = R.string.open_file),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    if (folderSelectionEnabled && isButtonExpanded) {
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = stringResource(id = R.string.select_folder_header),
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                            maxLines = 1
-                                        )
-                                    }
+                                    launchFilePicker()
                                 }
+                            }) {
+                                Icon(
+                                    Icons.Default.FileOpen,
+                                    contentDescription = stringResource(id = R.string.open_file),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
-
+                            
                             DropdownMenu(
-                                expanded = showFolderDialog,
-                                onDismissRequest = { 
-                                    showFolderDialog = false
-                                    scope.launch {
-                                        delay(150) // Menünün sönme animasyonu bitene kadar butonu geniş tut
-                                        isButtonExpanded = false
-                                    }
-                                },
-                                offset = DpOffset(x = 0.dp, y = 0.dp),
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
-                                modifier = Modifier.width(menuWidth)
+                                expanded = showFolderMenu,
+                                onDismissRequest = { showFolderMenu = false }
                             ) {
                                 DropdownMenuItem(
                                     text = { Text(stringResource(id = R.string.downloads)) },
                                     leadingIcon = { Icon(Icons.Default.Download, contentDescription = null) },
                                     onClick = {
-                                        showFolderDialog = false
+                                        showFolderMenu = false
                                         launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADownload"))
                                     }
                                 )
@@ -303,7 +251,7 @@ fun MainScreen(
                                     text = { Text(stringResource(id = R.string.documents)) },
                                     leadingIcon = { Icon(Icons.Default.Description, contentDescription = null) },
                                     onClick = {
-                                        showFolderDialog = false
+                                        showFolderMenu = false
                                         launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments"))
                                     }
                                 )

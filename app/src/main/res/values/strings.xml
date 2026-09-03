@@ -44,8 +44,6 @@
     <string name="select_format">Format seçin:</string>
     <string name="format_original">Orijinal format (%1$s)</string>
     <string name="format_pdf">PDF olarak (%1$s)</string>
-    <string name="optimize">Optimize et</string>
-    <string name="optimizing">Optimize ediliyor...</string>
     <string name="converting">Dönüştürülüyor...</string>
     <string name="error_conversion_failed">Dönüştürme hatası: %1$s</string>
 
@@ -92,6 +90,5 @@
     <!-- Folder Selection -->
     <string name="downloads">İndirilenler</string>
     <string name="documents">Belgeler</string>
-    <string name="select_folder_header">Klasör seçin:</string>
     <string name="error_folder_selection_not_supported">Dosya yöneticiniz belirli bir klasörü açmayı desteklemiyor. Bundan sonra doğrudan dosya yöneticisi açılacaktır.</string>
 </resources>
