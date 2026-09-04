@@ -72,6 +72,7 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 | [AndroidX Room](https://developer.android.com/jetpack/androidx/releases/room) (Runtime, KTX, Compiler/KSP) | Apache License 2.0 |
 | [AndroidX DocumentFile](https://developer.android.com/jetpack/androidx/releases/documentfile) | Apache License 2.0 |
 | [AndroidX WebKit](https://developer.android.com/jetpack/androidx/releases/webkit) | Apache License 2.0 |
+| [AndroidX Print](https://developer.android.com/jetpack/androidx/releases/print) | Apache License 2.0 |
 | [Kotlin](https://github.com/JetBrains/kotlin) (dil ve derleyici eklentileri) | Apache License 2.0 |
 | [KSP](https://github.com/google/ksp) (Kotlin Symbol Processing) | Apache License 2.0 |
 | [Android Gradle Plugin](https://developer.android.com/build/releases/gradle-plugin) | Apache License 2.0 |
@@ -81,6 +82,7 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 | Kütüphane                                                                                                                                                    | Lisans |
 |--------------------------------------------------------------------------------------------------------------------------------------------------------------| --- |
 | [Coil](https://github.com/coil-kt/coil) (coil-compose, coil-gif) — görsel yükleme (JPG/PNG/GIF)                                                              | Apache License 2.0 |
+| [PDF.js](https://mozilla.github.io/pdf.js/) — Mozilla tarafından geliştirilen PDF görüntüleme motoru                                                          | Apache License 2.0 |
 | [tiffrenderer](https://github.com/lucf15/TiffRenderer) — TIFF render motoru ve PDF dönüşümü                                                                  | Apache License 2.0 |
 | [LibreOffice Core](https://www.libreoffice.org/) (LibreOfficeKit) — DOC/DOCX görüntüleme ve PDF dönüşümü                                                     | Mozilla Public License 2.0 |
 

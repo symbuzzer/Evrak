@@ -116,7 +116,7 @@ fun MainScreen(
             "application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "text/html",
-            "application/octet-stream" // for UDF
+            "application/octet-stream"
         )
         initialUri = folderUri
         try {
@@ -722,9 +722,7 @@ fun EvrakItem(evrak: Evrak, onClick: () -> Unit, onLongClick: () -> Unit) {
         val date = Date(evrak.dateOpened)
         val dateFormat = DateFormat.getDateFormat(context)
         
-        // Cihazın 24 saatlik saat formatı ayarını kontrol et
         val is24Hour = DateFormat.is24HourFormat(context)
-        // 12 saatlik formatta 'a' (ÖÖ/ÖS) her zaman sonda olacak şekilde pattern belirle
         val timePattern = if (is24Hour) "HH:mm" else "h:mm a"
         val timeFormat = SimpleDateFormat(timePattern, Locale.getDefault())
         

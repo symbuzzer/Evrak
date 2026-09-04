@@ -59,7 +59,6 @@ fun TiffViewerScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pageCount by remember { mutableIntStateOf(0) }
-    var currentPage by remember { mutableIntStateOf(1) }
     var loadError by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
     
@@ -146,10 +145,6 @@ fun TiffViewerScreen(
         scale = (scale * zoomChange).coerceIn(1f, 5f)
     }
 
-    LaunchedEffect(listState.firstVisibleItemIndex) {
-        currentPage = listState.firstVisibleItemIndex + 1
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -158,8 +153,7 @@ fun TiffViewerScreen(
                         Text(text = stringResource(id = R.string.app_name))
                     } else {
                         MarqueeTitle(
-                            title = displayName,
-                            prefix = stringResource(id = R.string.page_format, currentPage, pageCount)
+                            title = displayName
                         )
                     }
                 },

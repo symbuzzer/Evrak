@@ -47,13 +47,9 @@ fun WordToPdfLoader(
                     return@withContext
                 }
 
-                val tempPdf = File(context.cacheDir, "view_temp_${System.currentTimeMillis()}.pdf")
-                val activity = context.findActivity()
-                val success = if (activity != null) {
-                    LibreOfficeManager.convertToPdf(file, tempPdf, activity)
-                } else {
-                    false
-                }
+                val tempDir = File(context.filesDir, "temp_v").apply { if (!exists()) mkdirs() }
+                val tempPdf = File(tempDir, "view_temp_${System.currentTimeMillis()}.pdf")
+                val success = LibreOfficeManager.convertToPdf(file, tempPdf, context)
                 
                 if (success && tempPdf.exists()) {
                     tempPdfPath = tempPdf.absolutePath

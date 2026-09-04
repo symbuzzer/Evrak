@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=no">
+    <title>PDF.js Viewer</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            background-color: #525659;
+            font-family: sans-serif;
+            /* Disable native overflow during zoom to let JS handle it */
+            overflow: auto;
+            /* Prevent smooth scroll interfering with zoom centering */
+            scroll-behavior: auto !important;
+        }
+        #viewer-container {
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Anchor to left for stable zoom math */
+            padding-bottom: 20px;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+        .page {
+            margin: 10px auto; /* Center pages visually within the scaled container */
+            display: block;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            background-color: white;
+            width: 95%;
+            height: auto;
+        }
+        @media print {
+            html, body {
+                background-color: white;
+                margin: 0 !important;
+                padding: 0 !important;
+                height: auto !important;
+            }
+            #viewer-container {
+                padding-bottom: 0 !important;
+                width: 100% !important;
+            }
+            .page {
+                margin: 0 !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                display: block !important;
+                page-break-after: always !important;
+            }
+            .page:last-child {
+                page-break-after: auto !important;
+            }
+            #loading { display: none; }
+        }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Yükleniyor...</div>
+    <div id="error-message" style="display:none; color: #ff5555; padding: 20px; text-align: center;">
+        <p>Bir hata oluştu!</p>
+        <p id="error-details" style="font-size: 14px;"></p>
+    </div>
+    <div id="viewer-container"></div>
+
+    <script>
+        window.onerror = function(msg, url, line) {
+            document.getElementById('loading').style.display = 'none';
+            var err = document.getElementById('error-message');
+            var details = document.getElementById('error-details');
+            err.style.display = 'block';
+            details.innerHTML = msg + '<br><small>' + url + ':' + line + '</small>';
+            return false;
+        };
+
+        // PDF.js loader for both .js and .mjs
+        async function loadPdfJs() {
+            console.log('loadPdfJs started');
+            try {
+                // Try .mjs first (Modern)
+                try {
+                    console.log('Attempting to import pdf.min.mjs');
+                    const module = await import('./pdf.min.mjs');
+                    window['pdfjs-dist/build/pdf'] = module;
+                    window.isMjs = true;
+                    console.log('Loaded as .mjs successfully');
+                } catch (e) {
+                    console.warn('Failed to load as .mjs, trying .js legacy:', e);
+                    // Try .js (Legacy)
+                    const script = document.createElement('script');
+                    script.src = 'pdf.min.js';
+                    window.isMjs = false;
+                    await new Promise((resolve, reject) => {
+                        script.onload = () => { console.log('Loaded pdf.min.js script'); resolve(); };
+                        script.onerror = (err) => { console.error('Failed to load pdf.min.js script'); reject(err); };
+                        document.body.appendChild(script);
+                    });
+                }
+
+                // Now load viewer logic
+                console.log('Loading viewer.js');
+                const viewerScript = document.createElement('script');
+                viewerScript.src = 'viewer.js';
+                document.body.appendChild(viewerScript);
+            } catch (err) {
+                console.error('Critical error in loadPdfJs:', err);
+                window.onerror("PDF.js kütüphanesi yüklenemedi: " + err.message);
+            }
+        }
+
+        loadPdfJs();
+    </script>
+</body>
+</html>

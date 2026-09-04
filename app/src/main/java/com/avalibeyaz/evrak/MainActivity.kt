@@ -31,6 +31,7 @@ import com.avalibeyaz.evrak.ui.HtmlViewerScreen
 import com.avalibeyaz.evrak.ui.UnsupportedViewerScreen
 import com.avalibeyaz.evrak.ui.theme.EvrakTheme
 import com.avalibeyaz.evrak.ui.DocumentConverter
+import com.avalibeyaz.evrak.ui.LibreOfficeManager
 import androidx.lifecycle.lifecycleScope
 import androidx.print.PrintHelper
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +49,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         currentIntent = intent
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            LibreOfficeManager.init(applicationContext)
+        }
+
         setContent {
             EvrakTheme {
                 EvrakApp(viewModel, currentIntent, onFinish = { finish() })
@@ -314,7 +320,13 @@ private fun printFile(
             filePath.endsWith(".gif", true)
 
     if (filePath.endsWith(".pdf", true)) {
-        doPrint(context, file, displayName)
+        if (context is ComponentActivity) {
+            context.lifecycleScope.launch {
+                DocumentConverter.printPdfWithWebView(file, displayName, context, onConvertingChange)
+            }
+        } else {
+            doPrint(context, file, displayName)
+        }
     } else if (isImage) {
         doPrintImage(context, file, displayName)
     } else {

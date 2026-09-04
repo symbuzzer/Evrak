@@ -43,18 +43,18 @@ public final class LibreOfficeKit {
     
     public static native void redirectStdio(boolean state);
 
-    public static synchronized boolean init(Activity activity) {
+    public static synchronized boolean init(Context context) {
         if (initializeDone) {
             return true;
         }
         
         try {
-            AssetManager mgr = activity.getResources().getAssets();
-            String dataDir = activity.getFilesDir().getAbsolutePath(); 
-            File safeCacheDir = new File(activity.getFilesDir(), "lok_cache");
+            AssetManager mgr = context.getAssets();
+            String dataDir = context.getFilesDir().getAbsolutePath(); 
+            File safeCacheDir = new File(context.getFilesDir(), "lok_cache");
             if (!safeCacheDir.exists()) safeCacheDir.mkdirs();
             String cacheDir = safeCacheDir.getAbsolutePath();
-            String apkFile = activity.getPackageResourcePath();
+            String apkFile = context.getPackageResourcePath();
 
             Log.d(TAG, "Initializing LibreOfficeKit with: dataDir=" + dataDir + ", cacheDir=" + cacheDir);
 

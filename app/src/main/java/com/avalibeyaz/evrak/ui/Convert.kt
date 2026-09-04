@@ -1,14 +1,16 @@
 package com.avalibeyaz.evrak.ui
 
-import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfDocument
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.print.PrintResultCallback
+import androidx.webkit.WebViewAssetLoader
 import com.avalibeyaz.evrak.R
 import io.github.lucf15.tiffrenderer.TiffBitmap
 import io.github.lucf15.tiffrenderer.TiffRenderMode
@@ -45,11 +47,10 @@ object DocumentConverter {
                 }
             }
             "doc", "docx" -> {
-                val activity = context?.findActivity()
-                if (activity != null) {
-                    convertWordToPdfWithLibreOffice(inputFile, outputFile, activity)
+                if (context != null) {
+                    convertWordToPdfWithLibreOffice(inputFile, outputFile, context)
                 } else {
-                    val errorMsg = context?.getString(R.string.error_activity_required) ?: "Activity is required for Word conversion."
+                    val errorMsg = "Context is required for Word conversion."
                     ConversionResult.Error(errorMsg)
                 }
             }
@@ -67,6 +68,65 @@ object DocumentConverter {
                 ConversionResult.Error(errorMsg)
             }
         }
+    }
+
+    suspend fun printPdfWithWebView(
+        file: File,
+        displayName: String,
+        context: Context,
+        onStatusChange: (Boolean) -> Unit = {}
+    ) = withContext(Dispatchers.Main) {
+        onStatusChange(true)
+        val webView = WebView(context)
+        
+        // AssetLoader must be set for the hidden WebView too
+        val assetLoader = WebViewAssetLoader.Builder()
+            .setDomain("appassets.androidplatform.net")
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
+            .addPathHandler("/internal/", SafeFileHandler(context.filesDir))
+            .addPathHandler("/cache/", SafeFileHandler(context.cacheDir))
+            .build()
+
+        webView.settings.apply {
+            javaScriptEnabled = true
+            allowFileAccess = true
+            allowContentAccess = true
+            domStorageEnabled = true
+        }
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(
+                view: WebView?,
+                request: WebResourceRequest
+            ): WebResourceResponse? {
+                return assetLoader.shouldInterceptRequest(request.url)
+            }
+
+            override fun onPageFinished(view: WebView?, url: String?) {
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    onStatusChange(false)
+                    val printManager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
+                    val jobName = "${context.getString(R.string.app_name)} - $displayName"
+                    val adapter = webView.createPrintDocumentAdapter(jobName)
+                    printManager.print(jobName, adapter, null)
+                }, 3000)
+            }
+        }
+
+        val viewerUrl = "https://appassets.androidplatform.net/assets/pdfjs/viewer.html"
+        val fileUrl = when {
+            file.absolutePath.startsWith(context.cacheDir.absolutePath) -> {
+                val relativePath = file.absolutePath.substring(context.cacheDir.absolutePath.length)
+                "https://appassets.androidplatform.net/cache${relativePath.split('/').joinToString("/") { android.net.Uri.encode(it) }}"
+            }
+            file.absolutePath.startsWith(context.filesDir.absolutePath) -> {
+                val relativePath = file.absolutePath.substring(context.filesDir.absolutePath.length)
+                "https://appassets.androidplatform.net/internal${relativePath.split('/').joinToString("/") { android.net.Uri.encode(it) }}"
+            }
+            else -> "https://appassets.androidplatform.net/internal/${android.net.Uri.encode(file.name)}"
+        }
+        
+        webView.loadUrl("$viewerUrl?file=$fileUrl")
     }
 
     suspend fun convertHtmlToPdfWithWebView(
@@ -93,8 +153,6 @@ object DocumentConverter {
             mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
             offscreenPreRaster = true
         }
-
-        // webView.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null)
 
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -149,7 +207,36 @@ object DocumentConverter {
         }
 
         try {
-            val htmlContent = inputFile.readText(Charsets.UTF_8)
+            var htmlContent = inputFile.readText(Charsets.UTF_8)
+            
+            val fontBase64 = try {
+                context.assets.open("unpack/user/fonts/LiberationSerif-Regular.ttf").use { input ->
+                    android.util.Base64.encodeToString(input.readBytes(), android.util.Base64.NO_WRAP)
+                }
+            } catch (e: Exception) {
+                null
+            }
+
+            val fontFix = if (fontBase64 != null) {
+                """
+                <style>
+                @font-face {
+                    font-family: 'EmbeddedLiberation';
+                    src: url(data:font/ttf;base64,$fontBase64) format('truetype');
+                }
+                * {
+                    font-family: 'EmbeddedLiberation', serif !important;
+                }
+                </style>
+                """.trimIndent()
+            } else ""
+            
+            if (htmlContent.contains("<head>", ignoreCase = true)) {
+                htmlContent = htmlContent.replace("<head>", "<head>$fontFix", ignoreCase = true)
+            } else {
+                htmlContent = "$fontFix$htmlContent"
+            }
+            
             webView.loadDataWithBaseURL("https://evrak.app/", htmlContent, "text/html", "UTF-8", null)
         } catch (e: Exception) {
             if (!deferred.isCompleted) {
@@ -226,19 +313,19 @@ object DocumentConverter {
     private suspend fun convertWordToPdfWithLibreOffice(
         inputFile: File,
         outputFile: File,
-        activity: Activity
+        context: Context
     ): ConversionResult {
         return withContext(Dispatchers.IO) {
             try {
-                val success = LibreOfficeManager.convertToPdf(inputFile, outputFile, activity)
+                val success = LibreOfficeManager.convertToPdf(inputFile, outputFile, context)
                 if (success) {
                     ConversionResult.Success(outputFile)
                 } else {
-                    ConversionResult.Error(activity.getString(R.string.error_libreoffice_failed))
+                    ConversionResult.Error(context.getString(R.string.error_libreoffice_failed))
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Word -> PDF conversion error", e)
-                ConversionResult.Error(activity.getString(R.string.error_word_conversion_failed, e.message))
+                ConversionResult.Error(context.getString(R.string.error_word_conversion_failed, e.message))
             }
         }
     }

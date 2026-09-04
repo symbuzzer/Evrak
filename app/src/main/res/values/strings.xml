@@ -11,7 +11,6 @@
     <string name="confirm_delete">Silmek istediğinize emin misiniz?</string>
     <string name="rename_title">Dosyayı yeniden adlandır</string>
     <string name="rename_hint">Yeni dosya adı</string>
-    <string name="page_format">%1$d / %2$d</string>
     <string name="no_history">Henüz görüntülenen belge yok</string>
     <string name="ok">Tamam</string>
     <string name="cancel">İptal</string>
@@ -19,7 +18,6 @@
     <string name="open_file">Dosya aç</string>
     <string name="no_other_apps">Bu dosyayı açmak için başka uygulama yok</string>
 
-    <!-- New Strings -->
     <string name="error">Hata</string>
     <string name="error_file_not_found">Dosya bulunamadı</string>
     <string name="error_unknown">Bilinmeyen hata</string>
@@ -50,7 +48,6 @@
     <string name="error_tiff_open_failed">TIFF dosyası açılamadı: %1$s</string>
     <string name="share_app_text">Evrak uygulamasını indirin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
 
-    <!-- Filters -->
     <string name="filter_all">Tümü</string>
     <string name="filter_udf">UDF</string>
     <string name="filter_pdf">PDF</string>
@@ -58,10 +55,8 @@
     <string name="filter_word">Word</string>
     <string name="filter_other">Diğer</string>
 
-    <!-- Conversion Errors -->
     <string name="error_input_file_not_found">Girdi dosyası bulunamadı: %1$s</string>
     <string name="error_context_required">Dönüştürme için context gereklidir</string>
-    <string name="error_activity_required">Dönüştürme için activity gereklidir</string>
     <string name="error_unsupported_type">Desteklenmeyen dosya türü: %1$s</string>
     <string name="error_pdf_close_failed">PDF kapatılamadı: %1$s</string>
     <string name="error_pdf_write_failed">PDF yazma hatası: %1$s</string>
@@ -87,7 +82,6 @@
     <string name="udf_invalid_content">Geçersiz içerik</string>
     <string name="udf_no_content">İçerik bulunamadı</string>
 
-    <!-- Folder Selection -->
     <string name="downloads">İndirilenler</string>
     <string name="documents">Belgeler</string>
     <string name="error_folder_selection_not_supported">Dosya yöneticiniz belirli bir klasörü açmayı desteklemiyor. Bundan sonra doğrudan dosya yöneticisi açılacaktır.</string>
