@@ -194,7 +194,7 @@ object UdfHtmlConverter {
         private var contentPool: String = ""
         private var resolverStyleName: String = "default"
         private val styles = mutableMapOf<String, UdfStyle>()
-        private val numberedListCounters = mutableMapOf<String, Int>()
+        private val numberedListCounters = mutableMapOf<String, MutableMap<Int, Int>>()
         private val dataMap = mutableMapOf<String, String>()
         private var webId: String? = null
         private var defaultHanging: Double = 142.0
@@ -379,10 +379,12 @@ object UdfHtmlConverter {
             p.attrOrNull("SpaceBelow")?.toDoubleOrNull()?.let { style.append("margin-bottom:${it}pt;") }
             p.attrOrNull("LineSpacing")?.toDoubleOrNull()?.let { style.append("line-height:${1.0 + it};") }
 
+            val listLevel = p.attrOrNull("ListLevel")?.toIntOrNull() ?: 1
+            val secListType = p.attrOrNull("SecListTypeLevel$listLevel")
             val isNumbered = p.attrOrNull("Numbered")?.toBoolean() == true
-            val isBulleted = p.attrOrNull("Bulleted")?.toBoolean() == true
+            val isBulleted = p.attrOrNull("Bulleted")?.toBoolean() == true || secListType?.startsWith("BULLET_TYPE_") == true
             val hangingAttr = p.attrOrNull("Hanging")?.toDoubleOrNull() ?: 0.0
-            
+
             var hasTab = false
             forEachChildElement(p) { child ->
                 if (child.tagName == "tab") hasTab = true
@@ -397,15 +399,25 @@ object UdfHtmlConverter {
                 val body: String
 
                 if (isNumbered || isBulleted) {
-                    marker = if (isNumbered) {
-                        val listId = p.attrOrNull("ListId") ?: "default"
-                        val n = (numberedListCounters[listId] ?: 0) + 1
-                        numberedListCounters[listId] = n
-                        htmlEscape(numberMarker(n, p.attrOrNull("NumberType")))
+                    val listId = p.attrOrNull("ListId") ?: "default"
+                    val levelCounters = numberedListCounters.getOrPut(listId) { mutableMapOf() }
+
+                    marker = if (isBulleted) {
+                        htmlEscape(bulletMarker(secListType ?: p.attrOrNull("BulletType")))
                     } else {
-                        htmlEscape(bulletMarker(p.attrOrNull("BulletType")))
+                        val n = (levelCounters[listLevel] ?: 0) + 1
+                        levelCounters[listLevel] = n
+                        
+                        // Reset sub-level counters when parent level increments
+                        val levelsToRemove = levelCounters.keys.filter { it > listLevel }
+                        levelsToRemove.forEach { levelCounters.remove(it) }
+
+                        htmlEscape(numberMarker(n, p.attrOrNull("NumberType")))
                     }
-                    markerWidth = leftIndentAttr ?: 25.0
+
+                    markerWidth = 20.0
+                    leftIndentAttr?.let { style.append("padding-left:${it}pt;") }
+
                     val inner = StringBuilder()
                     forEachChildElement(p) { child -> inner.append(renderInlineElement(child)) }
                     body = inner.toString()
