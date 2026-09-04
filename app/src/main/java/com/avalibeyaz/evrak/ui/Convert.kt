@@ -91,9 +91,10 @@ object DocumentConverter {
             @Suppress("DEPRECATION")
             allowUniversalAccessFromFileURLs = true
             mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            offscreenPreRaster = true
         }
 
-        webView.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null)
+        // webView.setLayerType(android.view.View.LAYER_TYPE_SOFTWARE, null)
 
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -102,7 +103,7 @@ object DocumentConverter {
                     try {
                         val printAttributes = android.print.PrintAttributes.Builder()
                             .setMediaSize(android.print.PrintAttributes.MediaSize.ISO_A4)
-                            .setResolution(android.print.PrintAttributes.Resolution("pdf", "pdf", 600, 600))
+                            .setResolution(android.print.PrintAttributes.Resolution("pdf", "pdf", 720, 720))
                             .setMinMargins(android.print.PrintAttributes.Margins.NO_MARGINS)
                             .build()
 

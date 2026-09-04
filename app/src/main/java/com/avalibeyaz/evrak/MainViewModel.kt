@@ -42,11 +42,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         sharedPrefs.edit().putBoolean("folder_selection_enabled", false).apply()
     }
 
-    fun openDocument(uri: Uri, resolver: ContentResolver? = null, onOpened: (Evrak) -> Unit) {
+    fun openDocument(
+        uri: Uri, 
+        resolver: ContentResolver? = null, 
+        onError: (String) -> Unit = {},
+        onOpened: (Evrak) -> Unit
+    ) {
         viewModelScope.launch {
-            val evrak = repository.addEvrakFromUri(uri, resolver)
-            if (evrak != null) {
-                onOpened(evrak)
+            try {
+                val evrak = repository.addEvrakFromUri(uri, resolver)
+                if (evrak != null) {
+                    onOpened(evrak)
+                } else {
+                    onError(getApplication<Application>().getString(R.string.error_unknown))
+                }
+            } catch (e: Exception) {
+                onError(e.localizedMessage ?: getApplication<Application>().getString(R.string.error_unknown))
             }
         }
     }

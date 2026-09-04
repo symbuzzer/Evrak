@@ -109,9 +109,16 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                 },
                 onAboutClick = { showAboutDialog = true },
                 onFilePicked = { uri ->
-                    viewModel.openDocument(uri, context.contentResolver) { evrak ->
-                        navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
-                    }
+                    viewModel.openDocument(
+                        uri = uri, 
+                        resolver = context.contentResolver,
+                        onError = { error ->
+                            android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_LONG).show()
+                        },
+                        onOpened = { evrak ->
+                            navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
+                        }
+                    )
                 },
                 folderSelectionEnabled = folderSelectionEnabled,
                 onDisableFolderSelection = { viewModel.disableFolderSelection() }
@@ -219,6 +226,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
     }
 
     val activityContentResolver = androidx.compose.ui.platform.LocalContext.current.contentResolver
+    val context = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(intent) {
         intent?.let {
             if (it.getBooleanExtra("from_open_with", false)) {
@@ -254,11 +262,23 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                 } catch (_: Exception) {
                 }
                 
-                viewModel.openDocument(fileUri, activityContentResolver) { evrak ->
-                    navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}") {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                viewModel.openDocument(
+                    uri = fileUri, 
+                    resolver = activityContentResolver,
+                    onError = { error ->
+                        android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_LONG).show()
+                        if (navController.currentDestination?.route == "intent_processor") {
+                            navController.navigate("history") {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            }
+                        }
+                    },
+                    onOpened = { evrak ->
+                        navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}") {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
                     }
-                }
+                )
             }
         }
     }

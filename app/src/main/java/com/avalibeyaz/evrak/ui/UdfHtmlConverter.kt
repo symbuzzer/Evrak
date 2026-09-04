@@ -86,7 +86,7 @@ object UdfHtmlConverter {
 
         return """
             <!DOCTYPE html>
-            <html>
+            <html lang="tr">
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=${pageWidthPt.toInt()}, user-scalable=yes">
@@ -100,7 +100,7 @@ object UdfHtmlConverter {
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-                        font-family: 'Times New Roman', serif;
+                        font-family: 'Times New Roman', 'Liberation Serif', serif;
                     }
                     .udf-page {
                         background-color: #ffffff;
@@ -544,7 +544,11 @@ object UdfHtmlConverter {
             val size = el.attrOrNull("size") ?: defaultStyle().size
             
             family?.let { 
-                val fontStack = if (it.equals("Arial", true)) "Arial, Helvetica, sans-serif" else "'$it'"
+                val fontStack = when {
+                    it.equals("Arial", true) -> "Arial, 'Liberation Sans', Helvetica, sans-serif"
+                    it.equals("Times New Roman", true) -> "'Times New Roman', 'Liberation Serif', serif"
+                    else -> "'$it', 'Liberation Serif', serif"
+                }
                 runStyle.append("font-family:$fontStack;") 
             }
             size?.toDoubleOrNull()?.let { runStyle.append("font-size:${it}pt;") }

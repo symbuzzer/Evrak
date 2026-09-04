@@ -41,7 +41,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         val cacheFile = copyUriToInternalStorageWithSniffing(uri, cr) { sniffedExt ->
             if (sniffedExt != null) {
                 val isExistingUdf = extension?.equals(".udf", ignoreCase = true) == true
-                val isSniffedZip = sniffedExt.equals(".docx", ignoreCase = true)
+                val isSniffedZip = sniffedExt.equals(".docx", ignoreCase = true) || sniffedExt.equals(".zip", ignoreCase = true)
                 
                 if (isExistingUdf && isSniffedZip) return@copyUriToInternalStorageWithSniffing
                 
@@ -56,7 +56,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             }
         } ?: return null
         
-        if (extension == ".docx") {
+        if (extension == ".docx" || extension == ".zip") {
             val deepExt = deepSniffZip(cacheFile)
             if (deepExt != null) {
                 extension = deepExt
@@ -248,7 +248,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         if (header.size >= 4 && 
             header[0] == 0x50.toByte() && header[1] == 0x4B.toByte() && 
             header[2] == 0x03.toByte() && header[3] == 0x04.toByte()) {
-            return ".docx"
+            return ".zip"
         }
 
         if (header.size >= 4 && 

@@ -35,6 +35,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.avalibeyaz.evrak.R
@@ -326,15 +327,18 @@ fun PdfViewerScreen(
 
 @Composable
 fun PdfPageItem(renderer: PdfRenderer?, index: Int, mutex: Mutex) {
-    val bitmapState = produceState<Bitmap?>(initialValue = null, renderer, index) {
+    val density = LocalDensity.current.density
+    val renderScale = (density * 2.0f).coerceAtLeast(3.0f)
+    
+    val bitmapState = produceState<Bitmap?>(initialValue = null, renderer, index, renderScale) {
         if (renderer == null) return@produceState
         value = withContext(Dispatchers.IO) {
             mutex.withLock {
                 try {
                     val page = renderer.openPage(index)
                     val bitmap = Bitmap.createBitmap(
-                        (page.width * 1.5).toInt(),
-                        (page.height * 1.5).toInt(),
+                        (page.width * renderScale).toInt(),
+                        (page.height * renderScale).toInt(),
                         Bitmap.Config.ARGB_8888
                     )
                     page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
