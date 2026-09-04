@@ -21,3 +21,14 @@
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+
+# TIFF Renderer JNI rules
+-keep class io.github.lucf15.tiffrenderer.** {
+    *;
+}
+-keepclassmembers class io.github.lucf15.tiffrenderer.** {
+    *;
+}
+-keepclassmembernames class io.github.lucf15.tiffrenderer.** {
+    *;
+}
