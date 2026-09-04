@@ -183,16 +183,5 @@ fun WordToPdfLoader(
         )
     }
 
-    if (isConverting) {
-        Box(
-            modifier = Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.3f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = stringResource(id = R.string.converting), color = androidx.compose.ui.graphics.Color.White)
-            }
-        }
-    }
+    ConversionOverlay(isConverting = isConverting)
 }

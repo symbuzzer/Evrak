@@ -16,7 +16,7 @@ ksp = "2.3.11"
 documentfile = "1.0.1"
 coil = "2.7.0"
 webkit = "1.12.1"
-tiff-renderer = "2.2.0"
+tiff-renderer = "3.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

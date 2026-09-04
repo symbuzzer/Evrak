@@ -284,21 +284,32 @@ object DocumentConverter {
         }
     }
 
-    fun convertTiffToPdf(inputFile: File, outputFile: File, context: Context? = null): ConversionResult {
+    suspend fun convertTiffToPdf(inputFile: File, outputFile: File, context: Context? = null): ConversionResult {
         val pdfDocument = PdfDocument()
         var pfd: ParcelFileDescriptor? = null
         var tiffRenderer: TiffRenderer? = null
         try {
             pfd = ParcelFileDescriptor.open(inputFile, ParcelFileDescriptor.MODE_READ_ONLY)
             tiffRenderer = TiffRenderer(pfd)
-            for (pageIndex in 0 until tiffRenderer.pageCount) {
+            val pages = tiffRenderer.pageCount()
+            for (pageIndex in 0 until pages) {
                 val page = tiffRenderer.openPage(pageIndex)
-                val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
-                page.render(TiffBitmap(bitmap), null, null, TiffRenderMode.FOR_DISPLAY)
-                val pdfPage = pdfDocument.startPage(PdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, pageIndex + 1).create())
-                pdfPage.canvas.drawBitmap(bitmap, 0f, 0f, null)
-                pdfDocument.finishPage(pdfPage)
-                page.close(); bitmap.recycle()
+                try {
+                    // Downsampling to prevent OOM during PDF conversion
+                    val maxDimension = 3000f
+                    val scale = (maxDimension / maxOf(page.width, page.height)).coerceAtMost(1f)
+                    val targetWidth = (page.width * scale).toInt().coerceAtLeast(1)
+                    val targetHeight = (page.height * scale).toInt().coerceAtLeast(1)
+                    
+                    val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+                    page.render(TiffBitmap(bitmap), null, null, TiffRenderMode.FOR_DISPLAY)
+                    val pdfPage = pdfDocument.startPage(PdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, pageIndex + 1).create())
+                    pdfPage.canvas.drawBitmap(bitmap, 0f, 0f, null)
+                    pdfDocument.finishPage(pdfPage)
+                    bitmap.recycle()
+                } finally {
+                    try { page.close() } catch (_: Exception) {}
+                }
             }
             writePdf(pdfDocument, outputFile)
             return ConversionResult.Success(outputFile)
@@ -306,7 +317,8 @@ object DocumentConverter {
             val msg = context?.getString(R.string.error_tiff_error, e.message) ?: "TIFF error: ${e.message}"
             return ConversionResult.Error(msg, e)
         } finally {
-            tiffRenderer?.close(); pfd?.close(); pdfDocument.close()
+            try { tiffRenderer?.close() } catch (_: Exception) {}
+            pfd?.close(); pdfDocument.close()
         }
     }
 

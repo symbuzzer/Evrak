@@ -44,9 +44,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.NonCancellable
 import java.io.File
 import android.content.Intent
 import android.net.Uri
+import android.util.LruCache
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,30 +70,35 @@ fun TiffViewerScreen(
 
     var renderer by remember { mutableStateOf<TiffRenderer?>(null) }
     val mutex = remember { Mutex() }
+    val bitmapCache = remember { 
+        LruCache<Int, Bitmap>(10) // Cache last 10 pages
+    }
 
-    DisposableEffect(filePath) {
+    LaunchedEffect(filePath) {
         val file = File(filePath)
-        if (!file.exists()) return@DisposableEffect onDispose {}
-        
-        var pfd: ParcelFileDescriptor? = null
-        var tiffRenderer: TiffRenderer? = null
-        
-        try {
-            pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
-            tiffRenderer = TiffRenderer(pfd)
-            renderer = tiffRenderer
-            pageCount = tiffRenderer.pageCount
-        } catch (e: Exception) {
-            e.printStackTrace()
-            val errorMessage = context.getString(R.string.error_tiff_open_failed, e.message ?: "")
-            loadError = errorMessage
-            tiffRenderer?.close()
-            pfd?.close()
-        }
+        if (!file.exists()) return@LaunchedEffect
 
-        onDispose {
-            renderer?.close()
-            pfd?.close()
+        withContext(Dispatchers.IO) {
+            var pfd: ParcelFileDescriptor? = null
+            var tiffRenderer: TiffRenderer? = null
+
+            try {
+                pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+                tiffRenderer = TiffRenderer(pfd)
+                renderer = tiffRenderer
+                pageCount = tiffRenderer.pageCount()
+                
+                awaitCancellation()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                loadError = context.getString(R.string.error_tiff_open_failed, e.message ?: "")
+            } finally {
+                withContext(NonCancellable) {
+                    renderer = null
+                    try { tiffRenderer?.close() } catch (_: Exception) {}
+                    try { pfd?.close() } catch (_: Exception) {}
+                }
+            }
         }
     }
 
@@ -208,16 +216,6 @@ fun TiffViewerScreen(
         ) {
             val viewHeight = maxHeight
             
-            if (isConverting) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = stringResource(id = R.string.converting))
-                    }
-                }
-            }
-
             if (loadError != null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
@@ -255,7 +253,7 @@ fun TiffViewerScreen(
                             verticalArrangement = if (pageCount == 1) Arrangement.Center else Arrangement.spacedBy(16.dp)
                         ) {
                             items(pageCount) { index ->
-                                TiffPageItem(renderer = renderer, index = index, mutex = mutex)
+                                TiffPageItem(renderer = renderer, index = index, mutex = mutex, cache = bitmapCache)
                             }
                         }
                     }
@@ -338,6 +336,8 @@ fun TiffViewerScreen(
                     }
                 }
             }
+            
+            ConversionOverlay(isConverting = isConverting)
         }
     }
 
@@ -379,18 +379,29 @@ fun TiffViewerScreen(
 
 
 @Composable
-fun TiffPageItem(renderer: TiffRenderer?, index: Int, mutex: Mutex) {
-    val bitmapState = produceState<Bitmap?>(initialValue = null, renderer, index) {
-        if (renderer == null) return@produceState
+fun TiffPageItem(renderer: TiffRenderer?, index: Int, mutex: Mutex, cache: LruCache<Int, Bitmap>) {
+    val bitmapState = produceState<Bitmap?>(initialValue = cache.get(index), renderer, index) {
+        if (renderer == null || value != null) return@produceState
         value = withContext(Dispatchers.IO) {
             mutex.withLock {
                 try {
                     val page = renderer.openPage(index)
-                    val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
-                    val tiffBitmap = TiffBitmap(bitmap)
-                    page.render(tiffBitmap, null, null, TiffRenderMode.FOR_DISPLAY)
-                    page.close()
-                    bitmap
+                    try {
+                        // Downsampling to prevent OOM on real devices
+                        val maxDimension = 2048f
+                        val scale = (maxDimension / maxOf(page.width, page.height)).coerceAtMost(1f)
+                        val targetWidth = (page.width * scale).toInt().coerceAtLeast(1)
+                        val targetHeight = (page.height * scale).toInt().coerceAtLeast(1)
+                        
+                        val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+                        val tiffBitmap = TiffBitmap(bitmap)
+                        page.render(tiffBitmap, null, null, TiffRenderMode.FOR_DISPLAY)
+                        
+                        cache.put(index, bitmap)
+                        bitmap
+                    } finally {
+                        try { page.close() } catch (_: Exception) {}
+                    }
                 } catch (e: Throwable) {
                     e.printStackTrace()
                     null
