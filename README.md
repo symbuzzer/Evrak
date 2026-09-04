@@ -39,9 +39,9 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 - ✅ **Açık kaynak kodlu**
 - ✅ **Hiçbir izin istemez** — bildirim izni dahil, uygulamanın çalışması için herhangi bir Android izni gerekmez
 
-## Celse Android uygulaması entegrasyonu
+## CELSE Android uygulaması entegrasyonu
 
-Evrak uygulamasının, Celse ile Uyap Doküman Editör'ü uygulaması olmadan doğrudan çalışabilmesi için [şu adımları izleyin.](https://github.com/symbuzzer/UDE_stub)
+Evrak uygulamasının, CELSE ile Uyap Doküman Editör'ü uygulaması olmadan doğrudan çalışabilmesi için [şu adımları izleyin.](https://github.com/symbuzzer/UDE_stub)
 
 
 ## Desteklenen Dosya Formatları
