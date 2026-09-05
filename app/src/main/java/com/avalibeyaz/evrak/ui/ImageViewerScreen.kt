@@ -23,6 +23,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.IntSize
 import coil.compose.AsyncImage
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
@@ -41,21 +43,14 @@ fun ImageViewerScreen(
     onShareClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val file = File(filePath)
 
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     
-    var isConverting by remember { mutableStateOf(false) }
-    var showFormatDialog by remember { mutableStateOf<String?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
     val animatedScale by animateFloatAsState(targetValue = scale, label = "scale")
     val animatedOffset by animateOffsetAsState(targetValue = offset, label = "offset")
-    val state = rememberTransformableState { zoomChange, offsetChange, _ ->
-        scale = (scale * zoomChange).coerceIn(1f, 5f)
-        offset += offsetChange
-    }
 
     val saveLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument(
@@ -100,7 +95,7 @@ fun ImageViewerScreen(
                         },
                         state = rememberTooltipState()
                     ) {
-                        IconButton(onClick = { showFormatDialog = "save" }) {
+                        IconButton(onClick = { saveLauncher.launch(displayName) }) {
                             Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
                         }
                     }
@@ -115,7 +110,7 @@ fun ImageViewerScreen(
                         },
                         state = rememberTooltipState()
                     ) {
-                        IconButton(onClick = { showFormatDialog = "share" }) {
+                        IconButton(onClick = onShareClick) {
                             Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
                         }
                     }
@@ -123,43 +118,65 @@ fun ImageViewerScreen(
             )
         }
     ) { padding ->
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onDoubleTap = {
-                            if (scale > 1.1f) {
-                                scale = 1f
-                                offset = Offset.Zero
-                            } else {
-                                scale = 3f
-                                offset = Offset.Zero
-                            }
-                        }
-                    )
-                }
-                .transformable(state = state),
-            contentAlignment = Alignment.Center
         ) {
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(file)
-                    .decoderFactory(ImageDecoderDecoder.Factory())
-                    .build(),
-                contentDescription = null,
+            val maxWidth = constraints.maxWidth.toFloat()
+            val maxHeight = constraints.maxHeight.toFloat()
+
+            val state = rememberTransformableState { zoomChange, offsetChange, _ ->
+                val newScale = (scale * zoomChange).coerceIn(1f, 5f)
+                val extraWidth = (maxWidth * newScale - maxWidth).coerceAtLeast(0f)
+                val extraHeight = (maxHeight * newScale - maxHeight).coerceAtLeast(0f)
+
+                val maxX = extraWidth / 2
+                val maxY = extraHeight / 2
+
+                scale = newScale
+                offset = Offset(
+                    x = (offset.x + offsetChange.x).coerceIn(-maxX, maxX),
+                    y = (offset.y + offsetChange.y).coerceIn(-maxY, maxY)
+                )
+            }
+
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer(
-                        scaleX = animatedScale,
-                        scaleY = animatedScale,
-                        translationX = animatedOffset.x,
-                        translationY = animatedOffset.y
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                if (scale > 1.1f) {
+                                    scale = 1f
+                                    offset = Offset.Zero
+                                } else {
+                                    scale = 3f
+                                    offset = Offset.Zero
+                                }
+                            }
+                        )
+                    }
+                    .transformable(state = state),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(file)
+                        .decoderFactory(ImageDecoderDecoder.Factory())
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(
+                            scaleX = animatedScale,
+                            scaleY = animatedScale,
+                            translationX = animatedOffset.x,
+                            translationY = animatedOffset.y
+                        )
                 )
-            )
-
-            ConversionOverlay(isConverting = isConverting)
+            }
         }
 
         loadError?.let { error ->
@@ -174,73 +191,5 @@ fun ImageViewerScreen(
                 }
             )
         }
-    }
-
-    val savePdfLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/pdf")
-    ) { uri ->
-        uri?.let { destUri ->
-            scope.launch(Dispatchers.IO) {
-                isConverting = true
-                try {
-                    val pdfName = displayName.substringBeforeLast(".") + ".pdf"
-                    val tempPdf = File(context.cacheDir, pdfName)
-                    val result = DocumentConverter.convert(File(filePath), tempPdf, context)
-                    if (result is DocumentConverter.ConversionResult.Success) {
-                        context.contentResolver.openOutputStream(destUri)?.use { output ->
-                            tempPdf.inputStream().use { input -> input.copyTo(output) }
-                        }
-                    } else if (result is DocumentConverter.ConversionResult.Error) {
-                        withContext(Dispatchers.Main) {
-                            loadError = context.getString(R.string.error_conversion_failed, result.message)
-                        }
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                } finally {
-                    isConverting = false
-                }
-            }
-        }
-    }
-
-    if (showFormatDialog != null) {
-        val ext = filePath.substringAfterLast(".").uppercase()
-        FormatSelectionDialog(
-            extension = ext,
-            onDismiss = { showFormatDialog = null },
-            onFormatSelected = { usePdf ->
-                if (showFormatDialog == "save") {
-                    if (usePdf) {
-                        val newName = displayName.substringBeforeLast(".") + ".pdf"
-                        savePdfLauncher.launch(newName)
-                    } else {
-                        saveLauncher.launch(displayName)
-                    }
-                } else {
-                    if (usePdf) {
-                        scope.launch(Dispatchers.IO) {
-                            isConverting = true
-                            try {
-                                val pdfName = displayName.substringBeforeLast(".") + ".pdf"
-                                val tempPdf = File(context.cacheDir, pdfName)
-                                val result = DocumentConverter.convert(File(filePath), tempPdf, context)
-                                if (result is DocumentConverter.ConversionResult.Success) {
-                                    DocumentConverter.shareFile(context, tempPdf, "application/pdf")
-                                } else if (result is DocumentConverter.ConversionResult.Error) {
-                                    withContext(Dispatchers.Main) {
-                                        loadError = context.getString(R.string.error_conversion_failed, result.message)
-                                    }
-                                }
-                            } finally {
-                                isConverting = false
-                            }
-                        }
-                    } else {
-                        onShareClick()
-                    }
-                }
-            }
-        )
     }
 }

@@ -120,7 +120,10 @@ fun WordToPdfLoader(
             }
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                ConversionOverlay(
+                    isConverting = true,
+                    message = stringResource(id = R.string.loading)
+                )
             }
         }
     } else if (tempPdfPath != null) {

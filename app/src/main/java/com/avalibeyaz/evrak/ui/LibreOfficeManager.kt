@@ -131,14 +131,12 @@ object LibreOfficeManager {
             try {
                 var content = fontsConf.readText()
                 
-                // Patch cache directory
                 val oldCache = "/data/data/org.documentfoundation.libreoffice/fontconfig"
                 val newCache = cacheDir.absolutePath
                 if (content.contains(oldCache)) {
                     content = content.replace(oldCache, newCache)
                 }
 
-                // Add application fonts directory and explicit aliases
                 val appFontsDir = File(baseDir, "user/fonts").absolutePath
                 if (!content.contains(appFontsDir)) {
                     val fontAliases = """

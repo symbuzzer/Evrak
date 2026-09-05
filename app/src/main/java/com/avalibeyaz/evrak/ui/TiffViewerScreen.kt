@@ -71,7 +71,7 @@ fun TiffViewerScreen(
     var renderer by remember { mutableStateOf<TiffRenderer?>(null) }
     val mutex = remember { Mutex() }
     val bitmapCache = remember { 
-        LruCache<Int, Bitmap>(10) // Cache last 10 pages
+        LruCache<Int, Bitmap>(10)
     }
 
     LaunchedEffect(filePath) {
@@ -387,7 +387,6 @@ fun TiffPageItem(renderer: TiffRenderer?, index: Int, mutex: Mutex, cache: LruCa
                 try {
                     val page = renderer.openPage(index)
                     try {
-                        // Downsampling to prevent OOM on real devices
                         val maxDimension = 2048f
                         val scale = (maxDimension / maxOf(page.width, page.height)).coerceAtMost(1f)
                         val targetWidth = (page.width * scale).toInt().coerceAtLeast(1)

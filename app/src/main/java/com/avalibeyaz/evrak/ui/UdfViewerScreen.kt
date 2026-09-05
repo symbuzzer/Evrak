@@ -153,7 +153,10 @@ fun UdfViewerScreen(
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                ConversionOverlay(
+                    isConverting = true,
+                    message = stringResource(id = R.string.loading)
+                )
             } else {
                 AndroidView(
                     modifier = Modifier.fillMaxSize(),

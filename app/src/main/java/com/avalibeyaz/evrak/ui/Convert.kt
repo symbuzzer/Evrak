@@ -79,7 +79,6 @@ object DocumentConverter {
         onStatusChange(true)
         val webView = WebView(context)
         
-        // AssetLoader must be set for the hidden WebView too
         val assetLoader = WebViewAssetLoader.Builder()
             .setDomain("appassets.androidplatform.net")
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
@@ -295,7 +294,6 @@ object DocumentConverter {
             for (pageIndex in 0 until pages) {
                 val page = tiffRenderer.openPage(pageIndex)
                 try {
-                    // Downsampling to prevent OOM during PDF conversion
                     val maxDimension = 3000f
                     val scale = (maxDimension / maxOf(page.width, page.height)).coerceAtMost(1f)
                     val targetWidth = (page.width * scale).toInt().coerceAtLeast(1)

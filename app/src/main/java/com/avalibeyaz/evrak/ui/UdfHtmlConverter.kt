@@ -408,7 +408,6 @@ object UdfHtmlConverter {
                         val n = (levelCounters[listLevel] ?: 0) + 1
                         levelCounters[listLevel] = n
                         
-                        // Reset sub-level counters when parent level increments
                         val levelsToRemove = levelCounters.keys.filter { it > listLevel }
                         levelsToRemove.forEach { levelCounters.remove(it) }
 

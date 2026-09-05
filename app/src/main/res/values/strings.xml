@@ -42,6 +42,7 @@
     <string name="select_format">Format seçin:</string>
     <string name="format_original">Orijinal format (%1$s)</string>
     <string name="format_pdf">PDF olarak (%1$s)</string>
+    <string name="loading">Yükleniyor...</string>
     <string name="converting">Dönüştürülüyor...</string>
     <string name="error_conversion_failed">Dönüştürme hatası: %1$s</string>
 

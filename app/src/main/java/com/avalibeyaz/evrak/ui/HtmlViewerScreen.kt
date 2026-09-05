@@ -142,36 +142,40 @@ fun HtmlViewerScreen(
             )
         }
     ) { padding ->
-        AndroidView(
-            factory = { ctx ->
-                WebView(ctx).apply {
-                    webViewClient = WebViewClient()
-                    settings.apply {
-                        javaScriptEnabled = true
-                        loadWithOverviewMode = true
-                        useWideViewPort = true
-                        builtInZoomControls = true
-                        displayZoomControls = false
-                        allowFileAccess = true
-                        allowContentAccess = true
-                        domStorageEnabled = true
-                        mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                    }
-                    
-                    if (htmlContent != null) {
-                        loadDataWithBaseURL("https://evrak.app/", htmlContent, "text/html", "UTF-8", null)
-                    } else {
-                        loadUrl("file://$filePath")
-                    }
-                }
-            },
-            update = { },
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-        )
+        ) {
+            AndroidView(
+                factory = { ctx ->
+                    WebView(ctx).apply {
+                        webViewClient = WebViewClient()
+                        settings.apply {
+                            javaScriptEnabled = true
+                            loadWithOverviewMode = true
+                            useWideViewPort = true
+                            builtInZoomControls = true
+                            displayZoomControls = false
+                            allowFileAccess = true
+                            allowContentAccess = true
+                            domStorageEnabled = true
+                            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                        }
+                        
+                        if (htmlContent != null) {
+                            loadDataWithBaseURL("https://evrak.app/", htmlContent, "text/html", "UTF-8", null)
+                        } else {
+                            loadUrl("file://$filePath")
+                        }
+                    }
+                },
+                update = { },
+                modifier = Modifier.fillMaxSize()
+            )
 
-        ConversionOverlay(isConverting = isConverting)
+            ConversionOverlay(isConverting = isConverting)
+        }
         
         loadError?.let { error ->
             AlertDialog(

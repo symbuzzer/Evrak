@@ -74,11 +74,13 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         
         val isSupported = supportedExtensions.any { finalName.endsWith(it, ignoreCase = true) }
         
-        val evrak = Evrak(name = finalName, path = finalCacheFile.absolutePath)
-        
-        if (isSupported) {
-            evrakDao.insertEvrak(evrak)
+        if (!isSupported) {
+            if (finalCacheFile.exists()) finalCacheFile.delete()
+            return null
         }
+        
+        val evrak = Evrak(name = finalName, path = finalCacheFile.absolutePath)
+        evrakDao.insertEvrak(evrak)
         
         return evrak
     }
@@ -305,8 +307,18 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                     return ".udf"
                 }
                 
-                if (entries.any { it.contains("word/") } || entries.any { it == "[Content_Types].xml" }) {
+                if (entries.any { it.contains("word/document.xml") }) {
                     return ".docx"
+                }
+                if (entries.any { it.contains("ppt/presentation.xml") }) {
+                    return ".pptx"
+                }
+                if (entries.any { it.contains("xl/workbook.xml") }) {
+                    return ".xlsx"
+                }
+                
+                if (entries.any { it == "[Content_Types].xml" }) {
+                    return ".zip"
                 }
                 
                 null

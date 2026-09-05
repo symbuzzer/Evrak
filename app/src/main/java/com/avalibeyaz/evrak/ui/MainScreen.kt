@@ -125,7 +125,6 @@ fun MainScreen(
             e.printStackTrace()
             Toast.makeText(context, context.getString(R.string.error_folder_selection_not_supported), Toast.LENGTH_LONG).show()
             onDisableFolderSelection()
-            // Try launching without initial URI
             initialUri = null
             openDocumentLauncher.launch(mimeTypes)
         }
