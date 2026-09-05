@@ -21,7 +21,6 @@
     <string name="error">Hata</string>
     <string name="error_file_not_found">Dosya bulunamadı</string>
     <string name="error_unknown">Bilinmeyen hata</string>
-    <string name="about_title">Evrak</string>
     <string name="about_developed_by"> tarafından geliştirilmiştir.</string>
     <string name="about_developer_name">Ali BEYAZ</string>
     <string name="about_supported_formats">Desteklenen formatlar:</string>
@@ -43,11 +42,12 @@
     <string name="format_original">Orijinal format (%1$s)</string>
     <string name="format_pdf">PDF olarak (%1$s)</string>
     <string name="loading">Yükleniyor...</string>
+    <string name="preparing">Hazırlanıyor...</string>
     <string name="converting">Dönüştürülüyor...</string>
     <string name="error_conversion_failed">Dönüştürme hatası: %1$s</string>
 
     <string name="error_tiff_open_failed">TIFF dosyası açılamadı: %1$s</string>
-    <string name="share_app_text">Evrak uygulamasını indirin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
+    <string name="share_app_text">UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF, PNG dosyalarını ücretsiz ve reklamsız olarak görüntülemek için Evrak Android uygulamasını indirin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
 
     <string name="filter_all">Tümü</string>
     <string name="filter_udf">UDF</string>

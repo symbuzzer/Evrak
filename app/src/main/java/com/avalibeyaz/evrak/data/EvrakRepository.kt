@@ -55,6 +55,13 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 }
             }
         } ?: return null
+
+        if (extension == ".ole") {
+            val deepOleExt = deepSniffOle(cacheFile)
+            if (deepOleExt != null) {
+                extension = deepOleExt
+            }
+        }
         
         if (extension == ".docx" || extension == ".zip") {
             val deepExt = deepSniffZip(cacheFile)
@@ -74,13 +81,10 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         
         val isSupported = supportedExtensions.any { finalName.endsWith(it, ignoreCase = true) }
         
-        if (!isSupported) {
-            if (finalCacheFile.exists()) finalCacheFile.delete()
-            return null
-        }
-        
         val evrak = Evrak(name = finalName, path = finalCacheFile.absolutePath)
-        evrakDao.insertEvrak(evrak)
+        if (isSupported) {
+            evrakDao.insertEvrak(evrak)
+        }
         
         return evrak
     }
@@ -256,7 +260,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         if (header.size >= 4 && 
             header[0] == 0xD0.toByte() && header[1] == 0xCF.toByte() && 
             header[2] == 0x11.toByte() && header[3] == 0xE0.toByte()) {
-            return ".doc"
+            return ".ole"
         }
 
         if (header.size >= 8 &&
@@ -307,13 +311,14 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                     return ".udf"
                 }
                 
-                if (entries.any { it.contains("word/document.xml") }) {
+                // Use strict matching for OOXML main parts to avoid false positives from embedded objects
+                if (entries.any { it == "word/document.xml" }) {
                     return ".docx"
                 }
-                if (entries.any { it.contains("ppt/presentation.xml") }) {
+                if (entries.any { it == "ppt/presentation.xml" }) {
                     return ".pptx"
                 }
-                if (entries.any { it.contains("xl/workbook.xml") }) {
+                if (entries.any { it == "xl/workbook.xml" }) {
                     return ".xlsx"
                 }
                 
@@ -322,6 +327,31 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 }
                 
                 null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun deepSniffOle(file: File): String? {
+        return try {
+            val bytes = file.readBytes()
+            val content = String(bytes, Charsets.UTF_16LE) // OLE stream names are often UTF-16LE
+            
+            when {
+                content.contains("WordDocument") -> ".doc"
+                content.contains("Workbook") || content.contains("Book") -> ".xls"
+                content.contains("PowerPoint Document") -> ".ppt"
+                else -> {
+                    // Fallback to ASCII check if UTF-16LE fails (though OLE usually uses UTF-16 for directory)
+                    val asciiContent = String(bytes, Charsets.US_ASCII)
+                    when {
+                        asciiContent.contains("WordDocument") -> ".doc"
+                        asciiContent.contains("Workbook") || asciiContent.contains("Book") -> ".xls"
+                        asciiContent.contains("PowerPoint Document") -> ".ppt"
+                        else -> null
+                    }
+                }
             }
         } catch (e: Exception) {
             null

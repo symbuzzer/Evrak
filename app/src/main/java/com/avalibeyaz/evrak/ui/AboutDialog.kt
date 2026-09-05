@@ -45,7 +45,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "${stringResource(id = R.string.about_title)} v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    text = "${stringResource(id = R.string.app_name)} v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
@@ -102,7 +102,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                 AboutLinkItem(
                     icon = Icons.Default.IntegrationInstructions,
                     description = stringResource(id = R.string.about_celse_integration_desc),
-                    onClick = { uriHandler.openUri("https://github.com/symbuzzer/UDE_stub") }
+                    onClick = { uriHandler.openUri("https://github.com/symbuzzer/UDE_stub#celse-uygulamas%C4%B1-ile-do%C4%9Frudan-3-parti-udf-g%C3%B6r%C3%BCnt%C3%BCleyicilerini-kullanabilmek-i%C3%A7in-gerekli-yama") }
                 )
 
                 AboutLinkItem(

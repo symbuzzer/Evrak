@@ -66,6 +66,8 @@ fun TiffViewerScreen(
     val listState = rememberLazyListState()
     
     var isConverting by remember { mutableStateOf(false) }
+    var conversionMessage by remember { mutableStateOf("") }
+    val defaultConvertingMessage = stringResource(id = R.string.converting)
     var showFormatDialog by remember { mutableStateOf<String?>(null) }
 
     var renderer by remember { mutableStateOf<TiffRenderer?>(null) }
@@ -125,7 +127,10 @@ fun TiffViewerScreen(
     ) { uri ->
         uri?.let { destUri ->
             scope.launch(Dispatchers.IO) {
-                isConverting = true
+                withContext(Dispatchers.Main) {
+                    conversionMessage = defaultConvertingMessage
+                    isConverting = true
+                }
                 try {
                     val tempPdf = File(context.cacheDir, "temp_convert.pdf")
                     val result = DocumentConverter.convert(File(filePath), tempPdf, context)
@@ -337,7 +342,10 @@ fun TiffViewerScreen(
                 }
             }
             
-            ConversionOverlay(isConverting = isConverting)
+            ConversionOverlay(
+                isConverting = isConverting,
+                message = conversionMessage
+            )
         }
     }
 
@@ -356,7 +364,10 @@ fun TiffViewerScreen(
                 } else {
                     scope.launch(Dispatchers.IO) {
                         if (usePdf) {
-                            isConverting = true
+                            withContext(Dispatchers.Main) {
+                                conversionMessage = defaultConvertingMessage
+                                isConverting = true
+                            }
                             try {
                                 val pdfName = displayName.substringBeforeLast(".") + ".pdf"
                                 val tempPdf = File(context.cacheDir, pdfName)

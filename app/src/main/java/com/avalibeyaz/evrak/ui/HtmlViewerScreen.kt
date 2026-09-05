@@ -37,6 +37,8 @@ fun HtmlViewerScreen(
     val scope = rememberCoroutineScope()
     
     var isConverting by remember { mutableStateOf(false) }
+    var conversionMessage by remember { mutableStateOf("") }
+    val defaultConvertingMessage = stringResource(id = R.string.converting)
     var showFormatDialog by remember { mutableStateOf<String?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
 
@@ -61,7 +63,10 @@ fun HtmlViewerScreen(
     ) { uri ->
         uri?.let { destUri ->
             scope.launch(Dispatchers.IO) {
-                isConverting = true
+                withContext(Dispatchers.Main) {
+                    conversionMessage = defaultConvertingMessage
+                    isConverting = true
+                }
                 try {
                     val pdfName = displayName.substringBeforeLast(".") + ".pdf"
                     val tempPdf = File(context.cacheDir, pdfName)
@@ -174,7 +179,10 @@ fun HtmlViewerScreen(
                 modifier = Modifier.fillMaxSize()
             )
 
-            ConversionOverlay(isConverting = isConverting)
+            ConversionOverlay(
+                isConverting = isConverting,
+                message = conversionMessage
+            )
         }
         
         loadError?.let { error ->
@@ -207,7 +215,10 @@ fun HtmlViewerScreen(
                 } else {
                     scope.launch(Dispatchers.IO) {
                         if (usePdf) {
-                            isConverting = true
+                            withContext(Dispatchers.Main) {
+                                conversionMessage = defaultConvertingMessage
+                                isConverting = true
+                            }
                             try {
                                 val pdfName = displayName.substringBeforeLast(".") + ".pdf"
                                 val tempPdf = File(context.cacheDir, pdfName)

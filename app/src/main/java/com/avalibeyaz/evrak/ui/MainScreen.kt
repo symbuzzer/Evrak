@@ -70,6 +70,9 @@ fun MainScreen(
 
     var isRefreshing by remember { mutableStateOf(false) }
     var isConverting by remember { mutableStateOf(false) }
+    var conversionMessage by remember { mutableStateOf("") }
+    val defaultConvertingMessage = stringResource(id = R.string.converting)
+    val preparingMessage = stringResource(id = R.string.preparing)
     var showFormatDialog by remember { mutableStateOf<String?>(null) }
     var conversionError by remember { mutableStateOf<String?>(null) }
 
@@ -494,6 +497,7 @@ fun MainScreen(
                     onClick = {
                         showSheet = false
                         onPrintClick(selectedEvrak!!) { converting ->
+                            conversionMessage = preparingMessage
                             isConverting = converting
                         }
                     }
@@ -619,7 +623,10 @@ fun MainScreen(
                 } else {
                     scope.launch(Dispatchers.IO) {
                         if (usePdf) {
-                            isConverting = true
+                            withContext(Dispatchers.Main) {
+                                conversionMessage = defaultConvertingMessage
+                                isConverting = true
+                            }
                             try {
                                 val pdfName = selectedEvrak!!.name.substringBeforeLast(".") + ".pdf"
                                 val tempPdf = File(context.cacheDir, pdfName)
@@ -643,7 +650,10 @@ fun MainScreen(
         )
     }
 
-    ConversionOverlay(isConverting = isConverting)
+    ConversionOverlay(
+        isConverting = isConverting,
+        message = conversionMessage
+    )
 
     if (conversionError != null) {
         AlertDialog(

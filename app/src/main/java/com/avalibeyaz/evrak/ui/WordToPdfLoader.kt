@@ -33,6 +33,8 @@ fun WordToPdfLoader(
     var tempPdfPath by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isConverting by remember { mutableStateOf(false) }
+    var conversionMessage by remember { mutableStateOf("") }
+    val defaultConvertingMessage = stringResource(id = R.string.converting)
     var showFormatDialog by remember { mutableStateOf<String?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
 
@@ -90,7 +92,10 @@ fun WordToPdfLoader(
     ) { uri ->
         uri?.let { destUri ->
             scope.launch(Dispatchers.IO) {
-                isConverting = true
+                withContext(Dispatchers.Main) {
+                    conversionMessage = defaultConvertingMessage
+                    isConverting = true
+                }
                 try {
                     tempPdfPath?.let { path ->
                         context.contentResolver.openOutputStream(destUri)?.use { output ->
@@ -186,5 +191,8 @@ fun WordToPdfLoader(
         )
     }
 
-    ConversionOverlay(isConverting = isConverting)
+    ConversionOverlay(
+        isConverting = isConverting,
+        message = conversionMessage
+    )
 }

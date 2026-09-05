@@ -54,7 +54,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (evrak != null) {
                     onOpened(evrak)
                 } else {
-                    onError(getApplication<Application>().getString(R.string.unsupported_format_message))
+                    onError(getApplication<Application>().getString(R.string.error_unknown))
                 }
             } catch (e: Exception) {
                 onError(e.localizedMessage ?: getApplication<Application>().getString(R.string.error_unknown))

@@ -38,6 +38,8 @@ fun UdfViewerScreen(
     var htmlContent by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isConverting by remember { mutableStateOf(false) }
+    var conversionMessage by remember { mutableStateOf("") }
+    val defaultConvertingMessage = stringResource(id = R.string.converting)
     var showFormatDialog by remember { mutableStateOf<String?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
 
@@ -85,7 +87,10 @@ fun UdfViewerScreen(
     ) { uri ->
         uri?.let { destUri ->
             scope.launch(Dispatchers.IO) {
-                isConverting = true
+                withContext(Dispatchers.Main) {
+                    conversionMessage = defaultConvertingMessage
+                    isConverting = true
+                }
                 try {
                     val tempPdf = File(context.cacheDir, "temp_udf_convert.pdf")
                     val result = DocumentConverter.convert(File(filePath), tempPdf, context)
@@ -178,7 +183,10 @@ fun UdfViewerScreen(
                 )
             }
 
-            ConversionOverlay(isConverting = isConverting)
+            ConversionOverlay(
+                isConverting = isConverting,
+                message = conversionMessage
+            )
 
             loadError?.let { error ->
                 AlertDialog(
@@ -210,7 +218,10 @@ fun UdfViewerScreen(
                 } else {
                     scope.launch(Dispatchers.IO) {
                         if (usePdf) {
-                            isConverting = true
+                            withContext(Dispatchers.Main) {
+                                conversionMessage = defaultConvertingMessage
+                                isConverting = true
+                            }
                             try {
                                 val pdfName = displayName.substringBeforeLast(".") + ".pdf"
                                 val tempPdf = File(context.cacheDir, pdfName)
