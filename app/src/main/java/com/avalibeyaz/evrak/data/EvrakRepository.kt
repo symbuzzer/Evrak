@@ -16,6 +16,8 @@ import java.util.zip.ZipFile
 class EvrakRepository(private val context: Context, private val evrakDao: EvrakDao) {
     val allEvraklar: Flow<List<Evrak>> = evrakDao.getAllEvraklar()
 
+    suspend fun getAllPaths(): List<String> = evrakDao.getAllPaths()
+
     private val supportedExtensions = setOf(
         ".pdf", ".docx", ".doc", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm"
     )
@@ -28,13 +30,11 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         
         val fileName = getFileName(uri, cr) ?: context.getString(R.string.unknown_document)
 
-        if (extension == null) {
+        if (extension == null || extension == ".bin") {
             val lastDot = fileName.lastIndexOf('.')
             if (lastDot != -1) {
                 val ext = fileName.substring(lastDot).lowercase()
-                if (supportedExtensions.contains(ext)) {
-                    extension = ext
-                }
+                extension = ext
             }
         }
         
@@ -90,23 +90,36 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     }
 
     private fun getExtensionFromMime(mimeType: String?, uri: Uri): String? {
+        var result: String? = null
         if (mimeType != null) {
-            if (mimeType == "application/x-udf") return ".udf"
-            if (mimeType == "image/png") return ".png"
-            if (mimeType == "image/jpeg") return ".jpg"
-            if (mimeType == "image/gif") return ".gif"
-            val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
-            if (ext != null) {
-                return if (ext == "jpeg") ".jpg" else ".$ext"
+            result = when (mimeType) {
+                "application/x-udf" -> ".udf"
+                "image/png" -> ".png"
+                "image/jpeg" -> ".jpg"
+                "image/gif" -> ".gif"
+                else -> {
+                    val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
+                    if (ext != null) {
+                        if (ext == "jpeg") ".jpg" else ".$ext"
+                    } else null
+                }
             }
         }
-        val path = uri.path ?: return null
-        val lastDot = path.lastIndexOf('.')
-        if (lastDot != -1) {
-            val ext = path.substring(lastDot).lowercase()
-            if (supportedExtensions.contains(ext)) return ext
+
+        if (result == null || result == ".bin") {
+            val path = uri.path
+            if (path != null) {
+                val lastDot = path.lastIndexOf('.')
+                if (lastDot != -1) {
+                    val ext = path.substring(lastDot).lowercase()
+                    if (ext.length in 2..5) {
+                        return ext
+                    }
+                }
+            }
         }
-        return null
+        
+        return result
     }
 
     suspend fun deleteEvrak(evrak: Evrak) {
@@ -311,7 +324,6 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                     return ".udf"
                 }
                 
-                // Use strict matching for OOXML main parts to avoid false positives from embedded objects
                 if (entries.any { it == "word/document.xml" }) {
                     return ".docx"
                 }
@@ -336,14 +348,13 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     private fun deepSniffOle(file: File): String? {
         return try {
             val bytes = file.readBytes()
-            val content = String(bytes, Charsets.UTF_16LE) // OLE stream names are often UTF-16LE
+            val content = String(bytes, Charsets.UTF_16LE)
             
             when {
                 content.contains("WordDocument") -> ".doc"
                 content.contains("Workbook") || content.contains("Book") -> ".xls"
                 content.contains("PowerPoint Document") -> ".ppt"
                 else -> {
-                    // Fallback to ASCII check if UTF-16LE fails (though OLE usually uses UTF-16 for directory)
                     val asciiContent = String(bytes, Charsets.US_ASCII)
                     when {
                         asciiContent.contains("WordDocument") -> ".doc"

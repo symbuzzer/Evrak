@@ -11,6 +11,9 @@ interface EvrakDao {
     @Query("SELECT * FROM evraklar ORDER BY dateOpened DESC")
     fun getAllEvraklar(): Flow<List<Evrak>>
 
+    @Query("SELECT path FROM evraklar")
+    suspend fun getAllPaths(): List<String>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEvrak(evrak: Evrak)
 

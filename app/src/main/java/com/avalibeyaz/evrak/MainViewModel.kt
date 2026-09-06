@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.avalibeyaz.evrak.data.Evrak
 import com.avalibeyaz.evrak.data.EvrakDatabase
 import com.avalibeyaz.evrak.data.EvrakRepository
+import com.avalibeyaz.evrak.data.CleanupManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +36,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+        
+        viewModelScope.launch {
+            CleanupManager.performCleanup(application, repository)
+        }
     }
 
     fun disableFolderSelection() {

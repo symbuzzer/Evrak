@@ -6,10 +6,15 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.JavascriptInterface
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
@@ -18,12 +23,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.webkit.WebViewAssetLoader
 import com.avalibeyaz.evrak.R
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
 
@@ -53,6 +62,21 @@ class SafeFileHandler(private val baseDir: File) : WebViewAssetLoader.PathHandle
     }
 }
 
+class PdfJsInterface(
+    private val onPageCount: (Int) -> Unit,
+    private val onCurrentPage: (Int) -> Unit
+) {
+    @JavascriptInterface
+    public fun updatePageCount(count: Int) {
+        onPageCount(count)
+    }
+
+    @JavascriptInterface
+    public fun updateCurrentPage(index: Int) {
+        onCurrentPage(index)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PdfViewerScreen(
@@ -66,7 +90,19 @@ fun PdfViewerScreen(
     saveMimeType: String = "application/pdf"
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     
+    var pageCount by remember { mutableIntStateOf(0) }
+    var currentPageIndex by remember { mutableIntStateOf(0) }
+    var webView by remember { mutableStateOf<WebView?>(null) }
+    
+    val jsInterface: PdfJsInterface = remember {
+        PdfJsInterface(
+            onPageCount = { count -> pageCount = count },
+            onCurrentPage = { index -> currentPageIndex = index }
+        )
+    }
+
     val saveLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument(saveMimeType)
     ) { uri ->
@@ -196,82 +232,170 @@ fun PdfViewerScreen(
                 }
             }
         } else {
-            AndroidView(
-                factory = { ctx ->
-                    WebView(ctx).apply {
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
-                        settings.databaseEnabled = true
-                        @Suppress("DEPRECATION")
-                        settings.textZoom = 100
-                        settings.allowFileAccess = true
-                        settings.allowContentAccess = true
-                        settings.loadWithOverviewMode = true
-                        settings.useWideViewPort = true
-                        settings.setSupportZoom(false) 
-                        settings.builtInZoomControls = false
-                        settings.displayZoomControls = false
-                        
-                        webChromeClient = object : WebChromeClient() {
-                            override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
-                                Log.d("PdfViewerJS", "${consoleMessage?.message()} -- From line ${consoleMessage?.lineNumber()} of ${consoleMessage?.sourceId()}")
-                                return true
-                            }
-                        }
-
-                        webViewClient = object : WebViewClient() {
-                            override fun shouldInterceptRequest(
-                                view: WebView?,
-                                request: WebResourceRequest
-                            ): WebResourceResponse? {
-                                return assetLoader.shouldInterceptRequest(request.url)
-                            }
-
-                            override fun onPageFinished(view: WebView?, url: String?) {
-                                super.onPageFinished(view, url)
-                                Log.d("PdfViewer", "Page finished loading: $url")
-                            }
-
-                            override fun onReceivedError(
-                                view: WebView?,
-                                request: WebResourceRequest?,
-                                error: android.webkit.WebResourceError?
-                            ) {
-                                super.onReceivedError(view, request, error)
-                                Log.e("PdfViewer", "Error loading ${request?.url}: ${error?.description}")
-                            }
-                        }
-                        
-                        val viewerUrl = "https://appassets.androidplatform.net/assets/pdfjs/viewer.html"
-                        
-                        val fileAbsolutePath = file.absolutePath
-                        val fileUrl = when {
-                            fileAbsolutePath.startsWith(context.cacheDir.absolutePath) -> {
-                                val relativePath = fileAbsolutePath.substring(context.cacheDir.absolutePath.length)
-                                val encodedPath = relativePath.split('/').joinToString("/") { android.net.Uri.encode(it) }
-                                "https://appassets.androidplatform.net/cache$encodedPath"
-                            }
-                            fileAbsolutePath.startsWith(context.filesDir.absolutePath) -> {
-                                val relativePath = fileAbsolutePath.substring(context.filesDir.absolutePath.length)
-                                val encodedPath = relativePath.split('/').joinToString("/") { android.net.Uri.encode(it) }
-                                "https://appassets.androidplatform.net/internal$encodedPath"
-                            }
-                            else -> {
-                                "https://appassets.androidplatform.net/internal/${android.net.Uri.encode(file.name)}"
-                            }
-                        }
-                        
-                        loadUrl("$viewerUrl?file=$fileUrl")
-                    }
-                },
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-            )
+            ) {
+                val viewHeight = maxHeight
+                
+                Box(modifier = Modifier.fillMaxSize()) {
+                    AndroidView(
+                        factory = { ctx ->
+                            WebView(ctx).apply {
+                                layoutParams = ViewGroup.LayoutParams(
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT
+                                )
+                                settings.javaScriptEnabled = true
+                                settings.domStorageEnabled = true
+                                settings.databaseEnabled = true
+                                @Suppress("DEPRECATION")
+                                settings.textZoom = 100
+                                settings.allowFileAccess = true
+                                settings.allowContentAccess = true
+                                settings.loadWithOverviewMode = true
+                                settings.useWideViewPort = true
+                                settings.setSupportZoom(false) 
+                                settings.builtInZoomControls = false
+                                settings.displayZoomControls = false
+                                
+                                isVerticalScrollBarEnabled = false
+                                isHorizontalScrollBarEnabled = false
+                                
+                                addJavascriptInterface(jsInterface, "Android")
+                                webView = this
+                                
+                                webChromeClient = object : WebChromeClient() {
+                                    override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
+                                        Log.d("PdfViewerJS", "${consoleMessage?.message()} -- From line ${consoleMessage?.lineNumber()} of ${consoleMessage?.sourceId()}")
+                                        return true
+                                    }
+                                }
+
+                                webViewClient = object : WebViewClient() {
+                                    override fun shouldInterceptRequest(
+                                        view: WebView?,
+                                        request: WebResourceRequest
+                                    ): WebResourceResponse? {
+                                        return assetLoader.shouldInterceptRequest(request.url)
+                                    }
+
+                                    override fun onPageFinished(view: WebView?, url: String?) {
+                                        super.onPageFinished(view, url)
+                                        Log.d("PdfViewer", "Page finished loading: $url")
+                                    }
+
+                                    override fun onReceivedError(
+                                        view: WebView?,
+                                        request: WebResourceRequest?,
+                                        error: android.webkit.WebResourceError?
+                                    ) {
+                                        super.onReceivedError(view, request, error)
+                                        Log.e("PdfViewer", "Error loading ${request?.url}: ${error?.description}")
+                                    }
+                                }
+                                
+                                val viewerUrl = "https://appassets.androidplatform.net/assets/pdfjs/viewer.html"
+                                
+                                val fileAbsolutePath = file.absolutePath
+                                val fileUrl = when {
+                                    fileAbsolutePath.startsWith(context.cacheDir.absolutePath) -> {
+                                        val relativePath = fileAbsolutePath.substring(context.cacheDir.absolutePath.length)
+                                        val encodedPath = relativePath.split('/').joinToString("/") { android.net.Uri.encode(it) }
+                                        "https://appassets.androidplatform.net/cache$encodedPath"
+                                    }
+                                    fileAbsolutePath.startsWith(context.filesDir.absolutePath) -> {
+                                        val relativePath = fileAbsolutePath.substring(context.filesDir.absolutePath.length)
+                                        val encodedPath = relativePath.split('/').joinToString("/") { android.net.Uri.encode(it) }
+                                        "https://appassets.androidplatform.net/internal$encodedPath"
+                                    }
+                                    else -> {
+                                        "https://appassets.androidplatform.net/internal/${android.net.Uri.encode(file.name)}"
+                                    }
+                                }
+                                
+                                loadUrl("$viewerUrl?file=$fileUrl")
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    if (pageCount > 1) {
+                        val thumbHeight = (viewHeight.value / pageCount).coerceAtLeast(60f).dp
+                        val scrollableTrackHeight = viewHeight - thumbHeight
+                        
+                        val listProgress by remember {
+                            derivedStateOf {
+                                if (pageCount > 1) {
+                                    val total = pageCount - 1
+                                    (currentPageIndex.toFloat() / total).coerceIn(0f, 1f)
+                                } else 0f
+                            }
+                        }
+                        
+                        var isDragging by remember { mutableStateOf(false) }
+                        var dragOffset by remember { mutableFloatStateOf(0f) }
+                        
+                        val thumbOffset = if (isDragging) {
+                            dragOffset.dp
+                        } else {
+                            scrollableTrackHeight * listProgress
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .fillMaxHeight()
+                                .width(60.dp)
+                                .pointerInput(pageCount, viewHeight) {
+                                    detectVerticalDragGestures(
+                                        onDragStart = { _ ->
+                                            isDragging = true
+                                            dragOffset = (listProgress * scrollableTrackHeight.toPx()).toDp().value
+                                        },
+                                        onDragEnd = { isDragging = false },
+                                        onDragCancel = { isDragging = false },
+                                        onVerticalDrag = { change, dragAmount ->
+                                            change.consume()
+                                            val totalPx = scrollableTrackHeight.toPx()
+                                            val currentOffsetPx = dragOffset.dp.toPx()
+                                            val newOffsetPx = (currentOffsetPx + dragAmount).coerceIn(0f, totalPx)
+                                            dragOffset = newOffsetPx.toDp().value
+                                            
+                                            val newProgress = if (totalPx > 0) newOffsetPx / totalPx else 0f
+                                            val targetIndex = (newProgress * (pageCount - 1)).toInt()
+                                            
+                                            webView?.evaluateJavascript("scrollToPage($targetIndex)", null)
+                                        }
+                                    )
+                                }
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .width(4.dp)
+                                    .align(Alignment.CenterEnd)
+                                    .padding(end = 4.dp)
+                                    .background(Color.Gray.copy(alpha = 0.05f))
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 10.dp, height = thumbHeight)
+                                    .offset(y = thumbOffset)
+                                    .align(Alignment.TopEnd)
+                                    .padding(end = 4.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isDragging) MaterialTheme.colorScheme.primary 
+                                        else MaterialTheme.colorScheme.outlineVariant
+                                    )
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

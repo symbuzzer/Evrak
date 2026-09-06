@@ -15,6 +15,9 @@
             /* Prevent smooth scroll interfering with zoom centering */
             scroll-behavior: auto !important;
         }
+        ::-webkit-scrollbar {
+            display: none;
+        }
         #viewer-container {
             width: 100vw;
             display: flex;
@@ -31,6 +34,18 @@
             background-color: white;
             width: 95%;
             height: auto;
+            min-height: 200px; /* Placeholder height until loaded */
+        }
+        .page-placeholder {
+            margin: 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            background-color: #e0e0e0;
+            width: 95%;
+            color: #666;
+            font-size: 14px;
         }
         @media print {
             html, body {
