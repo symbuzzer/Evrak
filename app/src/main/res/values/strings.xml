@@ -24,7 +24,7 @@
     <string name="about_developed_by"> tarafından geliştirilmiştir.</string>
     <string name="about_developer_name">Ali BEYAZ</string>
     <string name="about_supported_formats">Desteklenen formatlar:</string>
-    <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC HTML JPG GIF PNG</string>
+    <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC HTML TXT JPG GIF PNG</string>
 
     <string name="about_celse_integration_desc">CELSE uygulaması entegrasyonunu gerçekleştirin.</string>
     <string name="about_view_on_play_store_desc">Uygulamayı Play Store üzerinden değerlendirin.</string>
@@ -36,6 +36,7 @@
     <string name="confirm_delete_all_message">Bütün geçmişi ve önbelleğe alınmış dosyaları silmek istediğinize emin misiniz?</string>
     <string name="unsupported_format_title">Tanımlanamayan format</string>
     <string name="unsupported_format_message">Bu dosya formatı şu anda desteklenmiyor.</string>
+    <string name="unsupported_format_hint">Ancak yine de bu dosyayı kaydedebilir ve paylaşabilirsiniz.</string>
     <string name="error_udf_read">UDF içeriği okunamadı ya da dosya bozuk.</string>
 
     <string name="select_format">Format seçin:</string>
@@ -47,7 +48,7 @@
     <string name="error_conversion_failed">Dönüştürme hatası: %1$s</string>
 
     <string name="error_tiff_open_failed">TIFF dosyası açılamadı: %1$s</string>
-    <string name="share_app_text">UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF, PNG dosyalarını ücretsiz ve reklamsız olarak görüntülemek için Evrak Android uygulamasını indirin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
+    <string name="share_app_text">UDF, TIFF, PDF, DOCX, DOC, HTML, TXT, JPG, GIF, PNG dosyalarını ücretsiz ve reklamsız olarak görüntülemek için Evrak Android uygulamasını indirin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
 
     <string name="filter_all">Tümü</string>
     <string name="filter_udf">UDF</string>

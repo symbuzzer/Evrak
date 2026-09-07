@@ -22,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import com.avalibeyaz.evrak.ui.AboutDialog
 import com.avalibeyaz.evrak.ui.MainScreen
 import com.avalibeyaz.evrak.ui.ImageViewerScreen
+import com.avalibeyaz.evrak.ui.TextViewerScreen
 import com.avalibeyaz.evrak.ui.TiffViewerScreen
 import com.avalibeyaz.evrak.ui.PdfViewerScreen
 import com.avalibeyaz.evrak.ui.WordToPdfLoader
@@ -167,6 +168,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
             val isHtml = filePath.endsWith(".html", true) || 
                           filePath.endsWith(".htm", true)
             
+            val isText = filePath.endsWith(".txt", ignoreCase = true)
+            
             when {
                 isPdf -> {
                     PdfViewerScreen(
@@ -216,11 +219,20 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         onShareClick = { shareFile(context, filePath) }
                     )
                 }
+                isText -> {
+                    TextViewerScreen(
+                        filePath = filePath,
+                        displayName = displayName,
+                        onBackClick = onBackSafe,
+                        onShareClick = { shareFile(context, filePath) }
+                    )
+                }
                 else -> {
                     UnsupportedViewerScreen(
                         filePath = filePath,
                         displayName = displayName,
-                        onBackClick = onBackSafe
+                        onBackClick = onBackSafe,
+                        onShareClick = { shareFile(context, filePath) }
                     )
                 }
             }

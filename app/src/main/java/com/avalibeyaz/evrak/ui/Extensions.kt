@@ -24,6 +24,7 @@ fun getMimeType(path: String): String {
         path.endsWith(".gif", true) -> "image/gif"
         path.endsWith(".udf", true) -> "application/x-udf"
         path.endsWith(".html", true) || path.endsWith(".htm", true) -> "text/html"
+        path.endsWith(".txt", true) -> "text/plain"
         else -> "application/octet-stream"
     }
 }

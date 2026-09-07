@@ -2,7 +2,7 @@
 [<img width="220" height="66" src="https://github.com/user-attachments/assets/7c2fadad-e134-4566-a5cb-9f4a0f32732a" />](https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak)
 
 
-**Evrak**, avukatların ve arabulucuların günlük iş akışında en sık karşılaştığı dosya formatlarını **-UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF ve PNG-** tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan bir Android uygulamasıdır.
+**Evrak**, avukatların ve arabulucuların günlük iş akışında en sık karşılaştığı dosya formatlarını **-UDF, TIFF, PDF, DOCX, DOC, HTML, TXT, JPG, GIF, PNG-** tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan bir Android uygulamasıdır.
 
 UYAP, CELSE, e-arabulucu, e-Adalet vb. uygulamalar üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygulamaları aracılığıyla gelen evrakları açmak için genellikle birden fazla farklı uygulamaya ihtiyaç duyulur. Evrak Android uygulaması, bu ihtiyacı tek bir yerde, gereksiz karmaşıklık olmadan çözer.  
 
@@ -19,7 +19,7 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 
 ## Özellikler
 
-- **Çoklu format desteği:** UDF, TIFF, PDF, DOCX, DOC, HTML, JPG, GIF, PNG
+- **Çoklu format desteği:** UDF, TIFF, PDF, DOCX, DOC, HTML, TXT, JPG, GIF, PNG
 - **Basit ve hızlı:** Dosyayı aç, görüntüle - başka hiçbir şeye gerek yok
 - **Paylaşma ve kaydetme:** Görüntülenen dosyaları istediğiniz yere kaydedebilir veya doğrudan başka uygulamalarla paylaşabilirsiniz
 - **UDF, TIFF, DOCX, DOC ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında isterseniz bu dosyaları PDF'e çevirebilirsiniz
@@ -53,6 +53,7 @@ Evrak uygulamasının, CELSE ile Uyap Doküman Editör'ü uygulaması olmadan do
 | PDF | `.pdf` |
 | Word | `.docx`, `.doc` |
 | HTML | `.html`, `.htm` |
+| Metin | `.txt` |
 | Görsel | `.jpg`, `.jpeg`, `.png`, `.gif` |
 
 ## Kullanılan Kütüphaneler ve Lisansları

@@ -25,6 +25,10 @@
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="text/plain" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="application/x-udf" />
         </intent>
     </queries>
@@ -62,6 +66,7 @@
                 <data android:mimeType="image/tiff" />
                 <data android:mimeType="image/x-tiff" />
                 <data android:mimeType="text/html" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
 
             <intent-filter>
@@ -95,6 +100,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="content" />
                 <data android:scheme="file" />
+                <data android:mimeType="text/plain" />
                 <data android:mimeType="application/octet-stream" />
                 <data android:mimeType="*/*" />
             </intent-filter>
@@ -111,6 +117,7 @@
                 <data android:mimeType="image/*" />
                 <data android:mimeType="application/x-udf" />
                 <data android:mimeType="text/html" />
+                <data android:mimeType="text/plain" />
                 <data android:mimeType="application/octet-stream" />
             </intent-filter>
         </activity>

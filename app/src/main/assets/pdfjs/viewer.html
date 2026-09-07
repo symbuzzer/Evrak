@@ -10,10 +10,9 @@
             padding: 0;
             background-color: #525659;
             font-family: sans-serif;
-            /* Disable native overflow during zoom to let JS handle it */
             overflow: auto;
-            /* Prevent smooth scroll interfering with zoom centering */
             scroll-behavior: auto !important;
+            -webkit-overflow-scrolling: touch;
         }
         ::-webkit-scrollbar {
             display: none;
@@ -22,19 +21,18 @@
             width: 100vw;
             display: flex;
             flex-direction: column;
-            align-items: flex-start; /* Anchor to left for stable zoom math */
-            padding-bottom: 20px;
+            align-items: flex-start;
+            padding-bottom: 40px;
             transform-origin: 0 0;
             will-change: transform;
         }
         .page {
-            margin: 10px auto; /* Center pages visually within the scaled container */
+            margin: 10px auto;
             display: block;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             background-color: white;
             width: 95%;
             height: auto;
-            min-height: 200px; /* Placeholder height until loaded */
         }
         .page-placeholder {
             margin: 10px auto;
@@ -46,6 +44,7 @@
             width: 95%;
             color: #666;
             font-size: 14px;
+            min-height: 300px;
         }
         @media print {
             html, body {
@@ -99,37 +98,27 @@
             return false;
         };
 
-        // PDF.js loader for both .js and .mjs
         async function loadPdfJs() {
-            console.log('loadPdfJs started');
             try {
-                // Try .mjs first (Modern)
                 try {
-                    console.log('Attempting to import pdf.min.mjs');
                     const module = await import('./pdf.min.mjs');
                     window['pdfjs-dist/build/pdf'] = module;
                     window.isMjs = true;
-                    console.log('Loaded as .mjs successfully');
                 } catch (e) {
-                    console.warn('Failed to load as .mjs, trying .js legacy:', e);
-                    // Try .js (Legacy)
                     const script = document.createElement('script');
                     script.src = 'pdf.min.js';
                     window.isMjs = false;
                     await new Promise((resolve, reject) => {
-                        script.onload = () => { console.log('Loaded pdf.min.js script'); resolve(); };
-                        script.onerror = (err) => { console.error('Failed to load pdf.min.js script'); reject(err); };
+                        script.onload = () => resolve();
+                        script.onerror = (err) => reject(err);
                         document.body.appendChild(script);
                     });
                 }
 
-                // Now load viewer logic
-                console.log('Loading viewer.js');
                 const viewerScript = document.createElement('script');
                 viewerScript.src = 'viewer.js';
                 document.body.appendChild(viewerScript);
             } catch (err) {
-                console.error('Critical error in loadPdfJs:', err);
                 window.onerror("PDF.js kütüphanesi yüklenemedi: " + err.message);
             }
         }

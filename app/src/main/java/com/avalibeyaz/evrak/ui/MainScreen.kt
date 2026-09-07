@@ -119,6 +119,7 @@ fun MainScreen(
             "application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "text/html",
+            "text/plain",
             "application/octet-stream"
         )
         initialUri = folderUri
@@ -465,13 +466,13 @@ fun MainScreen(
                     label = stringResource(id = R.string.share),
                     onClick = {
                         val path = selectedEvrak!!.path
-                        val isConvertible = path.endsWith(".udf", true) || 
+                        val isConvertible = (path.endsWith(".udf", true) || 
                                            path.endsWith(".tiff", true) || 
                                            path.endsWith(".tif", true) ||
                                            path.endsWith(".docx", true) ||
                                            path.endsWith(".doc", true) ||
                                            path.endsWith(".html", true) ||
-                                           path.endsWith(".htm", true)
+                                           path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
                         
                         if (isConvertible) {
                             showFormatDialog = "share"
@@ -488,13 +489,13 @@ fun MainScreen(
                     label = stringResource(id = R.string.save),
                     onClick = {
                         val path = selectedEvrak!!.path
-                        val isConvertible = path.endsWith(".udf", true) || 
+                        val isConvertible = (path.endsWith(".udf", true) || 
                                            path.endsWith(".tiff", true) || 
                                            path.endsWith(".tif", true) ||
                                            path.endsWith(".docx", true) ||
                                            path.endsWith(".doc", true) ||
                                            path.endsWith(".html", true) ||
-                                           path.endsWith(".htm", true)
+                                           path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
                         
                         if (isConvertible) {
                             showFormatDialog = "save"

@@ -4,18 +4,15 @@ import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
@@ -25,7 +22,6 @@ import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -34,7 +30,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import com.avalibeyaz.evrak.R
 import io.github.lucf15.tiffrenderer.TiffBitmap
 import io.github.lucf15.tiffrenderer.TiffRenderMode
@@ -47,8 +42,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.NonCancellable
 import java.io.File
-import android.content.Intent
-import android.net.Uri
 import android.util.LruCache
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -214,13 +207,11 @@ fun TiffViewerScreen(
             )
         }
     ) { padding ->
-        BoxWithConstraints(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            val viewHeight = maxHeight
-            
             if (loadError != null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
@@ -232,111 +223,32 @@ fun TiffViewerScreen(
                     }
                 }
             } else {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    Box(
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onDoubleTap = {
+                                    scale = if (scale > 1.1f) 1f else 3f
+                                }
+                            )
+                        }
+                        .transformable(state = state)
+                ) {
+                    LazyColumn(
+                        state = listState,
                         modifier = Modifier
                             .fillMaxSize()
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onDoubleTap = {
-                                        scale = if (scale > 1.1f) 1f else 3f
-                                    }
-                                )
-                            }
-                            .transformable(state = state)
+                            .graphicsLayer(
+                                scaleX = animatedScale,
+                                scaleY = animatedScale
+                            ),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = if (pageCount == 1) Arrangement.Center else Arrangement.spacedBy(16.dp)
                     ) {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer(
-                                    scaleX = animatedScale,
-                                    scaleY = animatedScale
-                                ),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = if (pageCount == 1) Arrangement.Center else Arrangement.spacedBy(16.dp)
-                        ) {
-                            items(pageCount) { index ->
-                                TiffPageItem(renderer = renderer, index = index, mutex = mutex, cache = bitmapCache)
-                            }
-                        }
-                    }
-
-                    if (pageCount > 1) {
-                        val thumbHeight = (viewHeight.value / pageCount).coerceAtLeast(60f).dp
-                        val scrollableTrackHeight = viewHeight - thumbHeight
-                        
-                        val listProgress by remember {
-                            derivedStateOf {
-                                if (pageCount > 1) {
-                                    val firstVisible = listState.firstVisibleItemIndex
-                                    val total = pageCount - 1
-                                    (firstVisible.toFloat() / total).coerceIn(0f, 1f)
-                                } else 0f
-                            }
-                        }
-                        
-                        var isDragging by remember { mutableStateOf(false) }
-                        var dragOffset by remember { mutableFloatStateOf(0f) }
-                        
-                        val thumbOffset = if (isDragging) {
-                            dragOffset.dp
-                        } else {
-                            scrollableTrackHeight * listProgress
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .fillMaxHeight()
-                                .width(60.dp)
-                                .pointerInput(pageCount, viewHeight) {
-                                    detectVerticalDragGestures(
-                                        onDragStart = { offset ->
-                                            isDragging = true
-                                            dragOffset = (listProgress * scrollableTrackHeight.toPx()).toDp().value
-                                        },
-                                        onDragEnd = { isDragging = false },
-                                        onDragCancel = { isDragging = false },
-                                        onVerticalDrag = { change, dragAmount ->
-                                            change.consume()
-                                            val totalPx = scrollableTrackHeight.toPx()
-                                            val currentOffsetPx = dragOffset.dp.toPx()
-                                            val newOffsetPx = (currentOffsetPx + dragAmount).coerceIn(0f, totalPx)
-                                            dragOffset = newOffsetPx.toDp().value
-                                            
-                                            val newProgress = if (totalPx > 0) newOffsetPx / totalPx else 0f
-                                            val targetIndex = (newProgress * (pageCount - 1)).toInt()
-                                            
-                                            scope.launch {
-                                                listState.scrollToItem(targetIndex)
-                                            }
-                                        }
-                                    )
-                                }
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .width(4.dp)
-                                    .align(Alignment.CenterEnd)
-                                    .padding(end = 4.dp)
-                                    .background(Color.Gray.copy(alpha = 0.05f))
-                            )
-
-                            Box(
-                                modifier = Modifier
-                                    .size(width = 10.dp, height = thumbHeight)
-                                    .offset(y = thumbOffset)
-                                    .align(Alignment.TopEnd)
-                                    .padding(end = 4.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (isDragging) MaterialTheme.colorScheme.primary 
-                                        else MaterialTheme.colorScheme.outlineVariant
-                                    )
-                            )
+                        items(pageCount) { index ->
+                            TiffPageItem(renderer = renderer, index = index, mutex = mutex, cache = bitmapCache)
                         }
                     }
                 }
