@@ -62,6 +62,13 @@ object DocumentConverter {
                     ConversionResult.Error(errorMsg)
                 }
             }
+            "txt" -> {
+                if (context != null) {
+                    convertTxtToPdf(inputFile, outputFile, context)
+                } else {
+                    ConversionResult.Error("Context is required for TXT conversion.")
+                }
+            }
             else -> {
                 val errorMsg = context?.getString(R.string.error_unsupported_type, inputFile.extension) 
                     ?: "Unsupported file type: .${inputFile.extension}"
@@ -279,6 +286,38 @@ object DocumentConverter {
             } catch (e: Exception) {
                 Log.e(TAG, "UDF -> PDF conversion error", e)
                 ConversionResult.Error(context.getString(R.string.error_udf_conversion_failed, e.message))
+            }
+        }
+    }
+
+    suspend fun convertTxtToPdf(inputFile: File, outputFile: File, context: Context): ConversionResult {
+        return withContext(Dispatchers.IO) {
+            try {
+                val text = inputFile.readText(Charsets.UTF_8)
+                val escapedText = text.replace("&", "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&#039;")
+
+                val html = """
+                    <html>
+                    <body style="white-space: pre-wrap; font-family: monospace; padding: 16px; font-size: 14px; line-height: 1.4; color: #000000;">
+                    $escapedText
+                    </body>
+                    </html>
+                """.trimIndent()
+
+                val tempHtmlFile = File(context.cacheDir, "temp_txt_${System.currentTimeMillis()}.html")
+                tempHtmlFile.writeText(html, Charsets.UTF_8)
+
+                val result = convertHtmlToPdfWithWebView(tempHtmlFile, outputFile, context)
+                tempHtmlFile.delete()
+                result
+            } catch (e: Exception) {
+                Log.e(TAG, "TXT -> PDF conversion error", e)
+                val msg = context.getString(R.string.error_during_conversion) + ": ${e.localizedMessage ?: ""}"
+                ConversionResult.Error(msg)
             }
         }
     }

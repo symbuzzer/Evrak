@@ -8,7 +8,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.IntegrationInstructions
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -109,6 +111,18 @@ fun AboutDialog(onDismiss: () -> Unit) {
                     icon = Icons.Default.Shop,
                     description = stringResource(id = R.string.about_view_on_play_store_desc),
                     onClick = { uriHandler.openUri("https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak") }
+                )
+
+                AboutLinkItem(
+                    icon = Icons.Default.Security,
+                    description = stringResource(id = R.string.about_privacy_policy),
+                    onClick = { uriHandler.openUri("https://github.com/symbuzzer/Evrak#gizlilik") }
+                )
+
+                AboutLinkItem(
+                    icon = Icons.Default.Gavel,
+                    description = stringResource(id = R.string.about_disclaimer),
+                    onClick = { uriHandler.openUri("https://github.com/symbuzzer/Evrak#sorumluluk-reddi") }
                 )
 
                 AboutLinkItem(

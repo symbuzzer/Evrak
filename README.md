@@ -21,15 +21,16 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 
 - **Çoklu format desteği:** UDF, TIFF, PDF, DOCX, DOC, HTML, TXT, JPG, GIF, PNG
 - **Basit ve hızlı:** Dosyayı aç, görüntüle - başka hiçbir şeye gerek yok
-- **Paylaşma ve kaydetme:** Görüntülenen dosyaları istediğiniz yere kaydedebilir veya doğrudan başka uygulamalarla paylaşabilirsiniz
-- **UDF, TIFF, DOCX, DOC ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında isterseniz bu dosyaları PDF'e çevirebilirsiniz
+- **Paylaşma ve kaydetme:** Görüntülenen dosyalar istenilen yere kaydedilebilir veya doğrudan başka uygulamalarla paylaşılabilir
+- **UDF, TIFF, DOCX, DOC ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında istenirse bu dosyalar PDF'e çevrilebilir
 - **Sorunsuz Türkçe karakterler:** Özellikle UDF'den dönüştürülen PDF dosyalarındaki Türkçe karakterlerin görüntülenememe sorunu yok
-- **Yazdırma:** Bütün dosya türlerini Android'in kendi yazdırma özelliği ile doğrudan cihazınızdan yazdırabilirsiniz
+- **Yazdırma:** Bütün dosya türleri, Android'in kendi yazdırma özelliği ile doğrudan cihazınızdan yazdırılabilir
 - **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
 - **Filtreleme:** Geçmişteki dosyaları dosya türüne göre filtreleyebilirsiniz
 - **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmelerİ için istenildiğinde yeniden adlandırılabilir veya silinebilir
 - **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
-- **Diğer uygulamalarla uyum içerisinde çalışma:** "Birlikte aç" seçeneği ile Evrak üzerinden görüntülediğiniz dosyaları, destekleyen diğer uygulamalar ile açabilirsiniz
+- **Diğer uygulamalarla uyum içerisinde çalışma:** "Birlikte aç" seçeneği ile Evrak üzerinden görüntülenen dosyalar, destekleyen diğer uygulamalar ile açılabilir
+- **Desteklenmeyen dosya türlerini paylaşabilme ve kaydedebilme:** Bu sayede cihaza kaydedilmeden doğrudan açılan dosyalar, desteklenmese bile paylaşılabilir ve kaydedilebilir
 
 ## Neden Evrak?
 

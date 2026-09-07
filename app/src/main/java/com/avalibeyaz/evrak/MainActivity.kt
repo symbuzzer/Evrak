@@ -19,6 +19,8 @@ import androidx.core.content.FileProvider
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
 import com.avalibeyaz.evrak.ui.AboutDialog
 import com.avalibeyaz.evrak.ui.MainScreen
 import com.avalibeyaz.evrak.ui.ImageViewerScreen
@@ -139,9 +141,20 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                 CircularProgressIndicator()
             }
         }
-        composable("viewer/{filePath}/{displayName}") { backStackEntry ->
+        composable(
+            route = "viewer/{filePath}/{displayName}?forceText={forceText}",
+            arguments = listOf(
+                navArgument("filePath") { type = NavType.StringType },
+                navArgument("displayName") { type = NavType.StringType },
+                navArgument("forceText") { 
+                    type = NavType.BoolType
+                    defaultValue = false 
+                }
+            )
+        ) { backStackEntry ->
             val filePath = backStackEntry.arguments?.getString("filePath") ?: ""
             val displayName = backStackEntry.arguments?.getString("displayName") ?: ""
+            val forceText = backStackEntry.arguments?.getBoolean("forceText") ?: false
             val context = androidx.compose.ui.platform.LocalContext.current
             
             val onBackSafe = {
@@ -171,6 +184,14 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
             val isText = filePath.endsWith(".txt", ignoreCase = true)
             
             when {
+                forceText || isText -> {
+                    TextViewerScreen(
+                        filePath = filePath,
+                        displayName = displayName,
+                        onBackClick = onBackSafe,
+                        onShareClick = { shareFile(context, filePath) }
+                    )
+                }
                 isPdf -> {
                     PdfViewerScreen(
                         filePath = filePath,
@@ -219,20 +240,17 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         onShareClick = { shareFile(context, filePath) }
                     )
                 }
-                isText -> {
-                    TextViewerScreen(
-                        filePath = filePath,
-                        displayName = displayName,
-                        onBackClick = onBackSafe,
-                        onShareClick = { shareFile(context, filePath) }
-                    )
-                }
                 else -> {
                     UnsupportedViewerScreen(
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
-                        onShareClick = { shareFile(context, filePath) }
+                        onShareClick = { shareFile(context, filePath) },
+                        onTryAsTextClick = {
+                            navController.navigate("viewer/${Uri.encode(filePath)}/${Uri.encode(displayName)}?forceText=true") {
+                                popUpTo("viewer/${Uri.encode(filePath)}/${Uri.encode(displayName)}") { inclusive = true }
+                            }
+                        }
                     )
                 }
             }

@@ -25,7 +25,8 @@ fun UnsupportedViewerScreen(
     filePath: String,
     displayName: String,
     onBackClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    onTryAsTextClick: () -> Unit
 ) {
     val context = LocalContext.current
     val mimeType = getMimeType(filePath)
@@ -131,20 +132,13 @@ fun UnsupportedViewerScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = MaterialTheme.shapes.medium,
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedButton(
+                onClick = onTryAsTextClick,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = displayName,
-                    modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center
-                )
+                Text(text = stringResource(id = R.string.try_opening_as_text))
             }
         }
     }

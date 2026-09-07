@@ -90,7 +90,8 @@ fun MainScreen(
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
                 path.endsWith(".jpg") || path.endsWith(".jpeg") ||
-                path.endsWith(".gif") || path.endsWith(".png")
+                path.endsWith(".gif") || path.endsWith(".png") ||
+                path.endsWith(".txt")
             }) filters.add(EvrakFilter.OTHER)
         filters
     }
@@ -151,7 +152,8 @@ fun MainScreen(
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
                 path.endsWith(".jpg") || path.endsWith(".jpeg") ||
-                path.endsWith(".gif") || path.endsWith(".png")
+                path.endsWith(".gif") || path.endsWith(".png") ||
+                path.endsWith(".txt")
             }
         }
     }
