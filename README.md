@@ -11,11 +11,13 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 <img width="270" height="585" src="https://github.com/user-attachments/assets/11a02fad-be30-4320-ac76-c1ddf80f5ebd" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/b6c6f40f-5b62-49a1-bed8-45e8ea1bdbc3" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/68bcc20d-98f7-4a45-899b-87c32e5bdff7" />
+<img width="270" height="585" src="https://github.com/user-attachments/assets/488074f7-73e8-4328-a362-f09b13f5391f" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/d419fe26-bb58-4875-8147-4752e10e8158" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/315d1016-36f3-457b-bf1b-d04c10106007" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/a4fa0f9a-d922-4025-912c-725a5d07f521" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/16ad8d58-a749-4f2e-bb2b-50b573f4356e" />
 <img width="270" height="585" src="https://github.com/user-attachments/assets/4e43874c-9d33-4354-a4b6-568b0968006f" />
+
 
 ## Özellikler
 
@@ -27,7 +29,7 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 - **Yazdırma:** Bütün dosya türleri, Android'in kendi yazdırma özelliği ile doğrudan cihazınızdan yazdırılabilir
 - **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
 - **Filtreleme:** Geçmişteki dosyaları dosya türüne göre filtreleyebilirsiniz
-- **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmelerİ için istenildiğinde yeniden adlandırılabilir veya silinebilir
+- **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmeleri için istenildiğinde yeniden adlandırılabilir veya silinebilir
 - **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
 - **Diğer uygulamalarla uyum içerisinde çalışma:** "Birlikte aç" seçeneği ile Evrak üzerinden görüntülenen dosyalar, destekleyen diğer uygulamalar ile açılabilir
 - **Desteklenmeyen dosya türlerini paylaşabilme ve kaydedebilme:** Bu sayede cihaza kaydedilmeden doğrudan açılan dosyalar, desteklenmese bile paylaşılabilir ve kaydedilebilir
