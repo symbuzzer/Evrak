@@ -44,7 +44,7 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 Evrak uygulamasının, CELSE ile Uyap Doküman Editör'ü uygulaması olmadan doğrudan çalışabilmesi için [şu adımları izleyin.](https://github.com/symbuzzer/UDE_stub)
 
 
-## Desteklenen Dosya Formatları
+## Desteklenen dosya formatları
 
 | Format | Uzantı |
 | --- | --- |
@@ -56,7 +56,7 @@ Evrak uygulamasının, CELSE ile Uyap Doküman Editör'ü uygulaması olmadan do
 | Metin | `.txt` |
 | Görsel | `.jpg`, `.jpeg`, `.png`, `.gif` |
 
-## Kullanılan Kütüphaneler ve Lisansları
+## Kullanılan kütüphaneler ve lisansları
 
 Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 
@@ -79,7 +79,7 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 | [KSP](https://github.com/google/ksp) (Kotlin Symbol Processing) | Apache License 2.0 |
 | [Android Gradle Plugin](https://developer.android.com/build/releases/gradle-plugin) | Apache License 2.0 |
 
-### Dosya Görüntüleme / Dönüştürme
+### Dosya görüntüleme ve dönüştürme
 
 | Kütüphane                                                                                                                                                    | Lisans |
 |--------------------------------------------------------------------------------------------------------------------------------------------------------------| --- |
@@ -102,9 +102,17 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 
 Evrak, herhangi bir Android izni talep etmez. Açılan dosyalar yalnızca cihazın kendi yerel depolama alanında (uygulamanın kendi önbelleğinde) tutulur; herhangi bir sunucuya veri gönderilmez, hiçbir analitik/takip SDK'sı kullanılmaz. 
 
-**Önemli:** Uygulama içindeki tüm dönüştürme ve görüntüleme işlemleri (UDF, TIFF, DOCX vb.) tamamen cihaz üzerinde, **çevrimdışı (offline)** olarak gerçekleştirilir. İnternet bağlantısı gerektirmez ve verilerinizi hiçbir şekilde internete aktarmaz.
+Uygulama içindeki tüm dönüştürme ve görüntüleme işlemleri tamamen cihaz üzerinde, çevrimdışı (offline) olarak gerçekleştirilir. İnternet bağlantısı gerektirmez ve verilerinizi hiçbir şekilde internete aktarmaz.
 
-## Katkıda Bulunma
+## Sorumluluk reddi
+
+Bu uygulama, belgelerin doğru ve eksiksiz görüntülenmesini garanti etmez. Evrak uygulamasını indirmek ve kullanmak tamamen kullanıcının sorumluluğundadır. Uygulamanın kullanılmasından kaynaklı zararlardan geliştirici hiç bir şekilde sorumlu tutulamaz.
+
+Evrak uygulamasını indirerek ve kullanarak bu şartları kabul etmiş sayılırsınız. Şartları kabul etmiyorsanız uygulamayı kaldırmanız ve kullanmamanız gerekmektedir.
+
+
+
+## Katkıda bulunma
 
 Hata bildirimleri, öneriler ve pull request'ler memnuniyetle karşılanır. Yeni bir dosya formatı desteği eklemek veya mevcut görüntüleyicilerden birini iyileştirmek isterseniz, lütfen bir issue açarak talep ve öneride bulunun.
 
