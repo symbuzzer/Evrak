@@ -668,8 +668,8 @@ fun MainScreen(
         )
     }
 
-    ConversionOverlay(
-        isConverting = isConverting,
+    WaitScreenOverlay(
+        show = isConverting,
         message = conversionMessage
     )
 

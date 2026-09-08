@@ -21,11 +21,11 @@ import androidx.compose.ui.unit.dp
 import com.avalibeyaz.evrak.R
 
 @Composable
-fun ConversionOverlay(
-    isConverting: Boolean,
+fun WaitScreenOverlay(
+    show: Boolean,
     message: String = stringResource(id = R.string.converting)
 ) {
-    if (isConverting) {
+    if (show) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

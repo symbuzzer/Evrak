@@ -179,8 +179,8 @@ fun HtmlViewerScreen(
                 modifier = Modifier.fillMaxSize()
             )
 
-            ConversionOverlay(
-                isConverting = isConverting,
+            WaitScreenOverlay(
+                show = isConverting,
                 message = conversionMessage
             )
         }

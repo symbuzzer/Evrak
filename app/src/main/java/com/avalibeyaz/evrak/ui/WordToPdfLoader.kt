@@ -125,8 +125,8 @@ fun WordToPdfLoader(
             }
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                ConversionOverlay(
-                    isConverting = true,
+                WaitScreenOverlay(
+                    show = true,
                     message = stringResource(id = R.string.loading)
                 )
             }
@@ -191,8 +191,8 @@ fun WordToPdfLoader(
         )
     }
 
-    ConversionOverlay(
-        isConverting = isConverting,
+    WaitScreenOverlay(
+        show = isConverting,
         message = conversionMessage
     )
 }

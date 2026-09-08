@@ -254,8 +254,8 @@ fun TiffViewerScreen(
                 }
             }
             
-            ConversionOverlay(
-                isConverting = isConverting,
+            WaitScreenOverlay(
+                show = isConverting,
                 message = conversionMessage
             )
         }

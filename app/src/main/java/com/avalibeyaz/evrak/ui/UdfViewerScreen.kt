@@ -158,8 +158,8 @@ fun UdfViewerScreen(
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (isLoading) {
-                ConversionOverlay(
-                    isConverting = true,
+                WaitScreenOverlay(
+                    show = true,
                     message = stringResource(id = R.string.loading)
                 )
             } else {
@@ -183,8 +183,8 @@ fun UdfViewerScreen(
                 )
             }
 
-            ConversionOverlay(
-                isConverting = isConverting,
+            WaitScreenOverlay(
+                show = isConverting,
                 message = conversionMessage
             )
 
