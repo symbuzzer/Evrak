@@ -138,7 +138,7 @@ object UdfHtmlConverter {
                     table.udf-table td { padding: 5.4pt; vertical-align: top; word-break: break-word; }
                     .udf-tab { display: inline-block; min-width: 28pt; white-space: pre; }
                     .udf-list-row { display: grid; width: 100%; align-items: flex-start; }
-                    .udf-list-marker { grid-column: 1; padding-right: 8pt; white-space: nowrap; }
+                    .udf-list-marker { grid-column: 1; padding-right: 8pt; word-break: break-word; }
                     .udf-list-content { grid-column: 2; min-width: 0; overflow-wrap: anywhere; }
                     .udf-verification-bar { 
                         border-top: 1px solid #333; 
@@ -372,7 +372,8 @@ object UdfHtmlConverter {
                 else -> style.append("text-align:left;")
             }
 
-            val leftIndentAttr = p.attrOrNull("LeftIndent")?.toDoubleOrNull()
+            val leftIndentAttr = p.attrOrNull("LeftIndent")?.toDoubleOrNull() ?: 0.0
+            style.append("padding-left:${leftIndentAttr}pt;")
             p.attrOrNull("RightIndent")?.toDoubleOrNull()?.let { style.append("margin-right:${it}pt;") }
             p.attrOrNull("FirstLineIndent")?.toDoubleOrNull()?.let { style.append("text-indent:${it}pt;") }
             p.attrOrNull("SpaceAbove")?.toDoubleOrNull()?.let { style.append("margin-top:${it}pt;") }
@@ -385,15 +386,24 @@ object UdfHtmlConverter {
             val isBulleted = p.attrOrNull("Bulleted")?.toBoolean() == true || secListType?.startsWith("BULLET_TYPE_") == true
             val hangingAttr = p.attrOrNull("Hanging")?.toDoubleOrNull() ?: 0.0
 
-            var hasTab = false
+            var hasEarlyTab = false
+            var charCount = 0
             forEachChildElement(p) { child ->
-                if (child.tagName == "tab") hasTab = true
+                if (hasEarlyTab) return@forEachChildElement
+                if (child.tagName == "tab") {
+                    if (charCount < 60) hasEarlyTab = true
+                }
                 if (child.tagName == "content") {
-                    if (extractText(child).contains('\t')) hasTab = true
+                    val text = extractText(child)
+                    val tabIdx = text.indexOf('\t')
+                    if (tabIdx >= 0 && (charCount + tabIdx) < 60) {
+                        hasEarlyTab = true
+                    }
+                    charCount += text.length
                 }
             }
 
-            if (isNumbered || isBulleted || hangingAttr > 0 || (hasTab && p.attrOrNull("Alignment") != "1")) {
+            if (isNumbered || isBulleted || hangingAttr > 0 || (hasEarlyTab && p.attrOrNull("Alignment") != "1")) {
                 val marker: String
                 val markerWidth: Double
                 val body: String
@@ -414,8 +424,22 @@ object UdfHtmlConverter {
                         htmlEscape(numberMarker(n, p.attrOrNull("NumberType")))
                     }
 
-                    markerWidth = 20.0
-                    leftIndentAttr?.let { style.append("padding-left:${it}pt;") }
+                    markerWidth = 25.0
+                    val effectivePadding = (leftIndentAttr - markerWidth).coerceAtLeast(0.0)
+
+                    style.setLength(0)
+                    when (p.attrOrNull("Alignment")) {
+                        "1" -> style.append("text-align:center;")
+                        "2" -> style.append("text-align:right;")
+                        "3" -> style.append("text-align:justify; text-justify:inter-word; text-align-last:left;")
+                        else -> style.append("text-align:left;")
+                    }
+                    style.append("padding-left:${effectivePadding}pt;")
+                    p.attrOrNull("RightIndent")?.toDoubleOrNull()?.let { style.append("margin-right:${it}pt;") }
+                    p.attrOrNull("FirstLineIndent")?.toDoubleOrNull()?.let { style.append("text-indent:${it}pt;") }
+                    p.attrOrNull("SpaceAbove")?.toDoubleOrNull()?.let { style.append("margin-top:${it}pt;") }
+                    p.attrOrNull("SpaceBelow")?.toDoubleOrNull()?.let { style.append("margin-bottom:${it}pt;") }
+                    p.attrOrNull("LineSpacing")?.toDoubleOrNull()?.let { style.append("line-height:${1.0 + it};") }
 
                     val inner = StringBuilder()
                     forEachChildElement(p) { child -> inner.append(renderInlineElement(child)) }
