@@ -90,4 +90,6 @@
     <string name="downloads">İndirilenler</string>
     <string name="documents">Belgeler</string>
     <string name="error_folder_selection_not_supported">Dosya yöneticiniz belirli bir klasörü açmayı desteklemiyor. Bundan sonra doğrudan dosya yöneticisi açılacaktır.</string>
+    <string name="save_success">Dosya başarıyla kaydedildi</string>
+    <string name="save_error">Dosya kaydedilirken hata oluştu</string>
 </resources>

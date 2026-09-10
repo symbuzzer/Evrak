@@ -2,6 +2,7 @@ package com.avalibeyaz.evrak.ui
 
 import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
@@ -108,8 +109,14 @@ fun TiffViewerScreen(
                             input.copyTo(output)
                         }
                     }
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, context.getString(R.string.save_success), Toast.LENGTH_SHORT).show()
+                    }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
@@ -131,13 +138,20 @@ fun TiffViewerScreen(
                         context.contentResolver.openOutputStream(destUri)?.use { output ->
                             tempPdf.inputStream().use { input -> input.copyTo(output) }
                         }
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, context.getString(R.string.save_success), Toast.LENGTH_SHORT).show()
+                        }
                     } else if (result is DocumentConverter.ConversionResult.Error) {
                         withContext(Dispatchers.Main) {
                             loadError = context.getString(R.string.error_conversion_failed, result.message)
+                            Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
                         }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
+                    }
                 } finally {
                     isConverting = false
                 }

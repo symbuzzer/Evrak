@@ -1,5 +1,6 @@
 package com.avalibeyaz.evrak.ui
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
@@ -68,8 +69,10 @@ fun ImageViewerScreen(
                         input.copyTo(output)
                     }
                 }
+                Toast.makeText(context, context.getString(R.string.save_success), Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 e.printStackTrace()
+                Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
             }
         }
     }
