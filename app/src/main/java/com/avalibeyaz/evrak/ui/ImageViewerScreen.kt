@@ -45,6 +45,7 @@ fun ImageViewerScreen(
 ) {
     val context = LocalContext.current
     val file = File(filePath)
+    var isLoading by remember { mutableStateOf(true) }
 
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -170,6 +171,9 @@ fun ImageViewerScreen(
                         .build(),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
+                    onLoading = { isLoading = true },
+                    onSuccess = { isLoading = false },
+                    onError = { isLoading = false },
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer(
@@ -181,6 +185,11 @@ fun ImageViewerScreen(
                 )
             }
         }
+
+        WaitScreenOverlay(
+            show = isLoading,
+            message = stringResource(id = R.string.loading)
+        )
 
         loadError?.let { error ->
             AlertDialog(

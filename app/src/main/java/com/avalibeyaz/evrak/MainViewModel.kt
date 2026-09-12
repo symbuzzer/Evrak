@@ -11,6 +11,7 @@ import com.avalibeyaz.evrak.data.Evrak
 import com.avalibeyaz.evrak.data.EvrakDatabase
 import com.avalibeyaz.evrak.data.EvrakRepository
 import com.avalibeyaz.evrak.data.CleanupManager
+import com.avalibeyaz.evrak.ui.EvrakFilter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +22,9 @@ import kotlinx.coroutines.launch
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: EvrakRepository
     val historyList: StateFlow<List<Evrak>>
+
+    private val _selectedFilter = MutableStateFlow(EvrakFilter.ALL)
+    val selectedFilter: StateFlow<EvrakFilter> = _selectedFilter.asStateFlow()
 
     private val sharedPrefs = application.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE)
     private val _folderSelectionEnabled = MutableStateFlow(
@@ -94,5 +98,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+    }
+
+    fun setFilter(filter: EvrakFilter) {
+        _selectedFilter.value = filter
     }
 }

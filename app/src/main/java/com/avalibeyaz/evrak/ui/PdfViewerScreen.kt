@@ -67,6 +67,7 @@ fun PdfViewerScreen(
     saveMimeType: String = "application/pdf"
 ) {
     val context = LocalContext.current
+    var isLoading by remember { mutableStateOf(true) }
 
     val saveLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument(saveMimeType)
@@ -241,6 +242,11 @@ fun PdfViewerScreen(
                                 ): WebResourceResponse? {
                                     return assetLoader.shouldInterceptRequest(request.url)
                                 }
+
+                                override fun onPageFinished(view: WebView?, url: String?) {
+                                    super.onPageFinished(view, url)
+                                    isLoading = false
+                                }
                             }
                             
                             val viewerUrl = "https://appassets.androidplatform.net/assets/pdfjs/viewer.html"
@@ -269,5 +275,10 @@ fun PdfViewerScreen(
                 )
             }
         }
+
+        WaitScreenOverlay(
+            show = isLoading,
+            message = stringResource(id = R.string.loading)
+        )
     }
 }

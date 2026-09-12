@@ -36,6 +36,7 @@ fun HtmlViewerScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(true) }
     
     var isConverting by remember { mutableStateOf(false) }
     var conversionMessage by remember { mutableStateOf("") }
@@ -165,7 +166,12 @@ fun HtmlViewerScreen(
             AndroidView(
                 factory = { ctx ->
                     WebView(ctx).apply {
-                        webViewClient = WebViewClient()
+                        webViewClient = object : WebViewClient() {
+                            override fun onPageFinished(view: WebView?, url: String?) {
+                                super.onPageFinished(view, url)
+                                isLoading = false
+                            }
+                        }
                         settings.apply {
                             javaScriptEnabled = true
                             loadWithOverviewMode = true
@@ -187,6 +193,11 @@ fun HtmlViewerScreen(
                 },
                 update = { },
                 modifier = Modifier.fillMaxSize()
+            )
+
+            WaitScreenOverlay(
+                show = isLoading,
+                message = stringResource(id = R.string.loading)
             )
 
             WaitScreenOverlay(

@@ -8,7 +8,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
@@ -28,6 +27,7 @@ import com.avalibeyaz.evrak.ui.TextViewerScreen
 import com.avalibeyaz.evrak.ui.TiffViewerScreen
 import com.avalibeyaz.evrak.ui.PdfViewerScreen
 import com.avalibeyaz.evrak.ui.WordToPdfLoader
+import com.avalibeyaz.evrak.ui.WaitScreenOverlay
 import com.avalibeyaz.evrak.ui.getMimeType
 import com.avalibeyaz.evrak.ui.UdfViewerScreen
 import com.avalibeyaz.evrak.ui.HtmlViewerScreen
@@ -75,6 +75,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
     val navController = rememberNavController()
     val historyList by viewModel.historyList.collectAsState()
     val folderSelectionEnabled by viewModel.folderSelectionEnabled.collectAsState()
+    val selectedFilter by viewModel.selectedFilter.collectAsState()
     var showAboutDialog by remember { mutableStateOf(false) }
     
     val isExternalIntent = remember(intent) {
@@ -130,16 +131,16 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                     )
                 },
                 folderSelectionEnabled = folderSelectionEnabled,
-                onDisableFolderSelection = { viewModel.disableFolderSelection() }
+                onDisableFolderSelection = { viewModel.disableFolderSelection() },
+                selectedFilter = selectedFilter,
+                onFilterChange = { viewModel.setFilter(it) }
             )
         }
         composable("intent_processor") {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
+            WaitScreenOverlay(
+                show = true,
+                message = stringResource(id = R.string.loading)
+            )
         }
         composable(
             route = "viewer/{filePath}/{displayName}?forceText={forceText}",

@@ -56,7 +56,9 @@ fun MainScreen(
     onAboutClick: () -> Unit,
     onFilePicked: (Uri) -> Unit,
     folderSelectionEnabled: Boolean,
-    onDisableFolderSelection: () -> Unit
+    onDisableFolderSelection: () -> Unit,
+    selectedFilter: EvrakFilter,
+    onFilterChange: (EvrakFilter) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -76,7 +78,6 @@ fun MainScreen(
     var showFormatDialog by remember { mutableStateOf<String?>(null) }
     var conversionError by remember { mutableStateOf<String?>(null) }
 
-    var selectedFilter by remember { mutableStateOf(EvrakFilter.ALL) }
     var initialUri by remember { mutableStateOf<Uri?>(null) }
     var showFolderMenu by remember { mutableStateOf(false) }
 
@@ -136,8 +137,8 @@ fun MainScreen(
     }
 
     LaunchedEffect(availableFilters) {
-        if (selectedFilter !in availableFilters) {
-            selectedFilter = EvrakFilter.ALL
+        if (historyList.isNotEmpty() && selectedFilter !in availableFilters) {
+            onFilterChange(EvrakFilter.ALL)
         }
     }
 
@@ -164,7 +165,10 @@ fun MainScreen(
         uri?.let { destUri ->
             selectedEvrak?.let { evrak ->
                 scope.launch(Dispatchers.IO) {
-                    isConverting = true
+                    withContext(Dispatchers.Main) {
+                        conversionMessage = defaultConvertingMessage
+                        isConverting = true
+                    }
                     try {
                         val tempPdf = File(context.cacheDir, "temp_main_convert.pdf")
                         val result = DocumentConverter.convert(File(evrak.path), tempPdf, context)
@@ -380,7 +384,7 @@ fun MainScreen(
                                 items(availableFilters) { filter ->
                                     FilterChip(
                                         selected = selectedFilter == filter,
-                                        onClick = { selectedFilter = filter },
+                                        onClick = { onFilterChange(filter) },
                                         label = { Text(text = stringResource(id = filter.labelResId)) }
                                     )
                                 }

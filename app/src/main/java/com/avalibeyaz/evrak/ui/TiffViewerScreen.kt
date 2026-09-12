@@ -55,6 +55,7 @@ fun TiffViewerScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(true) }
     var pageCount by remember { mutableIntStateOf(0) }
     var loadError by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
@@ -83,11 +84,13 @@ fun TiffViewerScreen(
                 tiffRenderer = TiffRenderer(pfd)
                 renderer = tiffRenderer
                 pageCount = tiffRenderer.pageCount()
+                withContext(Dispatchers.Main) { isLoading = false }
                 
                 awaitCancellation()
             } catch (e: Exception) {
                 e.printStackTrace()
                 loadError = context.getString(R.string.error_tiff_open_failed, e.message ?: "")
+                withContext(Dispatchers.Main) { isLoading = false }
             } finally {
                 withContext(NonCancellable) {
                     renderer = null
@@ -268,6 +271,11 @@ fun TiffViewerScreen(
                 }
             }
             
+            WaitScreenOverlay(
+                show = isLoading,
+                message = stringResource(id = R.string.loading)
+            )
+
             WaitScreenOverlay(
                 show = isConverting,
                 message = conversionMessage
