@@ -19,7 +19,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     suspend fun getAllPaths(): List<String> = evrakDao.getAllPaths()
 
     private val supportedExtensions = setOf(
-        ".pdf", ".docx", ".doc", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt"
+        ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt"
     )
 
     suspend fun addEvrakFromUri(uri: Uri, resolver: ContentResolver? = null): Evrak? {
@@ -49,8 +49,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 val isExistingImage = extension?.lowercase() in imageExtensions
                 val isSniffedImage = sniffedExt.lowercase() in imageExtensions
                 
-                if (isExistingImage && isSniffedImage) {
-                } else {
+                if (!(isExistingImage && isSniffedImage)) {
                     extension = sniffedExt
                 }
             }

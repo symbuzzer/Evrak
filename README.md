@@ -2,7 +2,7 @@
 [<img width="220" height="66" src="https://github.com/user-attachments/assets/7c2fadad-e134-4566-a5cb-9f4a0f32732a" />](https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak)
 
 
-**Evrak**, avukatların ve arabulucuların günlük iş akışında en sık karşılaştığı dosya formatlarını **-UDF, TIFF, PDF, DOCX, DOC, HTML, TXT, JPG, GIF, PNG-** tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan ücretsiz ve reklamsız bir Android uygulamasıdır.
+**Evrak**, avukatların ve arabulucuların günlük iş akışında en sık karşılaştığı dosya formatlarını **-UDF, TIFF, PDF, Word (DOCX, DOC), Excel (XLSX, XLS), HTML, TXT, JPG, GIF, PNG-** tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan ücretsiz ve reklamsız bir Android uygulamasıdır.
 
 UYAP, CELSE, e-arabulucu, e-Adalet vb. uygulamalar üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygulamaları aracılığıyla gelen evrakları açmak için genellikle birden fazla farklı uygulamaya ihtiyaç duyulur. Evrak Android uygulaması, bu ihtiyacı tek bir yerde, gereksiz karmaşıklık olmadan çözer.  
 
@@ -10,10 +10,10 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 
 ## Özellikler
 
-- **Çoklu format desteği:** UDF, TIFF, PDF, DOCX, DOC, HTML, TXT, JPG, GIF, PNG
+- **Çoklu format desteği:** UDF, TIFF, PDF, Word (DOCX, DOC), Excel (XLSX, XLS), HTML, TXT, JPG, GIF, PNG
 - **Basit ve hızlı:** Dosyayı aç, görüntüle - başka hiçbir şeye gerek yok
 - **Paylaşma ve kaydetme:** Görüntülenen dosyalar istenilen yere kaydedilebilir veya doğrudan başka uygulamalarla paylaşılabilir
-- **UDF, TIFF, DOCX, DOC ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında istenirse bu dosyalar PDF'e çevrilebilir
+- **UDF, TIFF, Word (DOCX, DOC), Excel (XLSX, XLS) ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında istenirse bu dosyalar PDF'e çevrilebilir
 - **Sorunsuz Türkçe karakterler:** Özellikle UDF'den dönüştürülen PDF dosyalarındaki Türkçe karakterlerin görüntülenememe sorunu yok
 - **Yazdırma:** Bütün dosya türleri, Android'in kendi yazdırma özelliği ile doğrudan cihazınızdan yazdırılabilir
 - **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
@@ -38,15 +38,16 @@ Evrak uygulamasının, CELSE ile Uyap Doküman Editör'ü uygulaması olmadan do
 
 ## Desteklenen dosya formatları
 
-| Format | Uzantı |
-| --- | --- |
-| UYAP UDF | `.udf` |
-| TIFF | `.tif`, `.tiff` |
-| PDF | `.pdf` |
-| Word | `.docx`, `.doc` |
-| HTML | `.html`, `.htm` |
-| Metin | `.txt` |
-| Görsel | `.jpg`, `.jpeg`, `.png`, `.gif` |
+| Format   | Uzantı                          |
+|----------|---------------------------------|
+| UYAP UDF | `.udf`                          |
+| TIFF     | `.tif`, `.tiff`                 |
+| PDF      | `.pdf`                          |
+| Word     | `.docx`, `.doc`                 |
+| Excel    | `.xlsx`, `.xls`                 |
+| HTML     | `.html`, `.htm`                 |
+| Metin    | `.txt`                          |
+| Görsel   | `.jpg`, `.jpeg`, `.png`, `.gif` |
 
 ## Kullanılan kütüphaneler ve lisansları
 
@@ -59,7 +60,7 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 | [Coil](https://github.com/coil-kt/coil) (coil-compose, coil-gif) — görsel yükleme (JPG/PNG/GIF)                                                              | Apache License 2.0 |
 | [PDF.js](https://mozilla.github.io/pdf.js/) — Mozilla tarafından geliştirilen PDF görüntüleme motoru                                                          | Apache License 2.0 |
 | [tiffrenderer](https://github.com/lucf15/TiffRenderer) — TIFF render motoru ve PDF dönüşümü                                                                  | Apache License 2.0 |
-| [LibreOffice Core](https://www.libreoffice.org/) (LibreOfficeKit) — DOC/DOCX görüntüleme ve PDF dönüşümü                                                     | Mozilla Public License 2.0 |
+| [LibreOffice Core](https://www.libreoffice.org/) (LibreOfficeKit) — DOC/DOCX/XLS/XLSX görüntüleme ve PDF dönüşümü                                             | Mozilla Public License 2.0 |
 
 ### Android / Kotlin
 

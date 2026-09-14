@@ -25,7 +25,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -86,7 +85,11 @@ fun MainScreen(
         if (historyList.any { it.path.endsWith(".udf", true) }) filters.add(EvrakFilter.UDF)
         if (historyList.any { it.path.endsWith(".pdf", true) }) filters.add(EvrakFilter.PDF)
         if (historyList.any { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }) filters.add(EvrakFilter.TIFF)
-        if (historyList.any { it.path.endsWith(".doc", true) || it.path.endsWith(".docx", true) }) filters.add(EvrakFilter.WORD)
+        if (historyList.any { 
+            val path = it.path.lowercase()
+            path.endsWith(".doc") || path.endsWith(".docx") ||
+            path.endsWith(".xls") || path.endsWith(".xlsx")
+        }) filters.add(EvrakFilter.OFFICE)
         if (historyList.any {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
@@ -148,7 +151,11 @@ fun MainScreen(
             EvrakFilter.UDF -> historyList.filter { it.path.endsWith(".udf", true) }
             EvrakFilter.PDF -> historyList.filter { it.path.endsWith(".pdf", true) }
             EvrakFilter.TIFF -> historyList.filter { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }
-            EvrakFilter.WORD -> historyList.filter { it.path.endsWith(".doc", true) || it.path.endsWith(".docx", true) }
+            EvrakFilter.OFFICE -> historyList.filter {
+                val path = it.path.lowercase()
+                path.endsWith(".doc") || path.endsWith(".docx") ||
+                path.endsWith(".xls") || path.endsWith(".xlsx")
+            }
             EvrakFilter.OTHER -> historyList.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
@@ -526,17 +533,22 @@ fun MainScreen(
                     }
                 )
 
-                OptionItem(
-                    icon = Icons.Default.Print,
-                    label = stringResource(id = R.string.print),
-                    onClick = {
-                        showSheet = false
-                        onPrintClick(selectedEvrak!!) { converting ->
-                            conversionMessage = preparingMessage
-                            isConverting = converting
+                val isExcel = selectedEvrak!!.path.endsWith(".xlsx", true) || 
+                              selectedEvrak!!.path.endsWith(".xls", true)
+                
+                if (!isExcel) {
+                    OptionItem(
+                        icon = Icons.Default.Print,
+                        label = stringResource(id = R.string.print),
+                        onClick = {
+                            showSheet = false
+                            onPrintClick(selectedEvrak!!) { converting ->
+                                conversionMessage = preparingMessage
+                                isConverting = converting
+                            }
                         }
-                    }
-                )
+                    )
+                }
 
                 OptionItem(
                     icon = Icons.Default.Edit,
@@ -816,6 +828,6 @@ enum class EvrakFilter(val labelResId: Int) {
     UDF(R.string.filter_udf),
     PDF(R.string.filter_pdf),
     TIFF(R.string.filter_tiff),
-    WORD(R.string.filter_word),
+    OFFICE(R.string.filter_office),
     OTHER(R.string.filter_other)
 }

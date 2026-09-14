@@ -8,7 +8,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,9 +25,11 @@ import com.avalibeyaz.evrak.ui.ImageViewerScreen
 import com.avalibeyaz.evrak.ui.TextViewerScreen
 import com.avalibeyaz.evrak.ui.TiffViewerScreen
 import com.avalibeyaz.evrak.ui.PdfViewerScreen
+import com.avalibeyaz.evrak.ui.OfficeToHtmlLoader
 import com.avalibeyaz.evrak.ui.WordToPdfLoader
 import com.avalibeyaz.evrak.ui.WaitScreenOverlay
 import com.avalibeyaz.evrak.ui.getMimeType
+import com.avalibeyaz.evrak.ui.findActivity
 import com.avalibeyaz.evrak.ui.UdfViewerScreen
 import com.avalibeyaz.evrak.ui.HtmlViewerScreen
 import com.avalibeyaz.evrak.ui.UnsupportedViewerScreen
@@ -174,8 +175,11 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                           filePath.endsWith(".jpeg", true) || 
                           filePath.endsWith(".gif", true)
             
-            val isWord = filePath.endsWith(".docx", true) || 
+            val isOffice = filePath.endsWith(".docx", true) || 
                           filePath.endsWith(".doc", true)
+            
+            val isExcel = filePath.endsWith(".xlsx", true) ||
+                          filePath.endsWith(".xls", true)
             
             val isUdf = filePath.endsWith(".udf", true)
             
@@ -217,8 +221,16 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         onShareClick = { shareFile(context, filePath) }
                     )
                 }
-                isWord -> {
+                isOffice -> {
                     WordToPdfLoader(
+                        filePath = filePath,
+                        displayName = displayName,
+                        onBackClick = onBackSafe,
+                        onShareClick = { shareFile(context, filePath) }
+                    )
+                }
+                isExcel -> {
+                    OfficeToHtmlLoader(
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,

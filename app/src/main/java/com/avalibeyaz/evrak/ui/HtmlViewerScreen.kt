@@ -32,11 +32,12 @@ fun HtmlViewerScreen(
     filePath: String,
     displayName: String,
     onBackClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    onSaveClick: (() -> Unit)? = null,
+    originalExtension: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var isLoading by remember { mutableStateOf(true) }
     
     var isConverting by remember { mutableStateOf(false) }
     var conversionMessage by remember { mutableStateOf("") }
@@ -102,7 +103,37 @@ fun HtmlViewerScreen(
 
     val htmlContent = remember(filePath) {
         try {
-            File(filePath).readText(Charsets.UTF_8)
+            var content = File(filePath).readText(Charsets.UTF_8)
+            val isExcel = originalExtension?.contains("XLS", true) == true
+            
+            val tableStyle = if (isExcel) {
+                "table { border-collapse: collapse; width: auto; min-width: 100%; margin-bottom: 20px; table-layout: auto; }"
+            } else {
+                "table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }"
+            }
+            
+            val cellStyle = if (isExcel) {
+                "th, td { border: 1px solid #ccc; padding: 8px; text-align: left; white-space: nowrap; }"
+            } else {
+                "th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }"
+            }
+
+            val css = """
+                <style>
+                    $tableStyle
+                    $cellStyle
+                    th { background-color: #f2f2f2; }
+                    body { font-family: sans-serif; padding: 10px; }
+                    img { max-width: 100%; height: auto; }
+                </style>
+            """.trimIndent()
+            
+            if (content.contains("<head>", ignoreCase = true)) {
+                content = content.replace("<head>", "<head>$css", ignoreCase = true)
+            } else {
+                content = "<html><head>$css</head><body>$content</body></html>"
+            }
+            content
         } catch (e: Exception) {
             null
         }
@@ -120,6 +151,9 @@ fun HtmlViewerScreen(
                     }
                 },
                 actions = {
+                    val isExcel = originalExtension?.equals("XLSX", true) == true || 
+                                  originalExtension?.equals("XLS", true) == true
+
                     TooltipBox(
                         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                             TooltipAnchorPosition.Above
@@ -132,7 +166,11 @@ fun HtmlViewerScreen(
                         state = rememberTooltipState()
                     ) {
                         IconButton(onClick = {
-                            showFormatDialog = "save"
+                            if (isExcel && onSaveClick != null) {
+                                onSaveClick()
+                            } else {
+                                showFormatDialog = "save"
+                            }
                         }) {
                             Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
                         }
@@ -149,7 +187,11 @@ fun HtmlViewerScreen(
                         state = rememberTooltipState()
                     ) {
                         IconButton(onClick = {
-                            showFormatDialog = "share"
+                            if (isExcel) {
+                                onShareClick()
+                            } else {
+                                showFormatDialog = "share"
+                            }
                         }) {
                             Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
                         }
@@ -166,12 +208,7 @@ fun HtmlViewerScreen(
             AndroidView(
                 factory = { ctx ->
                     WebView(ctx).apply {
-                        webViewClient = object : WebViewClient() {
-                            override fun onPageFinished(view: WebView?, url: String?) {
-                                super.onPageFinished(view, url)
-                                isLoading = false
-                            }
-                        }
+                        webViewClient = WebViewClient()
                         settings.apply {
                             javaScriptEnabled = true
                             loadWithOverviewMode = true
@@ -196,11 +233,6 @@ fun HtmlViewerScreen(
             )
 
             WaitScreenOverlay(
-                show = isLoading,
-                message = stringResource(id = R.string.loading)
-            )
-
-            WaitScreenOverlay(
                 show = isConverting,
                 message = conversionMessage
             )
@@ -221,7 +253,7 @@ fun HtmlViewerScreen(
     }
 
     if (showFormatDialog != null) {
-        val ext = filePath.substringAfterLast(".").uppercase()
+        val ext = originalExtension ?: filePath.substringAfterLast(".").uppercase()
         FormatSelectionDialog(
             extension = ext,
             onDismiss = { showFormatDialog = null },

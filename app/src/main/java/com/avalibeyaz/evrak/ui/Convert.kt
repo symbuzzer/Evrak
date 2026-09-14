@@ -56,7 +56,7 @@ object DocumentConverter {
             }
             "html", "htm" -> {
                 if (context != null) {
-                    convertHtmlToPdfWithWebView(inputFile, outputFile, context)
+                    convertHtmlFileToPdf(inputFile, outputFile, context)
                 } else {
                     val errorMsg = context?.getString(R.string.error_context_required) ?: "Context is required for HTML conversion."
                     ConversionResult.Error(errorMsg)
@@ -73,6 +73,19 @@ object DocumentConverter {
                 val errorMsg = context?.getString(R.string.error_unsupported_type, inputFile.extension) 
                     ?: "Unsupported file type: .${inputFile.extension}"
                 ConversionResult.Error(errorMsg)
+            }
+        }
+    }
+
+    suspend fun convertToHtml(inputFile: File, outputFile: File, context: Context): ConversionResult {
+        if (!inputFile.exists()) return ConversionResult.Error("File not found")
+        return withContext(Dispatchers.IO) {
+            try {
+                val success = LibreOfficeManager.convertToHtml(inputFile, outputFile, context)
+                if (success) ConversionResult.Success(outputFile)
+                else ConversionResult.Error("LibreOffice HTML conversion failed")
+            } catch (e: Exception) {
+                ConversionResult.Error(e.localizedMessage ?: "HTML conversion error")
             }
         }
     }
@@ -135,8 +148,17 @@ object DocumentConverter {
         webView.loadUrl("$viewerUrl?file=$fileUrl")
     }
 
+    suspend fun convertHtmlFileToPdf(inputFile: File, outputFile: File, context: Context): ConversionResult {
+        return try {
+            val html = inputFile.readText(Charsets.UTF_8)
+            convertHtmlToPdfWithWebView(html, outputFile, context)
+        } catch (e: Exception) {
+            ConversionResult.Error("HTML read error: ${e.message}")
+        }
+    }
+
     suspend fun convertHtmlToPdfWithWebView(
-        inputFile: File,
+        htmlContent: String,
         outputFile: File,
         context: Context
     ): ConversionResult = withContext(Dispatchers.Main) {
@@ -152,12 +174,6 @@ object DocumentConverter {
             textZoom = 100
             allowFileAccess = true
             allowContentAccess = true
-            @Suppress("DEPRECATION")
-            allowFileAccessFromFileURLs = true
-            @Suppress("DEPRECATION")
-            allowUniversalAccessFromFileURLs = true
-            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-            offscreenPreRaster = true
         }
 
         webView.webViewClient = object : WebViewClient() {
@@ -182,89 +198,58 @@ object DocumentConverter {
                                             pfd.close()
                                             deferred.complete(ConversionResult.Success(outputFile))
                                         } catch (e: Exception) {
-                                            val msg = context.getString(R.string.error_pdf_close_failed, e.message)
-                                            deferred.complete(ConversionResult.Error(msg))
+                                            deferred.complete(ConversionResult.Error("PDF close error"))
                                         }
                                     },
                                     onFailure = { error ->
                                         pfd.close()
-                                        val msg = context.getString(R.string.error_pdf_write_failed, error)
-                                        deferred.complete(ConversionResult.Error(msg))
+                                        deferred.complete(ConversionResult.Error("PDF write failed: $error"))
                                     }
                                 )
                                 adapter.onWrite(arrayOf(android.print.PageRange.ALL_PAGES), pfd, null, writeCallback)
                             },
                             onFailure = { error ->
                                 pfd.close()
-                                val msg = context.getString(R.string.error_pdf_layout_failed, error)
-                                deferred.complete(ConversionResult.Error(msg))
+                                deferred.complete(ConversionResult.Error("PDF layout failed: $error"))
                             }
                         )
                         adapter.onLayout(null, printAttributes, null, layoutCallback, null)
                     } catch (e: Exception) {
-                        Log.e(TAG, "PDF conversion error", e)
                         if (!deferred.isCompleted) {
-                            val msg = context.getString(R.string.error_pdf_creation_failed, e.localizedMessage)
-                            deferred.complete(ConversionResult.Error(msg))
+                            deferred.complete(ConversionResult.Error("PDF creation failed: ${e.message}"))
                         }
                     }
                 }, 3500)
             }
         }
 
-        try {
-            var htmlContent = inputFile.readText(Charsets.UTF_8)
-            
-            val fontBase64 = try {
-                context.assets.open("unpack/user/fonts/LiberationSerif-Regular.ttf").use { input ->
-                    android.util.Base64.encodeToString(input.readBytes(), android.util.Base64.NO_WRAP)
-                }
-            } catch (e: Exception) {
-                null
+        var finalHtml = htmlContent
+        val fontBase64 = try {
+            context.assets.open("unpack/user/fonts/LiberationSerif-Regular.ttf").use { input ->
+                android.util.Base64.encodeToString(input.readBytes(), android.util.Base64.NO_WRAP)
             }
+        } catch (e: Exception) { null }
 
-            val fontFix = if (fontBase64 != null) {
-                """
-                <style>
-                @font-face {
-                    font-family: 'EmbeddedLiberation';
-                    src: url(data:font/ttf;base64,$fontBase64) format('truetype');
-                }
-                * {
-                    font-family: 'EmbeddedLiberation', serif !important;
-                }
-                </style>
-                """.trimIndent()
-            } else ""
-            
-            if (htmlContent.contains("<head>", ignoreCase = true)) {
-                htmlContent = htmlContent.replace("<head>", "<head>$fontFix", ignoreCase = true)
+        if (fontBase64 != null) {
+            val fontStyle = "<style>@font-face { font-family: 'EmbeddedLiberation'; src: url(data:font/ttf;base64,$fontBase64) format('truetype'); } * { font-family: 'EmbeddedLiberation', serif !important; }</style>"
+            if (finalHtml.contains("<head>", ignoreCase = true)) {
+                finalHtml = finalHtml.replace("<head>", "<head>$fontStyle", ignoreCase = true)
             } else {
-                htmlContent = "$fontFix$htmlContent"
-            }
-            
-            webView.loadDataWithBaseURL("https://evrak.app/", htmlContent, "text/html", "UTF-8", null)
-        } catch (e: Exception) {
-            if (!deferred.isCompleted) {
-                val msg = context.getString(R.string.error_file_read_failed, e.message)
-                deferred.complete(ConversionResult.Error(msg))
+                finalHtml = "$fontStyle$finalHtml"
             }
         }
 
+        webView.loadDataWithBaseURL("https://evrak.app/", finalHtml, "text/html", "UTF-8", null)
+
         try {
-            withTimeout(35000) { deferred.await() }
+            withTimeout(60000) { deferred.await() }
         } catch (e: Exception) {
             webView.stopLoading()
             if (deferred.isCompleted) {
                 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
                 deferred.getCompleted()
             } else {
-                if (e is kotlinx.coroutines.TimeoutCancellationException) {
-                    ConversionResult.Error(context.getString(R.string.error_conversion_timeout))
-                } else {
-                    val msg = context.getString(R.string.error_during_conversion) + ": ${e.localizedMessage ?: ""}"
-                    ConversionResult.Error(msg)
-                }
+                ConversionResult.Error(context.getString(R.string.error_conversion_timeout))
             }
         }
     }
@@ -276,13 +261,7 @@ object DocumentConverter {
                 if (html.isEmpty()) {
                     return@withContext ConversionResult.Error(context.getString(R.string.error_udf_parse_failed))
                 }
-
-                val tempHtmlFile = File(context.cacheDir, "temp_${System.currentTimeMillis()}.html")
-                tempHtmlFile.writeText(html, Charsets.UTF_8)
-
-                val result = convertHtmlToPdfWithWebView(tempHtmlFile, outputFile, context)
-                tempHtmlFile.delete()
-                result
+                convertHtmlToPdfWithWebView(html, outputFile, context)
             } catch (e: Exception) {
                 Log.e(TAG, "UDF -> PDF conversion error", e)
                 ConversionResult.Error(context.getString(R.string.error_udf_conversion_failed, e.message))
@@ -291,34 +270,13 @@ object DocumentConverter {
     }
 
     suspend fun convertTxtToPdf(inputFile: File, outputFile: File, context: Context): ConversionResult {
-        return withContext(Dispatchers.IO) {
-            try {
-                val text = inputFile.readText(Charsets.UTF_8)
-                val escapedText = text.replace("&", "&amp;")
-                    .replace("<", "&lt;")
-                    .replace(">", "&gt;")
-                    .replace("\"", "&quot;")
-                    .replace("'", "&#039;")
-
-                val html = """
-                    <html>
-                    <body style="white-space: pre-wrap; font-family: monospace; padding: 16px; font-size: 14px; line-height: 1.4; color: #000000;">
-                    $escapedText
-                    </body>
-                    </html>
-                """.trimIndent()
-
-                val tempHtmlFile = File(context.cacheDir, "temp_txt_${System.currentTimeMillis()}.html")
-                tempHtmlFile.writeText(html, Charsets.UTF_8)
-
-                val result = convertHtmlToPdfWithWebView(tempHtmlFile, outputFile, context)
-                tempHtmlFile.delete()
-                result
-            } catch (e: Exception) {
-                Log.e(TAG, "TXT -> PDF conversion error", e)
-                val msg = context.getString(R.string.error_during_conversion) + ": ${e.localizedMessage ?: ""}"
-                ConversionResult.Error(msg)
-            }
+        return try {
+            val text = inputFile.readText(Charsets.UTF_8)
+            val escapedText = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            val html = "<html><body style='white-space: pre-wrap; font-family: monospace;'>$escapedText</body></html>"
+            convertHtmlToPdfWithWebView(html, outputFile, context)
+        } catch (e: Exception) {
+            ConversionResult.Error("TXT error: ${e.message}")
         }
     }
 
@@ -333,12 +291,7 @@ object DocumentConverter {
             for (pageIndex in 0 until pages) {
                 val page = tiffRenderer.openPage(pageIndex)
                 try {
-                    val maxDimension = 3000f
-                    val scale = (maxDimension / maxOf(page.width, page.height)).coerceAtMost(1f)
-                    val targetWidth = (page.width * scale).toInt().coerceAtLeast(1)
-                    val targetHeight = (page.height * scale).toInt().coerceAtLeast(1)
-                    
-                    val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+                    val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
                     page.render(TiffBitmap(bitmap), null, null, TiffRenderMode.FOR_DISPLAY)
                     val pdfPage = pdfDocument.startPage(PdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, pageIndex + 1).create())
                     pdfPage.canvas.drawBitmap(bitmap, 0f, 0f, null)
@@ -351,8 +304,7 @@ object DocumentConverter {
             writePdf(pdfDocument, outputFile)
             return ConversionResult.Success(outputFile)
         } catch (e: Exception) {
-            val msg = context?.getString(R.string.error_tiff_error, e.message) ?: "TIFF error: ${e.message}"
-            return ConversionResult.Error(msg, e)
+            return ConversionResult.Error("TIFF error: ${e.message}")
         } finally {
             try { tiffRenderer?.close() } catch (_: Exception) {}
             pfd?.close(); pdfDocument.close()
@@ -367,14 +319,10 @@ object DocumentConverter {
         return withContext(Dispatchers.IO) {
             try {
                 val success = LibreOfficeManager.convertToPdf(inputFile, outputFile, context)
-                if (success) {
-                    ConversionResult.Success(outputFile)
-                } else {
-                    ConversionResult.Error(context.getString(R.string.error_libreoffice_failed))
-                }
+                if (success) ConversionResult.Success(outputFile)
+                else ConversionResult.Error(context.getString(R.string.error_libreoffice_failed))
             } catch (e: Exception) {
-                Log.e(TAG, "Word -> PDF conversion error", e)
-                ConversionResult.Error(context.getString(R.string.error_word_conversion_failed, e.message))
+                ConversionResult.Error("Word error: ${e.message}")
             }
         }
     }

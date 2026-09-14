@@ -165,57 +165,68 @@ object LibreOfficeManager {
     }
 
     suspend fun convertToPdf(inputFile: File, outputFile: File, context: Context): Boolean {
-        if (!isInitialized) {
-            init(context)
-        }
-        
-        if (!isInitialized) {
-            Log.e(TAG, context.getString(R.string.error_libreoffice_not_initialized))
-            return false
-        }
+        if (!isInitialized) init(context)
+        if (!isInitialized) return false
 
         return withContext(Dispatchers.IO) {
             mutex.withLock {
                 var doc: Document? = null
-                var tempInputFile: File? = null
+                var tempInput: File? = null
                 try {
                     val inputDir = File(context.filesDir, "in").apply { if (!exists()) mkdirs() }
-                    val safeExtension = inputFile.extension.let { if (it.isEmpty()) "docx" else it }
-                    tempInputFile = File(inputDir, "lo_input_${System.currentTimeMillis()}.$safeExtension")
-                    inputFile.copyTo(tempInputFile, overwrite = true)
+                    val ext = inputFile.extension.let { if (it.isEmpty()) "docx" else it }
+                    tempInput = File(inputDir, "lo_${System.currentTimeMillis()}.$ext")
+                    inputFile.copyTo(tempInput!!, overwrite = true)
 
-                    val inputUri = Uri.fromFile(tempInputFile).toString()
-                    val outputUri = Uri.fromFile(outputFile).toString()
+                    val inputUri = "file://" + tempInput!!.absolutePath
+                    val outputUri = "file://" + outputFile.absolutePath
                     
                     doc = office?.documentLoad(inputUri)
-                    
-                    if (doc == null) {
-                        val error = try { office?.getError() ?: "Unknown native error" } catch (e: Exception) { "Error message could not be retrieved" }
-                        Log.e(TAG, "Document load failed. Native error: $error")
-                        return@withLock false
-                    }
+                    if (doc == null) return@withLock false
 
                     outputFile.parentFile?.mkdirs()
+                    doc.saveAs(outputUri, "pdf", "")
                     
-                    val filterOptions = "EmbedStandardFonts=true"
-                    try {
-                        doc.saveAs(outputUri, "pdf", filterOptions)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Native saveAs with options failed, trying empty options", e)
-                        doc.saveAs(outputUri, "pdf", "")
-                    }
-                    
-                    val success = outputFile.exists() && outputFile.length() > 0
-                    if (!success) {
-                        Log.e(TAG, context.getString(R.string.error_pdf_not_created))
-                    }
-                    success
+                    outputFile.exists() && outputFile.length() > 0
                 } catch (e: Exception) {
-                    Log.e(TAG, context.getString(R.string.error_during_conversion), e)
                     false
                 } finally {
-                    try { doc?.destroy() } catch (e: Exception) {}
-                    try { tempInputFile?.delete() } catch (e: Exception) {}
+                    try { doc?.destroy() } catch (_: Exception) {}
+                    try { tempInput?.delete() } catch (_: Exception) {}
+                }
+            }
+        }
+    }
+
+    suspend fun convertToHtml(inputFile: File, outputFile: File, context: Context): Boolean {
+        if (!isInitialized) init(context)
+        if (!isInitialized) return false
+
+        return withContext(Dispatchers.IO) {
+            mutex.withLock {
+                var doc: Document? = null
+                var tempInput: File? = null
+                try {
+                    val inputDir = File(context.filesDir, "in").apply { if (!exists()) mkdirs() }
+                    val ext = inputFile.extension.let { if (it.isEmpty()) "xlsx" else it }
+                    tempInput = File(inputDir, "lo_${System.currentTimeMillis()}.$ext")
+                    inputFile.copyTo(tempInput!!, overwrite = true)
+
+                    val inputUri = "file://" + tempInput!!.absolutePath
+                    val outputUri = "file://" + outputFile.absolutePath
+                    
+                    doc = office?.documentLoad(inputUri)
+                    if (doc == null) return@withLock false
+
+                    outputFile.parentFile?.mkdirs()
+                    doc.saveAs(outputUri, "html", "")
+                    
+                    outputFile.exists() && outputFile.length() > 0
+                } catch (e: Exception) {
+                    false
+                } finally {
+                    try { doc?.destroy() } catch (_: Exception) {}
+                    try { tempInput?.delete() } catch (_: Exception) {}
                 }
             }
         }

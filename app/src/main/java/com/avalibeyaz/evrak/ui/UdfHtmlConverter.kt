@@ -445,7 +445,7 @@ object UdfHtmlConverter {
                     forEachChildElement(p) { child -> inner.append(renderInlineElement(child)) }
                     body = inner.toString()
                 } else {
-                    val split = renderParagraphWithHangingSplit(p, hangingAttr)
+                    val split = renderParagraphWithHangingSplit(p)
                     if (split != null) {
                         marker = split.first
                         val plainMarker = marker.replace(Regex("<[^>]*>"), "").replace("&nbsp;", "").trim()
@@ -480,7 +480,7 @@ object UdfHtmlConverter {
             return "<div class=\"udf-paragraph\" style=\"$style\">$inner</div>"
         }
 
-        private fun renderParagraphWithHangingSplit(p: Element, hanging: Double): Pair<String, String>? {
+        private fun renderParagraphWithHangingSplit(p: Element): Pair<String, String>? {
             val before = StringBuilder()
             val after = StringBuilder()
             var splitDone = false
