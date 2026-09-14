@@ -5,12 +5,9 @@ import android.graphics.Bitmap
 import android.graphics.pdf.PdfDocument
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.print.PrintResultCallback
-import androidx.webkit.WebViewAssetLoader
 import com.avalibeyaz.evrak.R
 import io.github.lucf15.tiffrenderer.TiffBitmap
 import io.github.lucf15.tiffrenderer.TiffRenderMode
@@ -90,63 +87,6 @@ object DocumentConverter {
         }
     }
 
-    suspend fun printPdfWithWebView(
-        file: File,
-        displayName: String,
-        context: Context,
-        onStatusChange: (Boolean) -> Unit = {}
-    ) = withContext(Dispatchers.Main) {
-        onStatusChange(true)
-        val webView = WebView(context)
-        
-        val assetLoader = WebViewAssetLoader.Builder()
-            .setDomain("appassets.androidplatform.net")
-            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(context))
-            .addPathHandler("/internal/", SafeFileHandler(context.filesDir))
-            .addPathHandler("/cache/", SafeFileHandler(context.cacheDir))
-            .build()
-
-        webView.settings.apply {
-            javaScriptEnabled = true
-            allowFileAccess = true
-            allowContentAccess = true
-            domStorageEnabled = true
-        }
-
-        webView.webViewClient = object : WebViewClient() {
-            override fun shouldInterceptRequest(
-                view: WebView?,
-                request: WebResourceRequest
-            ): WebResourceResponse? {
-                return assetLoader.shouldInterceptRequest(request.url)
-            }
-
-            override fun onPageFinished(view: WebView?, url: String?) {
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    onStatusChange(false)
-                    val printManager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
-                    val jobName = "${context.getString(R.string.app_name)} - $displayName"
-                    val adapter = webView.createPrintDocumentAdapter(jobName)
-                    printManager.print(jobName, adapter, null)
-                }, 3000)
-            }
-        }
-
-        val viewerUrl = "https://appassets.androidplatform.net/assets/pdfjs/viewer.html"
-        val fileUrl = when {
-            file.absolutePath.startsWith(context.cacheDir.absolutePath) -> {
-                val relativePath = file.absolutePath.substring(context.cacheDir.absolutePath.length)
-                "https://appassets.androidplatform.net/cache${relativePath.split('/').joinToString("/") { android.net.Uri.encode(it) }}"
-            }
-            file.absolutePath.startsWith(context.filesDir.absolutePath) -> {
-                val relativePath = file.absolutePath.substring(context.filesDir.absolutePath.length)
-                "https://appassets.androidplatform.net/internal${relativePath.split('/').joinToString("/") { android.net.Uri.encode(it) }}"
-            }
-            else -> "https://appassets.androidplatform.net/internal/${android.net.Uri.encode(file.name)}"
-        }
-        
-        webView.loadUrl("$viewerUrl?file=$fileUrl")
-    }
 
     suspend fun convertHtmlFileToPdf(inputFile: File, outputFile: File, context: Context): ConversionResult {
         return try {

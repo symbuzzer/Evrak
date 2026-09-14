@@ -363,13 +363,7 @@ private fun printFile(
             filePath.endsWith(".gif", true)
 
     if (filePath.endsWith(".pdf", true)) {
-        if (context is ComponentActivity) {
-            context.lifecycleScope.launch {
-                DocumentConverter.printPdfWithWebView(file, displayName, context, onConvertingChange)
-            }
-        } else {
-            doPrint(context, file, displayName)
-        }
+        doPrint(context, file, displayName)
     } else if (isImage) {
         doPrintImage(context, file, displayName)
     } else {
@@ -409,44 +403,49 @@ private fun doPrint(context: android.content.Context, file: File, displayName: S
     val printManager = context.getSystemService(android.content.Context.PRINT_SERVICE) as android.print.PrintManager
     val jobName = "${context.getString(R.string.app_name)} - $displayName"
 
-    val pfd = android.os.ParcelFileDescriptor.open(file, android.os.ParcelFileDescriptor.MODE_READ_ONLY)
-
     printManager.print(
         jobName, 
         object : android.print.PrintDocumentAdapter() {
             override fun onLayout(
-            oldAttributes: android.print.PrintAttributes?,
-            newAttributes: android.print.PrintAttributes?,
-            cancellationSignal: android.os.CancellationSignal?,
-            callback: LayoutResultCallback?,
-            extras: android.os.Bundle?
-        ) {
-            if (cancellationSignal?.isCanceled == true) {
-                callback?.onLayoutCancelled()
-                return
+                oldAttributes: android.print.PrintAttributes?,
+                newAttributes: android.print.PrintAttributes?,
+                cancellationSignal: android.os.CancellationSignal?,
+                callback: LayoutResultCallback?,
+                extras: android.os.Bundle?
+            ) {
+                if (cancellationSignal?.isCanceled == true) {
+                    callback?.onLayoutCancelled()
+                    return
+                }
+
+                val info = android.print.PrintDocumentInfo.Builder(displayName)
+                    .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+                    .build()
+                callback?.onLayoutFinished(info, true)
             }
 
-            val info = android.print.PrintDocumentInfo.Builder(displayName)
-                .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
-                .build()
-            callback?.onLayoutFinished(info, true)
-        }
-
-        override fun onWrite(
-            pages: Array<out android.print.PageRange>?,
-            destination: android.os.ParcelFileDescriptor?,
-            cancellationSignal: android.os.CancellationSignal?,
-            callback: WriteResultCallback?
-        ) {
-            try {
-                val input = android.os.ParcelFileDescriptor.AutoCloseInputStream(pfd)
-                val output = java.io.FileOutputStream(destination?.fileDescriptor)
-                input.copyTo(output)
-                callback?.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
-            } catch (e: Exception) {
-                e.printStackTrace()
-                callback?.onWriteFailed(e.message)
+            override fun onWrite(
+                pages: Array<out android.print.PageRange>?,
+                destination: android.os.ParcelFileDescriptor?,
+                cancellationSignal: android.os.CancellationSignal?,
+                callback: WriteResultCallback?
+            ) {
+                var input: java.io.FileInputStream? = null
+                var output: java.io.FileOutputStream? = null
+                try {
+                    input = java.io.FileInputStream(file)
+                    output = java.io.FileOutputStream(destination?.fileDescriptor)
+                    input.copyTo(output)
+                    callback?.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    callback?.onWriteFailed(e.message)
+                } finally {
+                    try { input?.close() } catch (_: Exception) {}
+                    // output is closed by the print system
+                }
             }
-        }
-    }, null)
+        }, 
+        null
+    )
 }
