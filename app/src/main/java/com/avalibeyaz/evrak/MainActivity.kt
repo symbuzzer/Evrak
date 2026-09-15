@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -108,6 +109,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                     viewModel.refreshHistory()
                 },
                 onShareAppClick = {
+                    Toast.makeText(context, R.string.sharing_app, Toast.LENGTH_SHORT).show()
                     val shareText = context.getString(R.string.share_app_text)
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"

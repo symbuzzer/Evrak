@@ -421,7 +421,7 @@ object UdfHtmlConverter {
                         val levelsToRemove = levelCounters.keys.filter { it > listLevel }
                         levelsToRemove.forEach { levelCounters.remove(it) }
 
-                        htmlEscape(numberMarker(n, p.attrOrNull("NumberType")))
+                        htmlEscape(numberMarker(n, secListType ?: p.attrOrNull("NumberType")))
                     }
 
                     markerWidth = 25.0
@@ -530,10 +530,10 @@ object UdfHtmlConverter {
             "NUMBER_TYPE_CHAR_SMALL_PARENTHESIS" -> "${toAlpha(n, false)})"
             "NUMBER_TYPE_CHAR_BIG_DOT" -> "${toAlpha(n, true)}."
             "NUMBER_TYPE_CHAR_BIG_PARENTHESIS" -> "${toAlpha(n, true)})"
-            "NUMBER_TYPE_ROMAN_SMALL_DOT" -> "${toAlpha(n, false).lowercase()}."
-            "NUMBER_TYPE_ROMAN_SMALL_PARENTHESIS" -> "${toAlpha(n, false).lowercase()})"
-            "NUMBER_TYPE_ROMAN_BIG_DOT" -> "${toAlpha(n, true).uppercase()}."
-            "NUMBER_TYPE_ROMAN_BIG_PARENTHESIS" -> "${toAlpha(n, true).uppercase()})"
+            "NUMBER_TYPE_ROMAN_SMALL_DOT" -> "${toRoman(n).lowercase()}."
+            "NUMBER_TYPE_ROMAN_SMALL_PARENTHESIS" -> "${toRoman(n).lowercase()})"
+            "NUMBER_TYPE_ROMAN_BIG_DOT" -> "${toRoman(n).uppercase()}."
+            "NUMBER_TYPE_ROMAN_BIG_PARENTHESIS" -> "${toRoman(n).uppercase()})"
             else -> "$n." 
         }
 
@@ -556,6 +556,24 @@ object UdfHtmlConverter {
                 num = (num - 1) / 26
             }
             return if (upper) sb.toString().uppercase() else sb.toString()
+        }
+
+        private fun toRoman(n: Int): String {
+            if (n <= 0) return n.toString()
+            val numerals = listOf(
+                1000 to "M", 900 to "CM", 500 to "D", 400 to "CD",
+                100 to "C", 90 to "XC", 50 to "L", 40 to "XL",
+                10 to "X", 9 to "IX", 5 to "V", 4 to "IV", 1 to "I"
+            )
+            var num = n
+            val sb = StringBuilder()
+            for ((value, symbol) in numerals) {
+                while (num >= value) {
+                    sb.append(symbol)
+                    num -= value
+                }
+            }
+            return sb.toString()
         }
 
         private fun renderInlineElement(el: Element): String {
