@@ -1,86 +1,86 @@
 <resources>
     <string name="app_name">Evrak</string>
 
-    <string name="share_app">Uygulamayı paylaş</string>
-    <string name="about">Hakkında</string>
-    <string name="share">Paylaş</string>
-    <string name="save">Kaydet</string>
-    <string name="print">Yazdır</string>
-    <string name="rename">Yeniden adlandır</string>
-    <string name="delete">Sil</string>
-    <string name="confirm_delete">Silmek istediğinize emin misiniz?</string>
-    <string name="rename_title">Dosyayı yeniden adlandır</string>
-    <string name="rename_hint">Yeni dosya adı</string>
-    <string name="no_history">Henüz görüntülenen belge yok</string>
-    <string name="ok">Tamam</string>
-    <string name="cancel">İptal</string>
-    <string name="open_with">Birlikte aç</string>
-    <string name="open_file">Dosya aç</string>
-    <string name="no_other_apps">Bu dosyayı açmak için başka uygulama yok</string>
+    <string name="share_app">Share app</string>
+    <string name="about">About</string>
+    <string name="share">Share</string>
+    <string name="save">Save</string>
+    <string name="print">Print</string>
+    <string name="rename">Rename</string>
+    <string name="delete">Delete</string>
+    <string name="confirm_delete">Are you sure you want to delete this?</string>
+    <string name="rename_title">Rename file</string>
+    <string name="rename_hint">New file name</string>
+    <string name="no_history">No documents viewed yet</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="open_with">Open with</string>
+    <string name="open_file">Open file</string>
+    <string name="no_other_apps">No other apps available to open this file</string>
 
-    <string name="error">Hata</string>
-    <string name="error_file_not_found">Dosya bulunamadı</string>
-    <string name="error_unknown">Bilinmeyen hata</string>
-    <string name="about_developed_by"> tarafından geliştirilmiştir.</string>
+    <string name="error">Error</string>
+    <string name="error_file_not_found">File not found</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="about_developed_by"> was developed by.</string>
     <string name="about_developer_name">Ali BEYAZ</string>
-    <string name="about_supported_formats">Desteklenen formatlar:</string>
+    <string name="about_supported_formats">Supported formats:</string>
     <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS HTML TXT JPG GIF PNG</string>
 
-    <string name="about_celse_integration_desc">CELSE uygulaması entegrasyonunu gerçekleştirin.</string>
-    <string name="about_view_on_play_store_desc">Uygulamayı Play Store üzerinden değerlendirin.</string>
-    <string name="about_privacy_policy">Gizlilik bildirimine göz atın.</string>
-    <string name="about_disclaimer">Uygulamayı kullanarak kabul etmiş olduğunuz sorumluluk reddine göz atın.</string>
-    <string name="about_view_libraries_desc">Uygulamada kullanılan açık kaynak kütüphaneleri görüntüleyin.</string>
-    <string name="about_source_code_desc">Uygulamanın kaynak kodunu GitHub üzerinden inceleyin.</string>
+    <string name="about_celse_integration_desc">Perform CELSE app integration.</string>
+    <string name="about_view_on_play_store_desc">Rate the app on the Play Store.</string>
+    <string name="about_privacy_policy">View the privacy policy.</string>
+    <string name="about_disclaimer">View the disclaimer you accept by using this app.</string>
+    <string name="about_view_libraries_desc">View the open source libraries used in the app.</string>
+    <string name="about_source_code_desc">View the app\'s source code on GitHub.</string>
 
-    <string name="close">Kapat</string>
+    <string name="close">Close</string>
 
-    <string name="confirm_delete_all_message">Bütün geçmişi ve önbelleğe alınmış dosyaları silmek istediğinize emin misiniz?</string>
-    <string name="unsupported_format_title">Tanımlanamayan format</string>
-    <string name="unsupported_format_message">Bu dosya formatı şu anda desteklenmiyor.</string>
-    <string name="unsupported_format_hint">Ancak yine de bu dosyayı kaydedebilir ve paylaşabilirsiniz.</string>
-    <string name="try_opening_as_text">Yine de açmayı dene</string>
-    <string name="error_udf_read">UDF içeriği okunamadı ya da dosya bozuk.</string>
+    <string name="confirm_delete_all_message">Are you sure you want to delete all history and cached files?</string>
+    <string name="unsupported_format_title">Unrecognized format</string>
+    <string name="unsupported_format_message">This file format is not currently supported.</string>
+    <string name="unsupported_format_hint">However, you can still save and share this file.</string>
+    <string name="try_opening_as_text">Try opening anyway</string>
+    <string name="error_udf_read">The UDF content could not be read, or the file is corrupted.</string>
 
-    <string name="select_format">Format seçin:</string>
-    <string name="format_original">Orijinal format (%1$s)</string>
-    <string name="format_pdf">PDF olarak (%1$s)</string>
-    <string name="loading">Yükleniyor...</string>
-    <string name="preparing">Hazırlanıyor...</string>
-    <string name="converting">Dönüştürülüyor...</string>
-    <string name="error_conversion_failed">Dönüştürme hatası: %1$s</string>
+    <string name="select_format">Select a format:</string>
+    <string name="format_original">Original format (%1$s)</string>
+    <string name="format_pdf">As PDF (%1$s)</string>
+    <string name="loading">Loading&#8230;</string>
+    <string name="preparing">Preparing&#8230;</string>
+    <string name="converting">Converting&#8230;</string>
+    <string name="error_conversion_failed">Conversion error: %1$s</string>
 
-    <string name="error_tiff_open_failed">TIFF dosyası açılamadı: %1$s</string>
-    <string name="share_app_text">Evrak Android uygulaması ile; UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, HTML, TXT, JPG, GIF, PNG dosyalarını ücretsiz ve reklamsız olarak görüntüleyin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
-    <string name="sharing_app">Uygulama paylaşılıyor...</string>
+    <string name="error_tiff_open_failed">Failed to open TIFF file: %1$s</string>
+    <string name="share_app_text">View UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, HTML, TXT, JPG, GIF, PNG files for free and ad-free with the Evrak Android app: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
+    <string name="sharing_app">Sharing app&#8230;</string>
 
-    <string name="filter_all">Tümü</string>
+    <string name="filter_all">All</string>
     <string name="filter_udf">UDF</string>
     <string name="filter_pdf">PDF</string>
     <string name="filter_tiff">TIFF</string>
-    <string name="filter_office">Ofis</string>
-    <string name="filter_other">Diğer</string>
+    <string name="filter_office">Office</string>
+    <string name="filter_other">Other</string>
 
-    <string name="error_input_file_not_found">Girdi dosyası bulunamadı: %1$s</string>
-    <string name="error_context_required">Dönüştürme için context gereklidir</string>
-    <string name="error_unsupported_type">Desteklenmeyen dosya türü: %1$s</string>
-    <string name="error_file_read_failed">Dosya okuma hatası: %1$s</string>
-    <string name="error_conversion_timeout">Dönüştürme zaman aşımına uğradı</string>
-    <string name="error_udf_parse_failed">UDF içeriği ayrıştırılamadı</string>
-    <string name="error_udf_conversion_failed">UDF dönüştürme hatası: %1$s</string>
-    <string name="error_libreoffice_failed">LibreOffice dönüşüm hatası</string>
-    <string name="msg_copying_assets">Gerekli assetler kopyalanıyor...</string>
-    <string name="msg_libreoffice_ready">LibreOfficeKit başarıyla başlatıldı</string>
-    <string name="print_adapter_name">Evrak-Dönüşüm</string>
+    <string name="error_input_file_not_found">Input file not found: %1$s</string>
+    <string name="error_context_required">Context is required for conversion</string>
+    <string name="error_unsupported_type">Unsupported file type: %1$s</string>
+    <string name="error_file_read_failed">File read error: %1$s</string>
+    <string name="error_conversion_timeout">Conversion timed out</string>
+    <string name="error_udf_parse_failed">Failed to parse UDF content</string>
+    <string name="error_udf_conversion_failed">UDF conversion error: %1$s</string>
+    <string name="error_libreoffice_failed">LibreOffice conversion error</string>
+    <string name="msg_copying_assets">Copying required assets...</string>
+    <string name="msg_libreoffice_ready">LibreOfficeKit initialized successfully</string>
+    <string name="print_adapter_name">Evrak-Conversion</string>
 
-    <string name="unknown_document">Bilinmeyen belge</string>
-    <string name="udf_verification_bar">UYAP Bilişim Sistemindeki bu dokümana http://vatandas.uyap.gov.tr adresinden &lt;strong&gt;%1$s&lt;/strong&gt; ile erişebilirsiniz.</string>
-    <string name="udf_invalid_content">Geçersiz içerik</string>
-    <string name="udf_no_content">İçerik bulunamadı</string>
+    <string name="unknown_document">Unknown document</string>
+    <string name="udf_verification_bar">You can verify this document in the UYAP Information System at http://vatandas.uyap.gov.tr using &lt;strong&gt;%1$s&lt;/strong&gt;.</string>
+    <string name="udf_invalid_content">Invalid content</string>
+    <string name="udf_no_content">No content found</string>
 
-    <string name="downloads">İndirilenler</string>
-    <string name="documents">Belgeler</string>
-    <string name="error_folder_selection_not_supported">Dosya yöneticiniz belirli bir klasörü açmayı desteklemiyor. Bundan sonra doğrudan dosya yöneticisi açılacaktır.</string>
-    <string name="save_success">Dosya başarıyla kaydedildi</string>
-    <string name="save_error">Dosya kaydedilirken hata oluştu</string>
+    <string name="downloads">Downloads</string>
+    <string name="documents">Documents</string>
+    <string name="error_folder_selection_not_supported">Your file manager does not support opening a specific folder. The file manager will open directly instead going forward.</string>
+    <string name="save_success">File saved successfully</string>
+    <string name="save_error">An error occurred while saving the file</string>
 </resources>
