@@ -118,11 +118,17 @@ fun MainScreen(
         val mimeTypes = arrayOf(
             "application/pdf",
             "image/tiff",
+            "image/x-tiff",
             "image/jpeg",
             "image/png",
             "image/gif",
             "application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/x-udf",
+            "application/udf",
+            "application/vnd.udf",
             "text/html",
             "text/plain",
             "application/octet-stream"

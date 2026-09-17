@@ -18,6 +18,8 @@ fun getMimeType(path: String): String {
         path.endsWith(".pdf", ignoreCase = true) -> "application/pdf"
         path.endsWith(".docx", ignoreCase = true) -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         path.endsWith(".doc", ignoreCase = true) -> "application/msword"
+        path.endsWith(".xlsx", ignoreCase = true) -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        path.endsWith(".xls", ignoreCase = true) -> "application/vnd.ms-excel"
         path.endsWith(".tif", ignoreCase = true) || path.endsWith(".tiff", ignoreCase = true) -> "image/tiff"
         path.endsWith(".png", true) -> "image/png"
         path.endsWith(".jpg", true) || path.endsWith(".jpeg", true) -> "image/jpeg"
