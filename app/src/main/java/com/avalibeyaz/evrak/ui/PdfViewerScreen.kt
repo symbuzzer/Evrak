@@ -1,6 +1,9 @@
 package com.avalibeyaz.evrak.ui
 
 import android.view.ViewGroup
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -8,11 +11,13 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -68,6 +73,33 @@ fun PdfViewerScreen(
 ) {
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
+    var isFullScreen by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = isFullScreen) {
+        isFullScreen = false
+    }
+
+    DisposableEffect(isFullScreen) {
+        val window = context.findActivity()?.window
+        if (window != null) {
+            val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+            if (isFullScreen) {
+                windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+                windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            } else {
+                windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+            }
+        }
+        onDispose {
+            if (isFullScreen) {
+                val w = context.findActivity()?.window
+                if (w != null) {
+                    val controller = WindowCompat.getInsetsController(w, w.decorView)
+                    controller.show(WindowInsetsCompat.Type.systemBars())
+                }
+            }
+        }
+    }
 
     val saveLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument(saveMimeType)
@@ -89,56 +121,73 @@ fun PdfViewerScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    MarqueeTitle(
-                        title = displayName
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                },
-                actions = {
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Above
-                        ),
-                        tooltip = {
-                            PlainTooltip {
-                                Text(stringResource(id = R.string.save))
+            if (!isFullScreen) {
+                TopAppBar(
+                    title = {
+                        MarqueeTitle(
+                            title = displayName
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        }
+                    },
+                    actions = {
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.full_screen))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = { isFullScreen = true }) {
+                                Icon(Icons.Default.Fullscreen, contentDescription = stringResource(id = R.string.full_screen))
                             }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = {
-                            if (onSaveClick != null) {
-                                onSaveClick()
-                            } else {
-                                saveLauncher.launch(saveDisplayName)
+                        }
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.save))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = {
+                                if (onSaveClick != null) {
+                                    onSaveClick()
+                                } else {
+                                    saveLauncher.launch(saveDisplayName)
+                                }
+                            }) {
+                                Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
                             }
-                        }) {
-                            Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
+                        }
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.share))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = onShareClick) {
+                                Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
+                            }
                         }
                     }
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Above
-                        ),
-                        tooltip = {
-                            PlainTooltip {
-                                Text(stringResource(id = R.string.share))
-                            }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = onShareClick) {
-                            Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
-                        }
-                    }
-                }
-            )
+                )
+            }
         }
     ) { padding ->
         val file = File(filePath)

@@ -83,4 +83,5 @@
     <string name="error_folder_selection_not_supported">Dosya yöneticiniz belirli bir klasörü açmayı desteklemiyor. Bundan sonra doğrudan dosya yöneticisi açılacaktır.</string>
     <string name="save_success">Dosya başarıyla kaydedildi</string>
     <string name="save_error">Dosya kaydedilirken hata oluştu</string>
+    <string name="full_screen">Tam ekran</string>
 </resources>

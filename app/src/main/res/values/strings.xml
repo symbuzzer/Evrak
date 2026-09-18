@@ -83,4 +83,5 @@
     <string name="error_folder_selection_not_supported">Your file manager does not support opening a specific folder. The file manager will open directly instead going forward.</string>
     <string name="save_success">File saved successfully</string>
     <string name="save_error">An error occurred while saving the file</string>
+    <string name="full_screen">Full screen</string>
 </resources>
