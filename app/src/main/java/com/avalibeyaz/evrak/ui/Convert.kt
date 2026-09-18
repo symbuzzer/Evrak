@@ -51,6 +51,14 @@ object DocumentConverter {
                     ConversionResult.Error(errorMsg)
                 }
             }
+            "xls", "xlsx" -> {
+                if (context != null) {
+                    convertExcelToPdfWithWebView(inputFile, outputFile, context)
+                } else {
+                    val errorMsg = "Context is required for Excel conversion."
+                    ConversionResult.Error(errorMsg)
+                }
+            }
             "html", "htm" -> {
                 if (context != null) {
                     convertHtmlFileToPdf(inputFile, outputFile, context)
@@ -217,6 +225,46 @@ object DocumentConverter {
             convertHtmlToPdfWithWebView(html, outputFile, context)
         } catch (e: Exception) {
             ConversionResult.Error("TXT error: ${e.message}")
+        }
+    }
+
+    private suspend fun convertExcelToPdfWithWebView(
+        inputFile: File,
+        outputFile: File,
+        context: Context
+    ): ConversionResult {
+        return withContext(Dispatchers.IO) {
+            try {
+                val tempHtml = File(context.cacheDir, "excel_print_${System.currentTimeMillis()}.html")
+                val htmlResult = convertToHtml(inputFile, tempHtml, context)
+                if (htmlResult is ConversionResult.Success) {
+                    var htmlContent = tempHtml.readText(Charsets.UTF_8)
+                    
+                    val css = """
+                        <style>
+                            table { border-collapse: collapse; width: auto; min-width: 100%; margin-bottom: 20px; table-layout: auto; }
+                            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; white-space: nowrap; }
+                            th { background-color: #f2f2f2; }
+                            body { font-family: sans-serif; padding: 10px; }
+                            img { max-width: 100%; height: auto; }
+                        </style>
+                    """.trimIndent()
+                    
+                    if (htmlContent.contains("<head>", ignoreCase = true)) {
+                        htmlContent = htmlContent.replace("<head>", "<head>$css", ignoreCase = true)
+                    } else {
+                        htmlContent = "<html><head>$css</head><body>$htmlContent</body></html>"
+                    }
+                    
+                    val pdfResult = convertHtmlToPdfWithWebView(htmlContent, outputFile, context)
+                    tempHtml.delete()
+                    pdfResult
+                } else {
+                    htmlResult
+                }
+            } catch (e: Exception) {
+                ConversionResult.Error("Excel print conversion error: ${e.localizedMessage}")
+            }
         }
     }
 

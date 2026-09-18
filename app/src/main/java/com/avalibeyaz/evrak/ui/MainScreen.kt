@@ -503,6 +503,8 @@ fun MainScreen(
                                            path.endsWith(".tif", true) ||
                                            path.endsWith(".docx", true) ||
                                            path.endsWith(".doc", true) ||
+                                           path.endsWith(".xls", true) ||
+                                           path.endsWith(".xlsx", true) ||
                                            path.endsWith(".html", true) ||
                                            path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
                         
@@ -526,6 +528,8 @@ fun MainScreen(
                                            path.endsWith(".tif", true) ||
                                            path.endsWith(".docx", true) ||
                                            path.endsWith(".doc", true) ||
+                                           path.endsWith(".xls", true) ||
+                                           path.endsWith(".xlsx", true) ||
                                            path.endsWith(".html", true) ||
                                            path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
                         
@@ -539,22 +543,17 @@ fun MainScreen(
                     }
                 )
 
-                val isExcel = selectedEvrak!!.path.endsWith(".xlsx", true) || 
-                              selectedEvrak!!.path.endsWith(".xls", true)
-                
-                if (!isExcel) {
-                    OptionItem(
-                        icon = Icons.Default.Print,
-                        label = stringResource(id = R.string.print),
-                        onClick = {
-                            showSheet = false
-                            onPrintClick(selectedEvrak!!) { converting ->
-                                conversionMessage = preparingMessage
-                                isConverting = converting
-                            }
+                OptionItem(
+                    icon = Icons.Default.Print,
+                    label = stringResource(id = R.string.print),
+                    onClick = {
+                        showSheet = false
+                        onPrintClick(selectedEvrak!!) { converting ->
+                            conversionMessage = preparingMessage
+                            isConverting = converting
                         }
-                    )
-                }
+                    }
+                )
 
                 OptionItem(
                     icon = Icons.Default.Edit,

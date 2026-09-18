@@ -19,6 +19,7 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 - **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
 - **Filtreleme:** Geçmişteki dosyaları dosya türüne göre filtreleyebilirsiniz
 - **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmeleri için istenildiğinde yeniden adlandırılabilir veya silinebilir
+- **Tam ekran görüntüleme:** Bütün dosya formatları tam ekran görüntülenebilir
 - **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
 - **Diğer uygulamalarla uyum içerisinde çalışma:** "Birlikte aç" seçeneği ile Evrak üzerinden görüntülenen dosyalar, destekleyen diğer uygulamalar ile açılabilir
 - **Desteklenmeyen dosya türlerini paylaşabilme ve kaydedebilme:** Bu sayede cihaza kaydedilmeden doğrudan açılan dosyalar, desteklenmese bile paylaşılabilir ve kaydedilebilir
@@ -27,9 +28,9 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 
 - ✅ **Tamamen ücretsiz**
 - ✅ **Reklamsız**
-- ✅ **%100 Türkçe**
+- ✅ **%100 Türkçe** - İngilizce dil desteği de mevcut
 - ✅ **Açık kaynak kodlu**
-- ✅ **Hiçbir izin istemez** — bildirim izni dahil, uygulamanın çalışması için herhangi bir Android izni gerekmez
+- ✅ **Hiçbir izin istemez** - bildirim izni dahil, uygulamanın çalışması için herhangi bir Android izni gerekmez
 
 ## CELSE Android uygulaması entegrasyonu
 

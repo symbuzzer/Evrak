@@ -121,7 +121,8 @@ fun OfficeToHtmlLoader(
             onBackClick = onBackClick,
             onShareClick = onShareClick,
             onSaveClick = { saveOriginalLauncher.launch(displayName) },
-            originalExtension = filePath.substringAfterLast(".").uppercase()
+            originalExtension = filePath.substringAfterLast(".").uppercase(),
+            originalFilePath = filePath
         )
     } else {
         Scaffold(

@@ -1,5 +1,6 @@
 package com.avalibeyaz.evrak.ui
 
+import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +27,7 @@ fun MarqueeTitle(
             overflow = TextOverflow.Visible,
             modifier = Modifier.basicMarquee(
                 iterations = Int.MAX_VALUE,
+                animationMode = MarqueeAnimationMode.Immediately,
                 velocity = 40.dp
             )
         )

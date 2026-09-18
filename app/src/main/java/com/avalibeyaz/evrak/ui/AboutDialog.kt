@@ -1,6 +1,7 @@
 package com.avalibeyaz.evrak.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -98,7 +99,7 @@ fun AboutDialog(onDismiss: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
-                        modifier = Modifier.basicMarquee()
+                        modifier = Modifier.basicMarquee(animationMode = MarqueeAnimationMode.Immediately)
                     )
                 }
 

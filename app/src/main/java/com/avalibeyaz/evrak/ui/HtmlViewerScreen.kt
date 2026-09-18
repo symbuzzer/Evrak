@@ -39,7 +39,8 @@ fun HtmlViewerScreen(
     onBackClick: () -> Unit,
     onShareClick: () -> Unit,
     onSaveClick: (() -> Unit)? = null,
-    originalExtension: String? = null
+    originalExtension: String? = null,
+    originalFilePath: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -107,7 +108,7 @@ fun HtmlViewerScreen(
                 try {
                     val pdfName = displayName.substringBeforeLast(".") + ".pdf"
                     val tempPdf = File(context.cacheDir, pdfName)
-                    val result = DocumentConverter.convert(File(filePath), tempPdf, context)
+                    val result = DocumentConverter.convert(File(originalFilePath ?: filePath), tempPdf, context)
                     if (result is DocumentConverter.ConversionResult.Success) {
                         context.contentResolver.openOutputStream(destUri)?.use { output ->
                             tempPdf.inputStream().use { input -> input.copyTo(output) }
@@ -184,9 +185,6 @@ fun HtmlViewerScreen(
                         }
                     },
                     actions = {
-                        val isExcel = originalExtension?.equals("XLSX", true) == true || 
-                                      originalExtension?.equals("XLS", true) == true
-
                         TooltipBox(
                             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
@@ -214,11 +212,7 @@ fun HtmlViewerScreen(
                             state = rememberTooltipState()
                         ) {
                             IconButton(onClick = {
-                                if (isExcel && onSaveClick != null) {
-                                    onSaveClick()
-                                } else {
-                                    showFormatDialog = "save"
-                                }
+                                showFormatDialog = "save"
                             }) {
                                 Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
                             }
@@ -235,11 +229,7 @@ fun HtmlViewerScreen(
                             state = rememberTooltipState()
                         ) {
                             IconButton(onClick = {
-                                if (isExcel) {
-                                    onShareClick()
-                                } else {
-                                    showFormatDialog = "share"
-                                }
+                                showFormatDialog = "share"
                             }) {
                                 Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
                             }
@@ -312,7 +302,11 @@ fun HtmlViewerScreen(
                         val newName = displayName.substringBeforeLast(".") + ".pdf"
                         savePdfLauncher.launch(newName)
                     } else {
-                        saveHtmlLauncher.launch(displayName)
+                        if (onSaveClick != null) {
+                            onSaveClick()
+                        } else {
+                            saveHtmlLauncher.launch(displayName)
+                        }
                     }
                 } else {
                     scope.launch(Dispatchers.IO) {
@@ -324,7 +318,7 @@ fun HtmlViewerScreen(
                             try {
                                 val pdfName = displayName.substringBeforeLast(".") + ".pdf"
                                 val tempPdf = File(context.cacheDir, pdfName)
-                                val result = DocumentConverter.convert(File(filePath), tempPdf, context)
+                                val result = DocumentConverter.convert(File(originalFilePath ?: filePath), tempPdf, context)
                                 if (result is DocumentConverter.ConversionResult.Success) {
                                     DocumentConverter.shareFile(context, tempPdf, "application/pdf")
                                 } else if (result is DocumentConverter.ConversionResult.Error) {
