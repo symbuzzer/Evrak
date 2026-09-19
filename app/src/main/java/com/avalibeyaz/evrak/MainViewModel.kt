@@ -77,9 +77,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun renameEvrak(evrak: Evrak, newName: String) {
+    fun renameEvrak(evrak: Evrak, newName: String, onRenamed: ((Evrak) -> Unit)? = null) {
         viewModelScope.launch {
-            repository.renameEvrak(evrak, newName)
+            val updated = repository.renameEvrak(evrak, newName)
+            onRenamed?.invoke(updated)
         }
     }
 

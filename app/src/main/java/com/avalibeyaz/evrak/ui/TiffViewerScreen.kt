@@ -56,7 +56,8 @@ fun TiffViewerScreen(
     filePath: String,
     displayName: String,
     onBackClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    onRenameClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -209,7 +210,8 @@ fun TiffViewerScreen(
                             Text(text = stringResource(id = R.string.app_name))
                         } else {
                             MarqueeTitle(
-                                title = displayName
+                                title = displayName,
+                                onRenameClick = onRenameClick
                             )
                         }
                     },

@@ -40,7 +40,8 @@ fun HtmlViewerScreen(
     onShareClick: () -> Unit,
     onSaveClick: (() -> Unit)? = null,
     originalExtension: String? = null,
-    originalFilePath: String? = null
+    originalFilePath: String? = null,
+    onRenameClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -177,7 +178,10 @@ fun HtmlViewerScreen(
             if (!isFullScreen) {
                 TopAppBar(
                     title = {
-                        MarqueeTitle(title = displayName)
+                        MarqueeTitle(
+                            title = displayName,
+                            onRenameClick = onRenameClick
+                        )
                     },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {

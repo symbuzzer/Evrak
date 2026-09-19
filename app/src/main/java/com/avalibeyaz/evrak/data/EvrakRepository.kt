@@ -132,7 +132,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         }
     }
 
-    suspend fun renameEvrak(evrak: Evrak, newName: String) {
+    suspend fun renameEvrak(evrak: Evrak, newName: String): Evrak {
         val extension = if (evrak.path.contains(".")) {
             evrak.path.substring(evrak.path.lastIndexOf('.'))
         } else ""
@@ -155,6 +155,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         
         val updatedEvrak = evrak.copy(name = finalName, path = newPath)
         evrakDao.insertEvrak(updatedEvrak)
+        return updatedEvrak
     }
 
     suspend fun deleteAllEvrak() {

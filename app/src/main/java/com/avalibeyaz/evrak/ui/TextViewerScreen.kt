@@ -37,7 +37,8 @@ fun TextViewerScreen(
     filePath: String,
     displayName: String,
     onBackClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    onRenameClick: (String) -> Unit = {}
 ) {
     var textContent by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
@@ -111,7 +112,12 @@ fun TextViewerScreen(
         topBar = {
             if (!isFullScreen) {
                 TopAppBar(
-                    title = { MarqueeTitle(title = displayName) },
+                    title = {
+                        MarqueeTitle(
+                            title = displayName,
+                            onRenameClick = onRenameClick
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)

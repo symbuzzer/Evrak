@@ -28,6 +28,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -602,14 +604,22 @@ fun MainScreen(
     }
 
     if (showRenameDialog != null) {
-        var newName by remember { mutableStateOf(showRenameDialog!!.name.substringBeforeLast(".")) }
+        val initialName = showRenameDialog!!.name.substringBeforeLast(".")
+        var textFieldValue by remember {
+            mutableStateOf(
+                TextFieldValue(
+                    text = initialName,
+                    selection = TextRange(0, initialName.length)
+                )
+            )
+        }
         AlertDialog(
             onDismissRequest = { showRenameDialog = null },
             title = { Text(text = stringResource(id = R.string.rename_title)) },
             text = {
                 OutlinedTextField(
-                    value = newName,
-                    onValueChange = { newName = it },
+                    value = textFieldValue,
+                    onValueChange = { textFieldValue = it },
                     label = { Text(text = stringResource(id = R.string.rename_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -618,8 +628,8 @@ fun MainScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (newName.isNotBlank()) {
-                            onRenameClick(showRenameDialog!!, newName)
+                        if (textFieldValue.text.isNotBlank()) {
+                            onRenameClick(showRenameDialog!!, textFieldValue.text)
                         }
                         showRenameDialog = null
                     }

@@ -25,7 +25,8 @@ fun OfficeToHtmlLoader(
     filePath: String,
     displayName: String,
     onBackClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    onRenameClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -98,7 +99,7 @@ fun OfficeToHtmlLoader(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { MarqueeTitle(title = displayName) },
+                    title = { MarqueeTitle(title = displayName, onRenameClick = onRenameClick) },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -122,13 +123,14 @@ fun OfficeToHtmlLoader(
             onShareClick = onShareClick,
             onSaveClick = { saveOriginalLauncher.launch(displayName) },
             originalExtension = filePath.substringAfterLast(".").uppercase(),
-            originalFilePath = filePath
+            originalFilePath = filePath,
+            onRenameClick = onRenameClick
         )
     } else {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { MarqueeTitle(title = displayName) },
+                    title = { MarqueeTitle(title = displayName, onRenameClick = onRenameClick) },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)

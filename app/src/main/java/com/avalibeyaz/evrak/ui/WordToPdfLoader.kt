@@ -26,7 +26,8 @@ fun WordToPdfLoader(
     filePath: String,
     displayName: String,
     onBackClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    onRenameClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -128,7 +129,7 @@ fun WordToPdfLoader(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { MarqueeTitle(title = displayName) },
+                    title = { MarqueeTitle(title = displayName, onRenameClick = onRenameClick) },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
@@ -150,13 +151,14 @@ fun WordToPdfLoader(
             displayName = displayName,
             onBackClick = onBackClick,
             onShareClick = { showFormatDialog = "share" },
-            onSaveClick = { showFormatDialog = "save" }
+            onSaveClick = { showFormatDialog = "save" },
+            onRenameClick = onRenameClick
         )
     } else {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { MarqueeTitle(title = displayName) },
+                    title = { MarqueeTitle(title = displayName, onRenameClick = onRenameClick) },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)

@@ -46,7 +46,8 @@ fun ImageViewerScreen(
     filePath: String,
     displayName: String,
     onBackClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    onRenameClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val file = File(filePath)
@@ -114,7 +115,7 @@ fun ImageViewerScreen(
         topBar = {
             if (!isFullScreen) {
                 TopAppBar(
-                    title = { MarqueeTitle(title = displayName) },
+                    title = { MarqueeTitle(title = displayName, onRenameClick = onRenameClick) },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)

@@ -190,13 +190,25 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
             
             val isText = filePath.endsWith(".txt", ignoreCase = true)
             
+            val onRenameSafe: (String) -> Unit = { newName ->
+                val currentEvrak = historyList.find { it.path == filePath }
+                if (currentEvrak != null) {
+                    viewModel.renameEvrak(currentEvrak, newName) { updated ->
+                        navController.navigate("viewer/${Uri.encode(updated.path)}/${Uri.encode(updated.name)}?forceText=$forceText") {
+                            popUpTo("viewer/${Uri.encode(filePath)}/${Uri.encode(displayName)}?forceText=$forceText") { inclusive = true }
+                        }
+                    }
+                }
+            }
+
             when {
                 forceText || isText -> {
                     TextViewerScreen(
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
-                        onShareClick = { shareFile(context, filePath) }
+                        onShareClick = { shareFile(context, filePath) },
+                        onRenameClick = onRenameSafe
                     )
                 }
                 isPdf -> {
@@ -204,7 +216,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
-                        onShareClick = { shareFile(context, filePath) }
+                        onShareClick = { shareFile(context, filePath) },
+                        onRenameClick = onRenameSafe
                     )
                 }
                 isTiff -> {
@@ -212,7 +225,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
-                        onShareClick = { shareFile(context, filePath) }
+                        onShareClick = { shareFile(context, filePath) },
+                        onRenameClick = onRenameSafe
                     )
                 }
                 isImage -> {
@@ -220,7 +234,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
-                        onShareClick = { shareFile(context, filePath) }
+                        onShareClick = { shareFile(context, filePath) },
+                        onRenameClick = onRenameSafe
                     )
                 }
                 isOffice -> {
@@ -228,7 +243,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
-                        onShareClick = { shareFile(context, filePath) }
+                        onShareClick = { shareFile(context, filePath) },
+                        onRenameClick = onRenameSafe
                     )
                 }
                 isExcel -> {
@@ -236,7 +252,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
-                        onShareClick = { shareFile(context, filePath) }
+                        onShareClick = { shareFile(context, filePath) },
+                        onRenameClick = onRenameSafe
                     )
                 }
                 isUdf -> {
@@ -244,7 +261,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
-                        onShareClick = { shareFile(context, filePath) }
+                        onShareClick = { shareFile(context, filePath) },
+                        onRenameClick = onRenameSafe
                     )
                 }
                 isHtml -> {
@@ -252,7 +270,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
-                        onShareClick = { shareFile(context, filePath) }
+                        onShareClick = { shareFile(context, filePath) },
+                        onRenameClick = onRenameSafe
                     )
                 }
                 else -> {

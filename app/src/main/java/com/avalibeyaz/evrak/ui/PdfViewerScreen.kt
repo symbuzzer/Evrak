@@ -69,7 +69,8 @@ fun PdfViewerScreen(
     onSaveClick: (() -> Unit)? = null,
     saveFilePath: String = filePath,
     saveDisplayName: String = displayName,
-    saveMimeType: String = "application/pdf"
+    saveMimeType: String = "application/pdf",
+    onRenameClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
@@ -125,7 +126,8 @@ fun PdfViewerScreen(
                 TopAppBar(
                     title = {
                         MarqueeTitle(
-                            title = displayName
+                            title = displayName,
+                            onRenameClick = onRenameClick
                         )
                     },
                     navigationIcon = {
