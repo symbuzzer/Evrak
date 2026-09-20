@@ -87,11 +87,71 @@ fun ImageViewerScreen(
     val animatedScale by animateFloatAsState(targetValue = scale, label = "scale")
     val animatedOffset by animateOffsetAsState(targetValue = offset, label = "offset")
 
+    val isHeic = remember(filePath) {
+        filePath.endsWith(".heic", true)
+    }
+    var heicBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    LaunchedEffect(filePath) {
+        if (isHeic) {
+            isLoading = true
+            try {
+                withContext(Dispatchers.IO) {
+                    try {
+                        val source = android.graphics.ImageDecoder.createSource(file)
+                        heicBitmap = android.graphics.ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+                            decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+                            val maxSide = 2500
+                            if (info.size.width > maxSide || info.size.height > maxSide) {
+                                val ratio = Math.max(info.size.width.toFloat() / maxSide, info.size.height.toFloat() / maxSide)
+                                val targetWidth = (info.size.width / ratio).toInt()
+                                val targetHeight = (info.size.height / ratio).toInt()
+                                decoder.setTargetSize(targetWidth, targetHeight)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.w("Evrak", "ImageDecoder failed for HEIC, trying BitmapFactory: ${e.message}")
+                        val options = android.graphics.BitmapFactory.Options().apply {
+                            inJustDecodeBounds = true
+                        }
+                        android.graphics.BitmapFactory.decodeFile(file.absolutePath, options)
+                        
+                        val maxSide = 2500
+                        var sampleSize = 1
+                        if (options.outWidth > maxSide || options.outHeight > maxSide) {
+                            val largest = Math.max(options.outWidth, options.outHeight)
+                            sampleSize = Math.ceil(largest.toDouble() / maxSide).toInt()
+                        }
+                        
+                        val decodeOptions = android.graphics.BitmapFactory.Options().apply {
+                            inSampleSize = sampleSize
+                        }
+                        val bitmap = android.graphics.BitmapFactory.decodeFile(file.absolutePath, decodeOptions)
+                        if (bitmap != null) {
+                            heicBitmap = bitmap
+                        } else {
+                            loadError = context.getString(R.string.error_heic_codec_missing)
+                        }
+                    }
+                }
+                isLoading = false
+            } catch (e: Exception) {
+                e.printStackTrace()
+                loadError = context.getString(R.string.error_heic_open_failed, e.localizedMessage ?: "Unknown")
+                isLoading = false
+            }
+        }
+    }
+
     val saveLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument(
             when {
                 filePath.endsWith(".png", true) -> "image/png"
                 filePath.endsWith(".gif", true) -> "image/gif"
+                filePath.endsWith(".webp", true) -> "image/webp"
+                filePath.endsWith(".bmp", true) -> "image/bmp"
+                filePath.endsWith(".heic", true) -> "image/heic"
+                filePath.endsWith(".avif", true) -> "image/avif"
                 else -> "image/jpeg"
             }
         )
@@ -216,14 +276,24 @@ fun ImageViewerScreen(
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
-                        .data(file)
-                        .decoderFactory(ImageDecoderDecoder.Factory())
+                        .data(if (isHeic) heicBitmap else file)
+                        .apply {
+                            if (!isHeic && (filePath.endsWith(".gif", true) || filePath.endsWith(".webp", true))) {
+                                decoderFactory(ImageDecoderDecoder.Factory())
+                            }
+                        }
                         .build(),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
-                    onLoading = { isLoading = true },
-                    onSuccess = { isLoading = false },
-                    onError = { isLoading = false },
+                    onLoading = { if (!isHeic) isLoading = true },
+                    onSuccess = { if (!isHeic) isLoading = false },
+                    onError = { state ->
+                        if (!isHeic) {
+                            isLoading = false
+                            loadError = state.result.throwable.message ?: "Unknown Coil error"
+                            android.util.Log.e("Evrak", "Coil error loading $filePath: ${state.result.throwable}")
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer(

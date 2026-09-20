@@ -124,17 +124,23 @@ fun MainScreen(
         val filters = mutableListOf(EvrakFilter.ALL)
         if (historyList.any { it.path.endsWith(".udf", true) }) filters.add(EvrakFilter.UDF)
         if (historyList.any { it.path.endsWith(".pdf", true) }) filters.add(EvrakFilter.PDF)
-        if (historyList.any { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }) filters.add(EvrakFilter.TIFF)
         if (historyList.any { 
             val path = it.path.lowercase()
             path.endsWith(".doc") || path.endsWith(".docx") ||
             path.endsWith(".xls") || path.endsWith(".xlsx")
         }) filters.add(EvrakFilter.OFFICE)
+        if (historyList.any { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }) filters.add(EvrakFilter.TIFF)
+        if (historyList.any { it.path.endsWith(".eyp", true) }) filters.add(EvrakFilter.EYP)
+        if (historyList.any {
+                val path = it.path.lowercase()
+                path.endsWith(".jpg") || path.endsWith(".jpeg") ||
+                path.endsWith(".gif") || path.endsWith(".png") ||
+                path.endsWith(".webp") || path.endsWith(".bmp") ||
+                path.endsWith(".heic") || path.endsWith(".avif")
+            }) filters.add(EvrakFilter.IMAGE)
         if (historyList.any {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
-                path.endsWith(".jpg") || path.endsWith(".jpeg") ||
-                path.endsWith(".gif") || path.endsWith(".png") ||
                 path.endsWith(".txt") || path.endsWith(".zip")
             }) filters.add(EvrakFilter.OTHER)
         filters
@@ -162,10 +168,18 @@ fun MainScreen(
             "image/jpeg",
             "image/png",
             "image/gif",
+            "image/webp",
+            "image/bmp",
+            "image/x-ms-bmp",
+            "image/x-bmp",
+            "image/heic",
+            "image/heic-sequence",
+            "image/avif",
             "application/msword",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/vnd.ms-excel",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/eyp",
             "application/x-udf",
             "application/udf",
             "application/vnd.udf",
@@ -198,17 +212,23 @@ fun MainScreen(
             EvrakFilter.ALL -> historyList
             EvrakFilter.UDF -> historyList.filter { it.path.endsWith(".udf", true) }
             EvrakFilter.PDF -> historyList.filter { it.path.endsWith(".pdf", true) }
-            EvrakFilter.TIFF -> historyList.filter { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }
             EvrakFilter.OFFICE -> historyList.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".doc") || path.endsWith(".docx") ||
                 path.endsWith(".xls") || path.endsWith(".xlsx")
             }
+            EvrakFilter.TIFF -> historyList.filter { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }
+            EvrakFilter.EYP -> historyList.filter { it.path.endsWith(".eyp", true) }
+            EvrakFilter.IMAGE -> historyList.filter {
+                val path = it.path.lowercase()
+                path.endsWith(".jpg") || path.endsWith(".jpeg") ||
+                path.endsWith(".gif") || path.endsWith(".png") ||
+                path.endsWith(".webp") || path.endsWith(".bmp") ||
+                path.endsWith(".heic") || path.endsWith(".avif")
+            }
             EvrakFilter.OTHER -> historyList.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
-                path.endsWith(".jpg") || path.endsWith(".jpeg") ||
-                path.endsWith(".gif") || path.endsWith(".png") ||
                 path.endsWith(".txt") || path.endsWith(".zip")
             }
         }
@@ -597,7 +617,7 @@ fun MainScreen(
                     }
                 )
 
-                if (!selectedEvrak!!.path.endsWith(".zip", true)) {
+                if (!selectedEvrak!!.path.endsWith(".zip", true) && !selectedEvrak!!.path.endsWith(".eyp", true)) {
                     OptionItem(
                         icon = Icons.Default.Print,
                         label = stringResource(id = R.string.print),
@@ -907,7 +927,9 @@ enum class EvrakFilter(val labelResId: Int) {
     ALL(R.string.filter_all),
     UDF(R.string.filter_udf),
     PDF(R.string.filter_pdf),
-    TIFF(R.string.filter_tiff),
     OFFICE(R.string.filter_office),
+    TIFF(R.string.filter_tiff),
+    EYP(R.string.filter_eyp),
+    IMAGE(R.string.filter_image),
     OTHER(R.string.filter_other)
 }

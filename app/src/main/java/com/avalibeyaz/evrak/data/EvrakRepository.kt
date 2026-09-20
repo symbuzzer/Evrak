@@ -19,7 +19,8 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     suspend fun getAllPaths(): List<String> = evrakDao.getAllPaths()
 
     private val supportedExtensions = setOf(
-        ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt", ".zip"
+        ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt", ".zip", ".eyp",
+        ".webp", ".bmp", ".heic", ".avif"
     )
 
     suspend fun addEvrakFromUri(uri: Uri, resolver: ContentResolver? = null): Evrak? {
@@ -41,11 +42,13 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         val cacheFile = copyUriToInternalStorageWithSniffing(uri, cr) { sniffedExt ->
             if (sniffedExt != null) {
                 val isExistingUdf = extension?.equals(".udf", ignoreCase = true) == true
+                val isExistingEyp = extension?.equals(".eyp", ignoreCase = true) == true
                 val isSniffedZip = sniffedExt.equals(".docx", ignoreCase = true) || sniffedExt.equals(".zip", ignoreCase = true)
                 
                 if (isExistingUdf && isSniffedZip) return@copyUriToInternalStorageWithSniffing
+                if (isExistingEyp && sniffedExt.equals(".zip", ignoreCase = true)) return@copyUriToInternalStorageWithSniffing
                 
-                val imageExtensions = setOf(".png", ".jpg", ".jpeg", ".gif")
+                val imageExtensions = setOf(".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".heic", ".avif")
                 val isExistingImage = extension?.lowercase() in imageExtensions
                 val isSniffedImage = sniffedExt.lowercase() in imageExtensions
                 
@@ -121,11 +124,16 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         var result: String? = null
         if (mimeType != null) {
             result = when (mimeType) {
+                "application/eyp" -> ".eyp"
                 "application/x-udf" -> ".udf"
                 "text/plain" -> ".txt"
                 "image/png" -> ".png"
                 "image/jpeg" -> ".jpg"
                 "image/gif" -> ".gif"
+                "image/webp" -> ".webp"
+                "image/bmp", "image/x-ms-bmp", "image/x-bmp" -> ".bmp"
+                "image/heic", "image/heic-sequence" -> ".heic"
+                "image/avif" -> ".avif"
                 else -> {
                     val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
                     if (ext != null) {
@@ -241,7 +249,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             val success = try {
                 cr.openFileDescriptor(uri, "r")?.use { pfd ->
                     FileInputStream(pfd.fileDescriptor).use { input ->
-                        val header = ByteArray(8)
+                        val header = ByteArray(12)
                         val read = input.read(header)
                         if (read >= 4) {
                             sniffedExtension = sniffFileType(header)
@@ -339,6 +347,27 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             val s = String(header, 0, 4).lowercase()
             if (s == "<!do" || s == "<htm") {
                 return ".html"
+            }
+        }
+
+        if (header.size >= 12 &&
+            header[0] == 0x52.toByte() && header[1] == 0x49.toByte() && header[2] == 0x46.toByte() && header[3] == 0x46.toByte() &&
+            header[8] == 0x57.toByte() && header[9] == 0x45.toByte() && header[10] == 0x42.toByte() && header[11] == 0x50.toByte()) {
+            return ".webp"
+        }
+
+        if (header.size >= 2 && header[0] == 0x42.toByte() && header[1] == 0x4D.toByte()) {
+            return ".bmp"
+        }
+
+        if (header.size >= 12 &&
+            header[4] == 0x66.toByte() && header[5] == 0x74.toByte() && header[6] == 0x79.toByte() && header[7] == 0x70.toByte()) {
+            val ftyp = String(header, 8, 4)
+            if (ftyp == "heic" || ftyp == "heix" || ftyp == "hevc") {
+                return ".heic"
+            }
+            if (ftyp == "avif" || ftyp == "avis") {
+                return ".avif"
             }
         }
 

@@ -83,8 +83,19 @@
                 <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
                 <data android:mimeType="image/tiff" />
                 <data android:mimeType="image/x-tiff" />
+                <data android:mimeType="image/jpeg" />
+                <data android:mimeType="image/png" />
+                <data android:mimeType="image/gif" />
+                <data android:mimeType="image/webp" />
+                <data android:mimeType="image/bmp" />
+                <data android:mimeType="image/x-ms-bmp" />
+                <data android:mimeType="image/heic" />
+                <data android:mimeType="image/avif" />
                 <data android:mimeType="text/html" />
                 <data android:mimeType="text/plain" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
+                <data android:mimeType="application/eyp" />
             </intent-filter>
 
             <intent-filter>
@@ -112,6 +123,20 @@
                 <data android:pathPattern=".*\\..*\\.UDF" />
             </intent-filter>
 
+            <intent-filter android:priority="100">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="*/*" />
+                <data android:pathPattern=".*\\.eyp" />
+                <data android:pathPattern=".*\\.EYP" />
+                <data android:pathPattern=".*\\..*\\.eyp" />
+                <data android:pathPattern=".*\\..*\\.EYP" />
+            </intent-filter>
+
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -132,10 +157,20 @@
                 <data android:mimeType="application/vnd.ms-excel" />
                 <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
                 <data android:mimeType="image/tiff" />
+                <data android:mimeType="image/x-tiff" />
                 <data android:mimeType="image/jpeg" />
                 <data android:mimeType="image/png" />
+                <data android:mimeType="image/gif" />
+                <data android:mimeType="image/webp" />
+                <data android:mimeType="image/bmp" />
+                <data android:mimeType="image/x-ms-bmp" />
+                <data android:mimeType="image/heic" />
+                <data android:mimeType="image/avif" />
                 <data android:mimeType="image/*" />
                 <data android:mimeType="application/x-udf" />
+                <data android:mimeType="application/udf" />
+                <data android:mimeType="application/vnd.udf" />
+                <data android:mimeType="application/eyp" />
                 <data android:mimeType="text/html" />
                 <data android:mimeType="text/plain" />
                 <data android:mimeType="application/zip" />

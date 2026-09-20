@@ -177,7 +177,11 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
             val isImage = filePath.endsWith(".png", true) || 
                           filePath.endsWith(".jpg", true) || 
                           filePath.endsWith(".jpeg", true) || 
-                          filePath.endsWith(".gif", true)
+                          filePath.endsWith(".gif", true) ||
+                          filePath.endsWith(".webp", true) ||
+                          filePath.endsWith(".bmp", true) ||
+                          filePath.endsWith(".heic", true) ||
+                          filePath.endsWith(".avif", true)
             
             val isOffice = filePath.endsWith(".docx", true) || 
                           filePath.endsWith(".doc", true)
@@ -193,6 +197,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
             val isText = filePath.endsWith(".txt", ignoreCase = true)
             
             val isZip = filePath.endsWith(".zip", ignoreCase = true)
+            
+            val isEyp = filePath.endsWith(".eyp", ignoreCase = true)
             
             val onRenameSafe: (String) -> Unit = { newName ->
                 val currentEvrak = historyList.find { it.path == filePath }
@@ -269,7 +275,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         onRenameClick = onRenameSafe
                     )
                 }
-                isZip -> {
+                isZip || isEyp -> {
                     ZipViewerScreen(
                         filePath = filePath,
                         displayName = displayName,
@@ -406,7 +412,11 @@ private fun printFile(
     val isImage = filePath.endsWith(".jpg", true) ||
             filePath.endsWith(".jpeg", true) ||
             filePath.endsWith(".png", true) ||
-            filePath.endsWith(".gif", true)
+            filePath.endsWith(".gif", true) ||
+            filePath.endsWith(".webp", true) ||
+            filePath.endsWith(".bmp", true) ||
+            filePath.endsWith(".heic", true) ||
+            filePath.endsWith(".avif", true)
 
     if (filePath.endsWith(".pdf", true)) {
         doPrint(context, file, displayName)

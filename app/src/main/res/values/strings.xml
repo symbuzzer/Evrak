@@ -25,7 +25,7 @@
     <string name="about_developer_name">Ali BEYAZ</string>
     <string name="about_developer_order">format_developed_by_name</string>
     <string name="about_supported_formats">Supported formats:</string>
-    <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS ZIP HTML TXT JPG GIF PNG</string>
+    <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
     <string name="about_celse_integration_desc">Perform CELSE app integration.</string>
     <string name="about_view_on_play_store_desc">Rate the app on the Play Store.</string>
@@ -52,7 +52,9 @@
     <string name="error_conversion_failed">Conversion error: %1$s</string>
 
     <string name="error_tiff_open_failed">Failed to open TIFF file: %1$s</string>
-    <string name="share_app_text">View UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, ZIP, HTML, TXT, JPG, GIF, PNG files for free and ad-free with the Evrak Android app: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
+    <string name="error_heic_open_failed">Failed to open HEIC file: %1$s</string>
+    <string name="error_heic_codec_missing">Your device does not have the required hardware or software decoder (HEVC) to open this HEIC image.</string>
+    <string name="share_app_text">View UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF files for free and ad-free with the Evrak Android app: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
     <string name="sharing_app">Sharing app&#8230;</string>
 
     <string name="filter_all">All</string>
@@ -60,6 +62,8 @@
     <string name="filter_pdf">PDF</string>
     <string name="filter_tiff">TIFF</string>
     <string name="filter_office">Office</string>
+    <string name="filter_eyp">EYP</string>
+    <string name="filter_image">Image</string>
     <string name="filter_other">Other</string>
 
     <string name="error_input_file_not_found">Input file not found: %1$s</string>

@@ -2,6 +2,7 @@ package com.avalibeyaz.evrak.ui
 
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.ui.draw.alpha
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -34,6 +35,12 @@ import java.io.File
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import net.lingala.zip4j.ZipFile
+
+private val SUPPORTED_EXTENSIONS = setOf(
+    ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".tiff", ".tif",
+    ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt", ".zip", ".eyp",
+    ".webp", ".bmp", ".heic", ".avif"
+)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -115,10 +122,18 @@ fun ZipViewerScreen(
             if (file.exists()) {
                 ZipFile(file).use { zip ->
                     zip.charset = currentCharset
-                    zipEntries = zip.fileHeaders.asSequence()
+                    val entriesList = zip.fileHeaders.asSequence()
                         .filter { !it.isDirectory }
                         .map { it.fileName }
                         .toList()
+                    
+                    if (filePath.endsWith(".eyp", ignoreCase = true)) {
+                        zipEntries = entriesList.sortedWith(compareByDescending { entryName ->
+                            SUPPORTED_EXTENSIONS.any { entryName.endsWith(it, ignoreCase = true) }
+                        })
+                    } else {
+                        zipEntries = entriesList
+                    }
                 }
                 errorMessage = null
             } else {
@@ -181,22 +196,24 @@ fun ZipViewerScreen(
                     }
                 },
                 actions = {
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            positioning = TooltipAnchorPosition.Below
-                        ),
-                        tooltip = {
-                            PlainTooltip {
-                                Text(stringResource(id = R.string.extract_zip))
+                    if (!filePath.endsWith(".eyp", ignoreCase = true)) {
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                positioning = TooltipAnchorPosition.Below
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.extract_zip))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = {
+                                Toast.makeText(context, context.getString(R.string.select_extraction_location), Toast.LENGTH_LONG).show()
+                                folderPickerLauncher.launch(null)
+                            }) {
+                                Icon(Icons.Default.Unarchive, contentDescription = stringResource(id = R.string.extract_zip))
                             }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = {
-                            Toast.makeText(context, context.getString(R.string.select_extraction_location), Toast.LENGTH_LONG).show()
-                            folderPickerLauncher.launch(null)
-                        }) {
-                            Icon(Icons.Default.Unarchive, contentDescription = stringResource(id = R.string.extract_zip))
                         }
                     }
                     TooltipBox(
@@ -282,6 +299,8 @@ fun ZipViewerScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(zipEntries, key = { it }) { name ->
+                                val isSupported = SUPPORTED_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) }
+
                                 val dismissState = rememberSwipeToDismissBoxState(
                                     confirmValueChange = { value ->
                                         if (value != SwipeToDismissBoxValue.Settled) {
@@ -330,6 +349,7 @@ fun ZipViewerScreen(
                                         Card(
                                             modifier = Modifier
                                                 .fillMaxWidth()
+                                                .alpha(if (isSupported) 1f else 0.5f)
                                                 .combinedClickable(
                                                     onClick = { openZipEntry(name) },
                                                     onLongClick = {

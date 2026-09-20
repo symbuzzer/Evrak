@@ -25,7 +25,7 @@
     <string name="about_developer_name">Ali BEYAZ</string>
     <string name="about_developer_order">format_name_developed_by</string>
     <string name="about_supported_formats">Desteklenen formatlar:</string>
-    <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS ZIP HTML TXT JPG GIF PNG</string>
+    <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
     <string name="about_celse_integration_desc">CELSE uygulaması entegrasyonunu gerçekleştirin.</string>
     <string name="about_view_on_play_store_desc">Uygulamayı Play Store üzerinden değerlendirin.</string>
@@ -51,8 +51,9 @@
     <string name="converting">Dönüştürülüyor&#8230;</string>
     <string name="error_conversion_failed">Dönüştürme hatası: %1$s</string>
 
-    <string name="error_tiff_open_failed">TIFF dosyası açılamadı: %1$s</string>
-    <string name="share_app_text">Evrak Android uygulaması ile; UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, ZIP, HTML, TXT, JPG, GIF, PNG dosyalarını ücretsiz ve reklamsız olarak görüntüleyin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
+    <string name="error_heic_open_failed">HEIC dosyası açılamadı: %1$s</string>
+    <string name="error_heic_codec_missing">Cihazınız bu HEIC görselini açmak için gerekli donanımsal veya yazılımsal kod çözücüye (HEVC) sahip değil.</string>
+    <string name="share_app_text">Evrak Android uygulaması ile; UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF dosyalarını ücretsiz ve reklamsız olarak görüntüleyin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
     <string name="sharing_app">Uygulama paylaşılıyor&#8230;</string>
 
     <string name="filter_all">Tümü</string>
@@ -60,6 +61,8 @@
     <string name="filter_pdf">PDF</string>
     <string name="filter_tiff">TIFF</string>
     <string name="filter_office">Ofis</string>
+    <string name="filter_eyp">EYP</string>
+    <string name="filter_image">Görsel</string>
     <string name="filter_other">Diğer</string>
 
     <string name="error_input_file_not_found">Girdi dosyası bulunamadı: %1$s</string>
