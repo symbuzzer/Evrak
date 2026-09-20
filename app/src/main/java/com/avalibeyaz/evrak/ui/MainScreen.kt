@@ -24,9 +24,12 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -68,6 +71,41 @@ fun MainScreen(
     var showRenameDialog by remember { mutableStateOf<Evrak?>(null) }
     var showDeleteAllConfirm by remember { mutableStateOf(false) }
     
+    var isExtracting by remember { mutableStateOf(false) }
+
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let { treeUri ->
+            selectedEvrak?.let { evrak ->
+                isExtracting = true
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        context.contentResolver.takePersistableUriPermission(
+                            treeUri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        )
+                        val charset = ZipUtils.determineCharset(evrak.path)
+                        ZipUtils.extractZip(context, evrak.path, treeUri, charset)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, context.getString(R.string.extract_success), Toast.LENGTH_LONG).show()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, context.getString(R.string.extract_error), Toast.LENGTH_SHORT).show()
+                        }
+                    } finally {
+                        withContext(Dispatchers.Main) {
+                            isExtracting = false
+                            selectedEvrak = null
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     val sheetState = rememberModalBottomSheetState()
     var showSheet by remember { mutableStateOf(false) }
 
@@ -488,6 +526,18 @@ fun MainScreen(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(4.dp))
 
+                if (selectedEvrak!!.path.endsWith(".zip", true)) {
+                    OptionItem(
+                        icon = Icons.Default.Unarchive,
+                        label = stringResource(id = R.string.extract_zip),
+                        onClick = {
+                            showSheet = false
+                            Toast.makeText(context, context.getString(R.string.select_extraction_location), Toast.LENGTH_LONG).show()
+                            folderPickerLauncher.launch(null)
+                        }
+                    )
+                }
+
                 OptionItem(
                     icon = Icons.AutoMirrored.Filled.OpenInNew,
                     label = stringResource(id = R.string.open_with),
@@ -547,17 +597,19 @@ fun MainScreen(
                     }
                 )
 
-                OptionItem(
-                    icon = Icons.Default.Print,
-                    label = stringResource(id = R.string.print),
-                    onClick = {
-                        showSheet = false
-                        onPrintClick(selectedEvrak!!) { converting ->
-                            conversionMessage = preparingMessage
-                            isConverting = converting
+                if (!selectedEvrak!!.path.endsWith(".zip", true)) {
+                    OptionItem(
+                        icon = Icons.Default.Print,
+                        label = stringResource(id = R.string.print),
+                        onClick = {
+                            showSheet = false
+                            onPrintClick(selectedEvrak!!) { converting ->
+                                conversionMessage = preparingMessage
+                                isConverting = converting
+                            }
                         }
-                    }
-                )
+                    )
+                }
 
                 OptionItem(
                     icon = Icons.Default.Edit,
@@ -615,6 +667,15 @@ fun MainScreen(
                 )
             )
         }
+        val focusRequester = remember { FocusRequester() }
+        val keyboardController = LocalSoftwareKeyboardController.current
+
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+            delay(100)
+            keyboardController?.show()
+        }
+
         AlertDialog(
             onDismissRequest = { showRenameDialog = null },
             title = { Text(text = stringResource(id = R.string.rename_title)) },
@@ -624,7 +685,9 @@ fun MainScreen(
                     onValueChange = { textFieldValue = it },
                     label = { Text(text = stringResource(id = R.string.rename_hint)) },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
                 )
             },
             confirmButton = {
@@ -715,8 +778,8 @@ fun MainScreen(
     }
 
     WaitScreenOverlay(
-        show = isConverting,
-        message = conversionMessage
+        show = isConverting || isExtracting,
+        message = if (isExtracting) stringResource(id = R.string.extracting) else conversionMessage
     )
 
     if (conversionError != null) {

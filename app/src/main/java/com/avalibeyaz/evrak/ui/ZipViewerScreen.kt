@@ -49,47 +49,7 @@ fun ZipViewerScreen(
     val scope = rememberCoroutineScope()
 
     val currentCharset = remember(filePath) {
-        val file = File(filePath)
-        if (!file.exists()) return@remember StandardCharsets.UTF_8
-        
-        val charsets = listOf(
-            StandardCharsets.UTF_8,
-            Charset.forName("Cp1254"),
-            Charset.forName("IBM857")
-        )
-        
-        var bestCharset = StandardCharsets.UTF_8
-        var bestScore = -1
-        
-        for (cs in charsets) {
-            try {
-                ZipFile(file).use { zip ->
-                    zip.charset = cs
-                    val headers = zip.fileHeaders
-                    var score = 0
-                    var count = 0
-                    for (header in headers) {
-                        if (count > 50) break
-                        count++
-                        val name = header.fileName ?: ""
-                        if (name.contains("\uFFFD")) {
-                            score -= 1000
-                        }
-                        if (name.contains("ğ") || name.contains("ş") || name.contains("ç") || 
-                            name.contains("ı") || name.contains("ö") || name.contains("ü") ||
-                            name.contains("Ğ") || name.contains("Ş") || name.contains("Ç") || 
-                            name.contains("İ") || name.contains("Ö") || name.contains("Ü")) {
-                            score += 10
-                        }
-                    }
-                    if (score > bestScore) {
-                        bestScore = score
-                        bestCharset = cs
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-        bestCharset
+        ZipUtils.determineCharset(filePath)
     }
     
     var zipEntries by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -131,43 +91,9 @@ fun ZipViewerScreen(
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                     )
                     
-                    val pickedDir = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, treeUri)
-                    if (pickedDir != null && pickedDir.exists()) {
-                        java.util.zip.ZipInputStream(File(filePath).inputStream(), currentCharset).use { zis ->
-                            var entry = zis.nextEntry
-                            while (entry != null) {
-                                val parts = entry.name.split("/")
-                                var currentDir: androidx.documentfile.provider.DocumentFile? = pickedDir
-                                
-                                for (i in 0 until parts.size - 1) {
-                                    val part = parts[i]
-                                    if (part.isNotEmpty() && currentDir != null) {
-                                        val existing = currentDir.findFile(part)
-                                        currentDir = if (existing != null && existing.isDirectory) {
-                                            existing
-                                        } else {
-                                            currentDir.createDirectory(part)
-                                        }
-                                    }
-                                }
-                                
-                                val fileName = parts.last()
-                                if (fileName.isNotEmpty() && !entry.isDirectory && currentDir != null) {
-                                    val mimeType = getMimeType(fileName)
-                                    val newFile = currentDir.createFile(mimeType, fileName)
-                                    newFile?.uri?.let { fileUri ->
-                                        context.contentResolver.openOutputStream(fileUri)?.use { output ->
-                                            zis.copyTo(output)
-                                        }
-                                    }
-                                }
-                                zis.closeEntry()
-                                entry = zis.nextEntry
-                            }
-                        }
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, context.getString(R.string.extract_success), Toast.LENGTH_LONG).show()
-                        }
+                    ZipUtils.extractZip(context, filePath, treeUri, currentCharset)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, context.getString(R.string.extract_success), Toast.LENGTH_LONG).show()
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()

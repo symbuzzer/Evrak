@@ -10,12 +10,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.avalibeyaz.evrak.R
+import kotlinx.coroutines.delay
 
 @Composable
 fun MarqueeTitle(
@@ -73,6 +77,15 @@ fun MarqueeTitle(
                         )
                     )
                 }
+                val focusRequester = remember { FocusRequester() }
+                val keyboardController = LocalSoftwareKeyboardController.current
+
+                LaunchedEffect(Unit) {
+                    focusRequester.requestFocus()
+                    delay(100)
+                    keyboardController?.show()
+                }
+
                 AlertDialog(
                     onDismissRequest = { showRenameDialog = false },
                     title = { Text(text = stringResource(id = R.string.rename_title)) },
@@ -82,7 +95,9 @@ fun MarqueeTitle(
                             onValueChange = { textFieldValue = it },
                             label = { Text(text = stringResource(id = R.string.rename_hint)) },
                             singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester)
                         )
                     },
                     confirmButton = {
