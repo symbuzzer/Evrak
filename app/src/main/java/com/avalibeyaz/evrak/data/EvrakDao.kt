@@ -17,6 +17,12 @@ interface EvrakDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEvrak(evrak: Evrak)
 
+    @androidx.room.Update
+    suspend fun updateEvrak(evrak: Evrak)
+
+    @Query("SELECT * FROM evraklar WHERE name = :name AND size = :size LIMIT 1")
+    suspend fun getEvrakByNameAndSize(name: String, size: Long): Evrak?
+
     @Query("DELETE FROM evraklar WHERE path = :path")
     suspend fun deleteByPath(path: String)
 

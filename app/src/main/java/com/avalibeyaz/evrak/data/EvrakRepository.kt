@@ -80,12 +80,41 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         
         val isSupported = supportedExtensions.any { finalName.endsWith(it, ignoreCase = true) }
         
-        val evrak = Evrak(name = finalName, path = finalCacheFile.absolutePath)
-        if (isSupported) {
-            evrakDao.insertEvrak(evrak)
+        val fileSize = finalCacheFile.length()
+        val existingEvrak = evrakDao.getEvrakByNameAndSize(finalName, fileSize)
+
+        val evrak = if (existingEvrak != null) {
+            // Delete the old file if it's different from the new one
+            if (existingEvrak.path != finalCacheFile.absolutePath) {
+                try {
+                    val oldFile = File(existingEvrak.path)
+                    if (oldFile.exists()) oldFile.delete()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            val updated = existingEvrak.copy(
+                path = finalCacheFile.absolutePath,
+                dateOpened = System.currentTimeMillis()
+            )
+            if (isSupported) {
+                evrakDao.updateEvrak(updated)
+            }
+            updated
+        } else {
+            val newEvrak = Evrak(name = finalName, path = finalCacheFile.absolutePath, size = fileSize)
+            if (isSupported) {
+                evrakDao.insertEvrak(newEvrak)
+            }
+            newEvrak
         }
         
         return evrak
+    }
+
+    suspend fun updateEvrakTimestamp(evrak: Evrak) {
+        val updated = evrak.copy(dateOpened = System.currentTimeMillis())
+        evrakDao.updateEvrak(updated)
     }
 
     private fun getExtensionFromMime(mimeType: String?, uri: Uri): String? {

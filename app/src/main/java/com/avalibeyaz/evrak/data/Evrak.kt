@@ -8,5 +8,6 @@ data class Evrak(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val path: String,
-    val dateOpened: Long = System.currentTimeMillis()
+    val dateOpened: Long = System.currentTimeMillis(),
+    val size: Long = 0
 )

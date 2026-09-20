@@ -91,5 +91,5 @@
     <string name="extract_error">Failed to extract ZIP file</string>
     <string name="select_extraction_location">Select the location where files will be extracted</string>
     <string name="open_action">Open</string>
-    <string name="document_count">%1$d files</string>
+    <string name="file_count">%1$d files</string>
 </resources>

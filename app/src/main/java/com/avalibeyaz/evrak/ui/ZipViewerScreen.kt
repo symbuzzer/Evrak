@@ -268,7 +268,7 @@ fun ZipViewerScreen(
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Text(
-                            text = stringResource(id = R.string.document_count, zipEntries.size),
+                            text = stringResource(id = R.string.file_count, zipEntries.size),
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.outline

@@ -95,6 +95,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
             MainScreen(
                 historyList = historyList,
                 onItemClick = { evrak ->
+                    viewModel.updateEvrakTimestamp(evrak)
                     navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
                 },
                 onDeleteClick = { evrak ->

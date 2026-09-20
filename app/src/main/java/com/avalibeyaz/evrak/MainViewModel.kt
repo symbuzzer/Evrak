@@ -71,6 +71,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateEvrakTimestamp(evrak: Evrak) {
+        viewModelScope.launch {
+            repository.updateEvrakTimestamp(evrak)
+        }
+    }
+
     fun deleteEvrak(evrak: Evrak) {
         viewModelScope.launch {
             repository.deleteEvrak(evrak)
