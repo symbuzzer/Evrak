@@ -9,6 +9,14 @@
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/zip" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/x-zip-compressed" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="application/msword" />
         </intent>
         <intent>
@@ -130,6 +138,8 @@
                 <data android:mimeType="application/x-udf" />
                 <data android:mimeType="text/html" />
                 <data android:mimeType="text/plain" />
+                <data android:mimeType="application/zip" />
+                <data android:mimeType="application/x-zip-compressed" />
                 <data android:mimeType="application/octet-stream" />
             </intent-filter>
         </activity>

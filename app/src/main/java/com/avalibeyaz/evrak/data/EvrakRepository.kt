@@ -19,7 +19,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     suspend fun getAllPaths(): List<String> = evrakDao.getAllPaths()
 
     private val supportedExtensions = setOf(
-        ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt"
+        ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt", ".zip"
     )
 
     suspend fun addEvrakFromUri(uri: Uri, resolver: ContentResolver? = null): Evrak? {

@@ -97,7 +97,7 @@ fun MainScreen(
                 path.endsWith(".html") || path.endsWith(".htm") ||
                 path.endsWith(".jpg") || path.endsWith(".jpeg") ||
                 path.endsWith(".gif") || path.endsWith(".png") ||
-                path.endsWith(".txt")
+                path.endsWith(".txt") || path.endsWith(".zip")
             }) filters.add(EvrakFilter.OTHER)
         filters
     }
@@ -133,6 +133,8 @@ fun MainScreen(
             "application/vnd.udf",
             "text/html",
             "text/plain",
+            "application/zip",
+            "application/x-zip-compressed",
             "application/octet-stream"
         )
         initialUri = folderUri
@@ -169,7 +171,7 @@ fun MainScreen(
                 path.endsWith(".html") || path.endsWith(".htm") ||
                 path.endsWith(".jpg") || path.endsWith(".jpeg") ||
                 path.endsWith(".gif") || path.endsWith(".png") ||
-                path.endsWith(".txt")
+                path.endsWith(".txt") || path.endsWith(".zip")
             }
         }
     }

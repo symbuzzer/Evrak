@@ -34,6 +34,7 @@ import com.avalibeyaz.evrak.ui.findActivity
 import com.avalibeyaz.evrak.ui.UdfViewerScreen
 import com.avalibeyaz.evrak.ui.HtmlViewerScreen
 import com.avalibeyaz.evrak.ui.UnsupportedViewerScreen
+import com.avalibeyaz.evrak.ui.ZipViewerScreen
 import com.avalibeyaz.evrak.ui.theme.EvrakTheme
 import com.avalibeyaz.evrak.ui.DocumentConverter
 import com.avalibeyaz.evrak.ui.LibreOfficeManager
@@ -190,6 +191,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
             
             val isText = filePath.endsWith(".txt", ignoreCase = true)
             
+            val isZip = filePath.endsWith(".zip", ignoreCase = true)
+            
             val onRenameSafe: (String) -> Unit = { newName ->
                 val currentEvrak = historyList.find { it.path == filePath }
                 if (currentEvrak != null) {
@@ -263,6 +266,27 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) },
                         onRenameClick = onRenameSafe
+                    )
+                }
+                isZip -> {
+                    ZipViewerScreen(
+                        filePath = filePath,
+                        displayName = displayName,
+                        onBackClick = onBackSafe,
+                        onShareClick = { shareFile(context, filePath) },
+                        onRenameClick = onRenameSafe,
+                        onEntryClick = { entryPath, entryName ->
+                            viewModel.openDocument(
+                                uri = Uri.fromFile(File(entryPath)),
+                                resolver = context.contentResolver,
+                                onError = {
+                                    navController.navigate("viewer/${Uri.encode(entryPath)}/${Uri.encode(entryName)}")
+                                },
+                                onOpened = { evrak ->
+                                    navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
+                                }
+                            )
+                        }
                     )
                 }
                 isHtml -> {
@@ -463,7 +487,6 @@ private fun doPrint(context: android.content.Context, file: File, displayName: S
                     callback?.onWriteFailed(e.message)
                 } finally {
                     try { input?.close() } catch (_: Exception) {}
-                    // output is closed by the print system
                 }
             }
         }, 

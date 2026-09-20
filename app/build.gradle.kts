@@ -13,7 +13,7 @@ android {
         minSdk = 30
         targetSdk = 37
         versionCode = 35
-        versionName = "1.6.4"
+        versionName = "1.7.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.gif)
     implementation(libs.tiff.renderer)
+    implementation(libs.zip4j)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
