@@ -81,6 +81,7 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 | [AndroidX DocumentFile](https://developer.android.com/jetpack/androidx/releases/documentfile) | Apache License 2.0 |
 | [AndroidX WebKit](https://developer.android.com/jetpack/androidx/releases/webkit) | Apache License 2.0 |
 | [AndroidX Print](https://developer.android.com/jetpack/androidx/releases/print) | Apache License 2.0 |
+| [Google Play Review](https://developer.android.com/guide/playcore/in-app-review) | Apache License 2.0 |
 | [Kotlin](https://github.com/JetBrains/kotlin) (dil ve derleyici eklentileri) | Apache License 2.0 |
 | [KSP](https://github.com/google/ksp) (Kotlin Symbol Processing) | Apache License 2.0 |
 | [Android Gradle Plugin](https://developer.android.com/build/releases/gradle-plugin) | Apache License 2.0 |

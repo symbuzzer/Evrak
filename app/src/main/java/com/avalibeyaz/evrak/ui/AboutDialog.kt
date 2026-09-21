@@ -1,5 +1,8 @@
 package com.avalibeyaz.evrak.ui
 
+import android.app.Activity
+import android.content.Context
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.basicMarquee
@@ -16,11 +19,14 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,11 +34,27 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.avalibeyaz.evrak.BuildConfig
 import com.avalibeyaz.evrak.R
+import com.google.android.play.core.review.ReviewManagerFactory
 
 @Composable
 fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
+    val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val scrollState = rememberScrollState()
+
+    val isInstalledFromPlayStore = remember {
+        try {
+            val installSource = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getInstallerPackageName(context.packageName)
+            }
+            installSource == "com.android.vending"
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -130,10 +152,49 @@ fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
                 }
 
                 AboutLinkItem(
-                    icon = Icons.Default.Shop,
-                    description = stringResource(id = R.string.about_view_on_play_store_desc),
-                    onClick = { uriHandler.openUri("https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak") }
+                    icon = ImageVector.vectorResource(id = R.drawable.ic_whatsapp),
+                    description = stringResource(id = R.string.about_contact_developer_desc),
+                    onClick = { uriHandler.openUri("https://wa.me/@AvAliBEYAZ") }
                 )
+
+                if (isInstalledFromPlayStore) {
+                    AboutLinkItem(
+                        icon = Icons.Default.Shop,
+                        description = stringResource(id = R.string.about_view_on_play_store_desc),
+                        onClick = {
+                            val manager = ReviewManagerFactory.create(context)
+                            val prefs =
+                                context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                            val reviewRequested = prefs.getBoolean("review_requested", false)
+                            val playStoreUrl =
+                                "https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak"
+
+                            if (reviewRequested) {
+                                uriHandler.openUri(playStoreUrl)
+                            } else {
+                                val request = manager.requestReviewFlow()
+                                request.addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        val reviewInfo = task.result
+                                        val activity = context as? Activity
+                                        if (activity != null) {
+                                            val flow = manager.launchReviewFlow(activity, reviewInfo)
+                                            flow.addOnCompleteListener {
+                                                prefs.edit().putBoolean("review_requested", true)
+                                                    .apply()
+                                                uriHandler.openUri(playStoreUrl)
+                                            }
+                                        } else {
+                                            uriHandler.openUri(playStoreUrl)
+                                        }
+                                    } else {
+                                        uriHandler.openUri(playStoreUrl)
+                                    }
+                                }
+                            }
+                        }
+                    )
+                }
 
                 AboutLinkItem(
                     icon = Icons.Default.Security,

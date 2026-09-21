@@ -28,6 +28,7 @@
     <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
     <string name="about_celse_integration_desc">CELSE uygulaması entegrasyonunu gerçekleştirin.</string>
+    <string name="about_contact_developer_desc">Geliştiriciye hata bildirin veya merhaba diyin</string>
     <string name="about_view_on_play_store_desc">Uygulamayı Play Store üzerinden değerlendirin.</string>
     <string name="about_privacy_policy">Gizlilik bildirimine göz atın.</string>
     <string name="about_disclaimer">Uygulamayı kullanarak kabul etmiş olduğunuz sorumluluk reddine göz atın.</string>

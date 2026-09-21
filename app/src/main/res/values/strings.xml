@@ -28,6 +28,7 @@
     <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
     <string name="about_celse_integration_desc">Perform CELSE app integration.</string>
+    <string name="about_contact_developer_desc">Report a bug to the developer or say hello.</string>
     <string name="about_view_on_play_store_desc">Rate the app on the Play Store.</string>
     <string name="about_privacy_policy">View the privacy policy.</string>
     <string name="about_disclaimer">View the disclaimer you accept by using this app.</string>

@@ -78,6 +78,7 @@ dependencies {
     implementation(libs.coil.gif)
     implementation(libs.tiff.renderer)
     implementation(libs.zip4j)
+    implementation(libs.play.review.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
