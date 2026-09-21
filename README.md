@@ -2,7 +2,7 @@
 [<img width="220" height="66" src="https://github.com/user-attachments/assets/7c2fadad-e134-4566-a5cb-9f4a0f32732a" />](https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak)
 
 
-**Evrak**, avukatların ve arabulucuların günlük iş akışında en sık karşılaştığı dosya formatlarını **-UDF, TIFF, PDF, Word (DOCX, DOC), Excel (XLSX, XLS), EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF-** tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan ücretsiz ve reklamsız bir Android uygulamasıdır.
+**Evrak**, avukatların ve arabulucuların günlük iş akışında en sık karşılaştığı dosya formatlarını (UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, EYP, ZIP, HTML) ve diğer bazı yaygın dosya formatlarını (TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF) tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan ücretsiz ve reklamsız bir Android uygulamasıdır.
 
 UYAP, CELSE, e-arabulucu, e-Adalet vb. uygulamalar üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygulamaları aracılığıyla gelen evrakları açmak için genellikle birden fazla farklı uygulamaya ihtiyaç duyulur. Evrak Android uygulaması, bu ihtiyacı tek bir yerde, gereksiz karmaşıklık olmadan çözer.  
 

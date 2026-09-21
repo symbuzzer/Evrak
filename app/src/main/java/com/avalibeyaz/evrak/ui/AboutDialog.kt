@@ -30,7 +30,7 @@ import com.avalibeyaz.evrak.BuildConfig
 import com.avalibeyaz.evrak.R
 
 @Composable
-fun AboutDialog(onDismiss: () -> Unit) {
+fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
     val uriHandler = LocalUriHandler.current
     val scrollState = rememberScrollState()
 
@@ -121,11 +121,13 @@ fun AboutDialog(onDismiss: () -> Unit) {
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                AboutLinkItem(
-                    icon = Icons.Default.IntegrationInstructions,
-                    description = stringResource(id = R.string.about_celse_integration_desc),
-                    onClick = { uriHandler.openUri("https://github.com/symbuzzer/UDE_stub#celse-uygulamas%C4%B1-ile-do%C4%9Frudan-3-parti-udf-g%C3%B6r%C3%BCnt%C3%BCleyicilerini-kullanabilmek-i%C3%A7in-gerekli-yama") }
-                )
+                if (showCelseIntegration) {
+                    AboutLinkItem(
+                        icon = Icons.Default.IntegrationInstructions,
+                        description = stringResource(id = R.string.about_celse_integration_desc),
+                        onClick = { uriHandler.openUri("https://github.com/symbuzzer/UDE_stub#celse-uygulamas%C4%B1-ile-do%C4%9Frudan-3-parti-udf-g%C3%B6r%C3%BCnt%C3%BCleyicilerini-kullanabilmek-i%C3%A7in-gerekli-yama") }
+                    )
+                }
 
                 AboutLinkItem(
                     icon = Icons.Default.Shop,

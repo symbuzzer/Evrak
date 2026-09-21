@@ -48,6 +48,7 @@ import java.io.File
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
     private var currentIntent by mutableStateOf<Intent?>(null)
+    private var showCelseIntegration by mutableStateOf(true)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         android.webkit.WebView.enableSlowWholeDocumentDraw()
@@ -62,9 +63,21 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             EvrakTheme {
-                EvrakApp(viewModel, currentIntent, onFinish = { finish() })
+                EvrakApp(
+                    viewModel = viewModel,
+                    intent = currentIntent,
+                    showCelseIntegration = showCelseIntegration,
+                    onFinish = { finish() }
+                )
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Check if the UYAP Editor app is sideloaded whenever the app opens/resumes
+        val isSideloaded = com.avalibeyaz.evrak.ui.InstallUtils.isPackageSideloaded(this, "tr.gov.uyap.editor")
+        showCelseIntegration = !isSideloaded
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -74,7 +87,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
+fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Boolean, onFinish: () -> Unit) {
     val navController = rememberNavController()
     val historyList by viewModel.historyList.collectAsState()
     val folderSelectionEnabled by viewModel.folderSelectionEnabled.collectAsState()
@@ -323,7 +336,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, onFinish: () -> Unit) {
     }
 
     if (showAboutDialog) {
-        AboutDialog { showAboutDialog = false }
+        AboutDialog(showCelseIntegration = showCelseIntegration) { showAboutDialog = false }
     }
 
     val activityContentResolver = androidx.compose.ui.platform.LocalContext.current.contentResolver

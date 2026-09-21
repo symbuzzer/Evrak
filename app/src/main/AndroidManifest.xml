@@ -47,6 +47,7 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="application/x-udf" />
         </intent>
+        <package android:name="tr.gov.uyap.editor" />
     </queries>
 
     <application
