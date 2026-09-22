@@ -1,4 +1,3 @@
-# LibreOfficeKit JNI classes must be kept
 -keep class org.libreoffice.kit.** {
     *;
 }
@@ -9,7 +8,6 @@
     *;
 }
 
-# Keep the Document and Office handles
 -keepclassmembers class org.libreoffice.kit.Office {
     private java.nio.ByteBuffer handle;
 }
@@ -17,12 +15,10 @@
     private java.nio.ByteBuffer handle;
 }
 
-# General JNI rules
 -keepclasseswithmembernames class * {
     native <methods>;
 }
 
-# TIFF Renderer JNI rules
 -keep class io.github.lucf15.tiffrenderer.** {
     *;
 }

@@ -48,6 +48,7 @@
             <data android:mimeType="application/x-udf" />
         </intent>
         <package android:name="tr.gov.uyap.editor" />
+        <package android:name="com.adalet" />
     </queries>
 
     <application

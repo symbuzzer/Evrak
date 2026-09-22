@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
+// import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -151,11 +151,11 @@ fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
                     )
                 }
 
-                AboutLinkItem(
+                /*AboutLinkItem(
                     icon = ImageVector.vectorResource(id = R.drawable.ic_whatsapp),
                     description = stringResource(id = R.string.about_contact_developer_desc),
                     onClick = { uriHandler.openUri("https://wa.me/@AvAliBEYAZ") }
-                )
+                )*/
 
                 if (isInstalledFromPlayStore) {
                     AboutLinkItem(
@@ -221,14 +221,7 @@ fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
                 )
             }
         },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    text = stringResource(id = R.string.close),
-                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 16.sp)
-                )
-            }
-        }
+        confirmButton = {}
     )
 }
 

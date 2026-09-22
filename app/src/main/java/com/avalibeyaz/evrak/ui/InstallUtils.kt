@@ -23,5 +23,16 @@ object InstallUtils {
             false
         }
     }
+
+    fun isPackageInstalled(context: Context, packageName: String): Boolean {
+        return try {
+            context.packageManager.getPackageInfo(packageName, 0)
+            true
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        } catch (_: Exception) {
+            false
+        }
+    }
 }
 

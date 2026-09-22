@@ -35,8 +35,6 @@
     <string name="about_view_libraries_desc">View the open source libraries used in the app.</string>
     <string name="about_source_code_desc">View the app\'s source code on GitHub.</string>
 
-    <string name="close">Close</string>
-
     <string name="confirm_delete_all_message">Are you sure you want to delete all history and cached files?</string>
     <string name="unsupported_format_title">Unrecognized format</string>
     <string name="unsupported_format_message">This file format is not currently supported.</string>
@@ -86,6 +84,7 @@
 
     <string name="downloads">Downloads</string>
     <string name="documents">Documents</string>
+    <string name="celse">CELSE</string>
     <string name="error_folder_selection_not_supported">Your file manager does not support opening a specific folder. The file manager will open directly instead going forward.</string>
     <string name="save_success">File saved successfully</string>
     <string name="save_error">An error occurred while saving the file</string>

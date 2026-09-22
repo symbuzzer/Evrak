@@ -75,9 +75,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Check if the UYAP Editor app is sideloaded whenever the app opens/resumes
+        val isAdaletInstalled = com.avalibeyaz.evrak.ui.InstallUtils.isPackageInstalled(this, "com.adalet")
         val isSideloaded = com.avalibeyaz.evrak.ui.InstallUtils.isPackageSideloaded(this, "tr.gov.uyap.editor")
-        showCelseIntegration = !isSideloaded
+        showCelseIntegration = isAdaletInstalled && !isSideloaded
     }
 
     override fun onNewIntent(intent: Intent) {

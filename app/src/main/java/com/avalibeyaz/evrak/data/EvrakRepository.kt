@@ -87,7 +87,6 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         val existingEvrak = evrakDao.getEvrakByNameAndSize(finalName, fileSize)
 
         val evrak = if (existingEvrak != null) {
-            // Delete the old file if it's different from the new one
             if (existingEvrak.path != finalCacheFile.absolutePath) {
                 try {
                     val oldFile = File(existingEvrak.path)

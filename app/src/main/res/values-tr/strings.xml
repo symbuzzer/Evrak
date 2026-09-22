@@ -35,8 +35,6 @@
     <string name="about_view_libraries_desc">Uygulamada kullanılan açık kaynak kütüphaneleri görüntüleyin.</string>
     <string name="about_source_code_desc">Uygulamanın kaynak kodunu GitHub üzerinden inceleyin.</string>
 
-    <string name="close">Kapat</string>
-
     <string name="confirm_delete_all_message">Bütün geçmişi ve önbelleğe alınmış dosyaları silmek istediğinize emin misiniz?</string>
     <string name="unsupported_format_title">Tanımlanamayan format</string>
     <string name="unsupported_format_message">Bu dosya formatı şu anda desteklenmiyor.</string>
@@ -85,6 +83,7 @@
 
     <string name="downloads">İndirilenler</string>
     <string name="documents">Belgeler</string>
+    <string name="celse">CELSE</string>
     <string name="error_folder_selection_not_supported">Dosya yöneticiniz belirli bir klasörü açmayı desteklemiyor. Bundan sonra doğrudan dosya yöneticisi açılacaktır.</string>
     <string name="save_success">Dosya başarıyla kaydedildi</string>
     <string name="save_error">Dosya kaydedilirken hata oluştu</string>

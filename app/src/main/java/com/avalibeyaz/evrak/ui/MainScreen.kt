@@ -352,6 +352,21 @@ fun MainScreen(
                                         launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments"))
                                     }
                                 )
+                                if (InstallUtils.isPackageInstalled(context, "com.adalet")) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.celse)) },
+                                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
+                                        onClick = {
+                                            showFolderMenu = false
+                                            val launchIntent = context.packageManager.getLaunchIntentForPackage("com.adalet")
+                                            if (launchIntent != null) {
+                                                context.startActivity(launchIntent)
+                                            } else {
+                                                Toast.makeText(context, "CELSE app launch failed", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
