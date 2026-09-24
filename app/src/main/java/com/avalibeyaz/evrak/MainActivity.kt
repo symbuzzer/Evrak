@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -104,7 +103,6 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
     ) {
         composable("history") {
             val context = androidx.compose.ui.platform.LocalContext.current
-            val shareAppLabel = stringResource(id = R.string.share_app)
             MainScreen(
                 historyList = historyList,
                 onItemClick = { evrak ->
@@ -122,15 +120,6 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                 },
                 onRefresh = {
                     viewModel.refreshHistory()
-                },
-                onShareAppClick = {
-                    Toast.makeText(context, R.string.sharing_app, Toast.LENGTH_SHORT).show()
-                    val shareText = context.getString(R.string.share_app_text)
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, shareText)
-                    }
-                    context.startActivity(Intent.createChooser(shareIntent, shareAppLabel))
                 },
                 onPrintClick = { evrak, onConvertingChange ->
                     printFile(context, evrak.path, evrak.name, onConvertingChange)

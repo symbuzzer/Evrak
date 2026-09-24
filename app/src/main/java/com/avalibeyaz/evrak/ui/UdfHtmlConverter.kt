@@ -135,8 +135,8 @@ object UdfHtmlConverter {
                     }
                     .udf-page-break { border-top: 1px dashed #bbbbbb; margin: 24pt 0; }
                     table.udf-table { border-collapse: collapse; margin: 8pt 0; width: 100%; table-layout: fixed; }
-                    table.udf-table td { padding: 5.4pt; vertical-align: top; word-break: break-word; }
-                    .udf-tab { display: inline-block; min-width: 28pt; white-space: pre; }
+                    table.udf-table td { padding: 3pt 5.4pt; vertical-align: top; word-break: break-word; overflow-wrap: break-word; }
+                    .udf-tab { display: inline-block; min-width: 14pt; white-space: pre; }
                     .udf-list-row { display: grid; width: 100%; align-items: flex-start; }
                     .udf-list-marker { grid-column: 1; padding-right: 8pt; word-break: break-word; }
                     .udf-list-content { grid-column: 2; min-width: 0; overflow-wrap: anywhere; }
@@ -196,6 +196,7 @@ object UdfHtmlConverter {
         private val styles = mutableMapOf<String, UdfStyle>()
         private val numberedListCounters = mutableMapOf<String, MutableMap<Int, Int>>()
         private val dataMap = mutableMapOf<String, String>()
+        private val dataRowsMap = mutableMapOf<String, MutableList<Map<String, String>>>()
         private var webId: String? = null
         private var defaultHanging: Double = 142.0
 
@@ -321,13 +322,49 @@ object UdfHtmlConverter {
         }
 
         private fun parseData(dataEl: Element) {
-            forEachChildElement(dataEl) { child ->
-                val key = child.tagName
-                val value = child.textContent?.trim() ?: ""
-                if (value.isNotEmpty()) {
-                    dataMap[key] = value
+            fun collectLeafNodes(parent: Element, map: MutableMap<String, String>) {
+                val children = parent.childNodes
+                var hasElementChild = false
+                for (i in 0 until children.length) {
+                    val child = children.item(i)
+                    if (child.nodeType == Node.ELEMENT_NODE) {
+                        hasElementChild = true
+                        collectLeafNodes(child as Element, map)
+                    }
+                }
+                if (!hasElementChild) {
+                    val key = parent.tagName
+                    val value = parent.textContent?.trim() ?: ""
+                    if (value.isNotEmpty()) {
+                        map[key] = value
+                    }
                 }
             }
+
+            fun traverse(el: Element) {
+                val rowName = el.attrOrNull("rowName")
+                if (!rowName.isNullOrEmpty()) {
+                    val rowMap = mutableMapOf<String, String>()
+                    collectLeafNodes(el, rowMap)
+                    if (rowMap.isNotEmpty()) {
+                        dataRowsMap.getOrPut(rowName) { mutableListOf() }.add(rowMap)
+                        rowMap.forEach { (k, v) ->
+                            if (!dataMap.containsKey(k)) dataMap[k] = v
+                        }
+                    }
+                }
+
+                val children = el.childNodes
+                for (i in 0 until children.length) {
+                    val child = children.item(i)
+                    if (child.nodeType == Node.ELEMENT_NODE) {
+                        traverse(child as Element)
+                    }
+                }
+            }
+
+            traverse(dataEl)
+            collectLeafNodes(dataEl, dataMap)
         }
 
         private fun defaultStyle(): UdfStyle =
@@ -337,15 +374,18 @@ object UdfHtmlConverter {
                 foreground = "#000000"
             )
 
-        private fun renderStructuralElement(el: Element): String {
+        private fun renderStructuralElement(
+            el: Element,
+            dataScope: Map<String, String>? = null
+        ): String {
             return try {
                 when (el.tagName) {
-                    "header" -> "<div class=\"udf-header\">${renderContainerChildren(el)}</div>"
-                    "footer" -> "<div class=\"udf-footer\">${renderContainerChildren(el)}</div>"
-                    "paragraph" -> renderParagraph(el)
-                    "table" -> renderTable(el)
+                    "header" -> "<div class=\"udf-header\">${renderContainerChildren(el, dataScope)}</div>"
+                    "footer" -> "<div class=\"udf-footer\">${renderContainerChildren(el, dataScope)}</div>"
+                    "paragraph" -> renderParagraph(el, dataScope)
+                    "table" -> renderTable(el, dataScope)
                     "page-break" -> {
-                        val inner = renderContainerChildren(el)
+                        val inner = renderContainerChildren(el, dataScope)
                         "<div class=\"udf-page-break\"></div>$inner"
                     }
                     else -> ""
@@ -355,15 +395,31 @@ object UdfHtmlConverter {
             }
         }
 
-        private fun renderContainerChildren(el: Element): String {
+        private fun renderContainerChildren(
+            el: Element,
+            dataScope: Map<String, String>? = null
+        ): String {
             val sb = StringBuilder()
             forEachChildElement(el) { child ->
-                sb.append(renderStructuralElement(child))
+                sb.append(renderStructuralElement(child, dataScope))
             }
             return sb.toString()
         }
 
-        private fun renderParagraph(p: Element): String {
+        private fun parseTabStops(p: Element): List<Double> {
+            val tabSetAttr = p.attrOrNull("TabSet") ?: return emptyList()
+            return tabSetAttr.split(",")
+                .mapNotNull { token ->
+                    val parts = token.trim().split(":")
+                    parts.firstOrNull()?.toDoubleOrNull()
+                }
+                .filter { it > 0 }
+        }
+
+        private fun renderParagraph(
+            p: Element,
+            dataScope: Map<String, String>? = null
+        ): String {
             val style = StringBuilder()
             when (p.attrOrNull("Alignment")) {
                 "1" -> style.append("text-align:center;")
@@ -373,12 +429,15 @@ object UdfHtmlConverter {
             }
 
             val leftIndentAttr = p.attrOrNull("LeftIndent")?.toDoubleOrNull() ?: 0.0
-            style.append("padding-left:${leftIndentAttr}pt;")
-            p.attrOrNull("RightIndent")?.toDoubleOrNull()?.let { style.append("margin-right:${it}pt;") }
+            if (leftIndentAttr > 0) style.append("padding-left:${leftIndentAttr}pt;")
+            p.attrOrNull("RightIndent")?.toDoubleOrNull()?.let { if (it > 0) style.append("margin-right:${it}pt;") }
             p.attrOrNull("FirstLineIndent")?.toDoubleOrNull()?.let { style.append("text-indent:${it}pt;") }
-            p.attrOrNull("SpaceAbove")?.toDoubleOrNull()?.let { style.append("margin-top:${it}pt;") }
-            p.attrOrNull("SpaceBelow")?.toDoubleOrNull()?.let { style.append("margin-bottom:${it}pt;") }
-            p.attrOrNull("LineSpacing")?.toDoubleOrNull()?.let { style.append("line-height:${1.0 + it};") }
+            p.attrOrNull("SpaceAbove")?.toDoubleOrNull()?.let { if (it > 0) style.append("margin-top:${it}pt;") }
+            p.attrOrNull("SpaceBelow")?.toDoubleOrNull()?.let { if (it > 0) style.append("margin-bottom:${it}pt;") }
+            p.attrOrNull("LineSpacing")?.toDoubleOrNull()?.let { 
+                val ls = if (it <= 0.0) 1.15 else 1.0 + it
+                style.append("line-height:$ls;") 
+            }
 
             val listLevel = p.attrOrNull("ListLevel")?.toIntOrNull() ?: 1
             val secListType = p.attrOrNull("SecListTypeLevel$listLevel")
@@ -402,6 +461,9 @@ object UdfHtmlConverter {
                     charCount += text.length
                 }
             }
+
+            val tabStops = parseTabStops(p)
+            val tabState = TabState(tabStops)
 
             if (isNumbered || isBulleted || hangingAttr > 0 || (hasEarlyTab && p.attrOrNull("Alignment") != "1")) {
                 val marker: String
@@ -434,18 +496,21 @@ object UdfHtmlConverter {
                         "3" -> style.append("text-align:justify; text-justify:inter-word; text-align-last:left;")
                         else -> style.append("text-align:left;")
                     }
-                    style.append("padding-left:${effectivePadding}pt;")
-                    p.attrOrNull("RightIndent")?.toDoubleOrNull()?.let { style.append("margin-right:${it}pt;") }
+                    if (effectivePadding > 0) style.append("padding-left:${effectivePadding}pt;")
+                    p.attrOrNull("RightIndent")?.toDoubleOrNull()?.let { if (it > 0) style.append("margin-right:${it}pt;") }
                     p.attrOrNull("FirstLineIndent")?.toDoubleOrNull()?.let { style.append("text-indent:${it}pt;") }
-                    p.attrOrNull("SpaceAbove")?.toDoubleOrNull()?.let { style.append("margin-top:${it}pt;") }
-                    p.attrOrNull("SpaceBelow")?.toDoubleOrNull()?.let { style.append("margin-bottom:${it}pt;") }
-                    p.attrOrNull("LineSpacing")?.toDoubleOrNull()?.let { style.append("line-height:${1.0 + it};") }
+                    p.attrOrNull("SpaceAbove")?.toDoubleOrNull()?.let { if (it > 0) style.append("margin-top:${it}pt;") }
+                    p.attrOrNull("SpaceBelow")?.toDoubleOrNull()?.let { if (it > 0) style.append("margin-bottom:${it}pt;") }
+                    p.attrOrNull("LineSpacing")?.toDoubleOrNull()?.let { 
+                        val ls = if (it <= 0.0) 1.15 else 1.0 + it
+                        style.append("line-height:$ls;") 
+                    }
 
                     val inner = StringBuilder()
-                    forEachChildElement(p) { child -> inner.append(renderInlineElement(child)) }
+                    forEachChildElement(p) { child -> inner.append(renderInlineElement(child, dataScope, tabState)) }
                     body = inner.toString()
                 } else {
-                    val split = renderParagraphWithHangingSplit(p)
+                    val split = renderParagraphWithHangingSplit(p, dataScope, tabState)
                     if (split != null) {
                         marker = split.first
                         val plainMarker = marker.replace(Regex("<[^>]*>"), "").replace("&nbsp;", "").trim()
@@ -457,7 +522,7 @@ object UdfHtmlConverter {
                         body = split.second
                     } else {
                         val inner = StringBuilder()
-                        forEachChildElement(p) { child -> inner.append(renderInlineElement(child)) }
+                        forEachChildElement(p) { child -> inner.append(renderInlineElement(child, dataScope, tabState)) }
                         if (hangingAttr > 0) {
                             return "<div class=\"udf-paragraph\" style=\"$style padding-left:${hangingAttr}pt; text-indent:-${hangingAttr}pt;\">$inner</div>"
                         }
@@ -471,7 +536,7 @@ object UdfHtmlConverter {
 
             val innerSb = StringBuilder()
             forEachChildElement(p) { child ->
-                innerSb.append(renderInlineElement(child))
+                innerSb.append(renderInlineElement(child, dataScope, tabState))
             }
             
             var inner = innerSb.toString()
@@ -480,7 +545,35 @@ object UdfHtmlConverter {
             return "<div class=\"udf-paragraph\" style=\"$style\">$inner</div>"
         }
 
-        private fun renderParagraphWithHangingSplit(p: Element): Pair<String, String>? {
+        private class TabState(val tabStops: List<Double>) {
+            var tabIndex = 0
+            var currentPosPt = 0.0
+
+            fun nextTabHtml(): String {
+                val html: String
+                if (tabIndex < tabStops.size) {
+                    val targetPos = tabStops[tabIndex]
+                    val width = (targetPos - currentPosPt).coerceAtLeast(14.0)
+                    currentPosPt = targetPos
+                    tabIndex++
+                    html = "<span class=\"udf-tab\" style=\"display:inline-block; width:${width}pt;\">&nbsp;</span>"
+                } else {
+                    currentPosPt += 28.0
+                    html = "<span class=\"udf-tab\">&nbsp;</span>"
+                }
+                return html
+            }
+
+            fun addTextLength(len: Int) {
+                currentPosPt += len * 6.0
+            }
+        }
+
+        private fun renderParagraphWithHangingSplit(
+            p: Element,
+            dataScope: Map<String, String>?,
+            tabState: TabState
+        ): Pair<String, String>? {
             val before = StringBuilder()
             val after = StringBuilder()
             var splitDone = false
@@ -515,9 +608,9 @@ object UdfHtmlConverter {
                     }
                 }
                 if (splitDone) {
-                    after.append(renderInlineElement(child))
+                    after.append(renderInlineElement(child, dataScope, tabState))
                 } else {
-                    before.append(renderInlineElement(child))
+                    before.append(renderInlineElement(child, dataScope, tabState))
                 }
             }
 
@@ -576,14 +669,18 @@ object UdfHtmlConverter {
             return sb.toString()
         }
 
-        private fun renderInlineElement(el: Element): String {
+        private fun renderInlineElement(
+            el: Element,
+            dataScope: Map<String, String>? = null,
+            tabState: TabState? = null
+        ): String {
             return try {
                 when (el.tagName) {
-                    "content" -> renderContentRun(el)
+                    "content" -> renderContentRun(el, tabState)
                     "image" -> renderImage(el)
-                    "tab" -> "<span class=\"udf-tab\">&nbsp;</span>"
+                    "tab" -> tabState?.nextTabHtml() ?: "<span class=\"udf-tab\">&nbsp;</span>"
                     "space" -> htmlEscape(extractText(el)).ifEmpty { "&nbsp;" }
-                    "field" -> renderFieldRun(el)
+                    "field" -> renderFieldRun(el, dataScope, tabState)
                     else -> ""
                 }
             } catch (e: Exception) {
@@ -617,7 +714,7 @@ object UdfHtmlConverter {
             return runStyle.toString()
         }
 
-        private fun renderTextWithTabs(text: String, styleStr: String): String {
+        private fun renderTextWithTabs(text: String, styleStr: String, tabState: TabState? = null): String {
             if (text.isEmpty()) return ""
             val cleanText = text.trim('\n', '\r')
             if (cleanText.isEmpty()) return ""
@@ -628,7 +725,9 @@ object UdfHtmlConverter {
 
             fun flushChunk() {
                 if (chunk.isNotEmpty()) {
-                    out.append("<span style=\"$styleStr\">${htmlEscape(chunk.toString())}</span>")
+                    val str = chunk.toString()
+                    out.append("<span style=\"$styleStr\">${htmlEscape(str)}</span>")
+                    tabState?.addTextLength(str.length)
                     chunk.clear()
                 }
             }
@@ -636,7 +735,8 @@ object UdfHtmlConverter {
             while (i < cleanText.length) {
                 if (cleanText[i] == '\t') {
                     flushChunk()
-                    out.append("<span class=\"udf-tab\">&nbsp;</span>")
+                    val tabHtml = tabState?.nextTabHtml() ?: "<span class=\"udf-tab\">&nbsp;</span>"
+                    out.append(tabHtml)
                     i++
                 } else {
                     chunk.append(cleanText[i])
@@ -647,32 +747,36 @@ object UdfHtmlConverter {
             return out.toString()
         }
 
-        private fun renderContentRun(el: Element): String {
+        private fun renderContentRun(el: Element, tabState: TabState? = null): String {
             val text = extractText(el)
             if (text.isEmpty() || text == "\u200B") return ""
-            return renderTextWithTabs(text, contentRunStyle(el))
+            return renderTextWithTabs(text, contentRunStyle(el), tabState)
         }
 
-        private fun renderFieldRun(el: Element): String {
+        private fun renderFieldRun(
+            el: Element,
+            dataScope: Map<String, String>? = null,
+            tabState: TabState? = null
+        ): String {
             val fieldName = el.attrOrNull("fieldName") ?: el.attrOrNull("name") ?: ""
-            val mappedValue = dataMap[fieldName]
+            val mappedValue = dataScope?.get(fieldName) ?: dataMap[fieldName]
             if (!mappedValue.isNullOrEmpty() && mappedValue != fieldName) {
-                return renderTextWithTabs(mappedValue, contentRunStyle(el))
+                return renderTextWithTabs(mappedValue, contentRunStyle(el), tabState)
             }
             val valueAttr = el.attrOrNull("value")
             if (!valueAttr.isNullOrEmpty() && valueAttr != fieldName) {
-                return renderTextWithTabs(valueAttr, contentRunStyle(el))
+                return renderTextWithTabs(valueAttr, contentRunStyle(el), tabState)
             }
             val defaultAttr = el.attrOrNull("default")
             if (!defaultAttr.isNullOrEmpty() && defaultAttr != fieldName) {
-                return renderTextWithTabs(defaultAttr, contentRunStyle(el))
+                return renderTextWithTabs(defaultAttr, contentRunStyle(el), tabState)
             }
             val poolText = extractText(el)
             if (poolText.isNotEmpty() && poolText != "\u200B" && poolText != fieldName) {
-                return renderTextWithTabs(poolText, contentRunStyle(el))
+                return renderTextWithTabs(poolText, contentRunStyle(el), tabState)
             }
             val fallback = valueAttr ?: defaultAttr ?: mappedValue ?: poolText.takeIf { it.isNotEmpty() } ?: "[$fieldName]"
-            return renderTextWithTabs(fallback, contentRunStyle(el))
+            return renderTextWithTabs(fallback, contentRunStyle(el), tabState)
         }
 
         private fun renderImage(el: Element): String {
@@ -685,53 +789,122 @@ object UdfHtmlConverter {
             return "<img class=\"udf-image\" style=\"$style\" src=\"data:image/*;base64,$data\" />"
         }
 
-        private fun renderTable(table: Element): String {
+        private fun calculateCellWidthPercentages(cells: List<Element>, spans: List<Double>): List<Double> {
+            if (cells.isEmpty()) return emptyList()
+
+            val cellSpans = mutableListOf<Double>()
+            var spanIdx = 0
+
+            for (cell in cells) {
+                val colspan = cell.attrOrNull("colspan")?.toIntOrNull() ?: 1
+                var sumSpan = 0.0
+                if (spans.isNotEmpty()) {
+                    for (k in 0 until colspan) {
+                        val idx = spanIdx + k
+                        if (idx < spans.size) {
+                            sumSpan += spans[idx]
+                        } else if (spans.isNotEmpty()) {
+                            sumSpan += spans.last()
+                        } else {
+                            sumSpan += 1.0
+                        }
+                    }
+                    spanIdx += colspan
+                } else {
+                    sumSpan = colspan.toDouble()
+                }
+                cellSpans.add(sumSpan)
+            }
+
+            val totalSpan = cellSpans.sum().takeIf { it > 0 } ?: 1.0
+            return cellSpans.map { (it / totalSpan) * 100.0 }
+        }
+
+        private fun renderTable(
+            table: Element,
+            dataScope: Map<String, String>? = null
+        ): String {
             val hasBorder = table.attrOrNull("border") != "borderNone"
-            val columnSpans = table.attrOrNull("columnSpans")
+            val tableSpans = table.attrOrNull("columnSpans")
                 ?.split(",")
                 ?.mapNotNull { it.trim().toDoubleOrNull() }
                 ?: emptyList()
 
-            val colGroup = if (columnSpans.isNotEmpty()) {
-                val total = columnSpans.sum().takeIf { it > 0 } ?: 1.0
-                buildString {
-                    append("<colgroup>")
-                    columnSpans.forEach { span ->
-                        val pct = (span / total) * 100.0
-                        append("<col style=\"width:${pct}%;\"/>")
-                    }
-                    append("</colgroup>")
-                }
-            } else ""
-
             val rowsHtml = StringBuilder()
             forEachChildElement(table) { rowEl ->
                 if (rowEl.tagName == "row") {
-                    rowsHtml.append(renderRow(rowEl, hasBorder))
+                    rowsHtml.append(renderRow(rowEl, tableSpans, hasBorder, dataScope))
                 }
             }
 
-            return "<table class=\"udf-table\">$colGroup<tbody>$rowsHtml</tbody></table>"
+            return "<table class=\"udf-table\"><tbody>$rowsHtml</tbody></table>"
         }
 
-        private fun renderRow(row: Element, tableHasBorder: Boolean): String {
+        private fun renderRow(
+            row: Element,
+            tableSpans: List<Double>,
+            tableHasBorder: Boolean,
+            dataScope: Map<String, String>? = null
+        ): String {
             val rowStyle = StringBuilder()
             row.attrOrNull("height")?.toDoubleOrNull()?.let {
                 if (it > 0) rowStyle.append("height:${it}pt;")
             }
             val isHeaderRow = row.attrOrNull("rowType") == "headerRow"
+            val isDataRow = row.attrOrNull("rowType") == "dataRow"
+            val rowName = row.attrOrNull("rowName")
 
-            val cellsHtml = StringBuilder()
-            forEachChildElement(row) { cellEl ->
-                if (cellEl.tagName == "cell") {
-                    cellsHtml.append(renderCell(cellEl, isHeaderRow, tableHasBorder))
+            val rowSpans = row.attrOrNull("columnSpans")
+                ?.split(",")
+                ?.mapNotNull { it.trim().toDoubleOrNull() }
+                ?.takeIf { it.isNotEmpty() }
+                ?: tableSpans
+
+            val cells = mutableListOf<Element>()
+            forEachChildElement(row) { child ->
+                if (child.tagName == "cell") {
+                    cells.add(child)
                 }
             }
-            return "<tr style=\"$rowStyle\">$cellsHtml</tr>"
+
+            if (cells.isEmpty()) return ""
+
+            val cellWidthPcts = calculateCellWidthPercentages(cells, rowSpans)
+
+            fun renderRowWithScope(scope: Map<String, String>?): String {
+                val cellsHtml = StringBuilder()
+                cells.forEachIndexed { idx, cellEl ->
+                    val pct = cellWidthPcts.getOrNull(idx)
+                    cellsHtml.append(renderCell(cellEl, isHeaderRow, tableHasBorder, pct, scope))
+                }
+                return "<tr style=\"$rowStyle\">$cellsHtml</tr>"
+            }
+
+            val repeatingRows = if (isDataRow && !rowName.isNullOrEmpty()) dataRowsMap[rowName] else null
+            if (!repeatingRows.isNullOrEmpty()) {
+                val sb = StringBuilder()
+                repeatingRows.forEach { rowData ->
+                    sb.append(renderRowWithScope(rowData))
+                }
+                return sb.toString()
+            } else {
+                return renderRowWithScope(dataScope)
+            }
         }
 
-        private fun renderCell(cell: Element, isHeaderRow: Boolean, tableHasBorder: Boolean): String {
+        private fun renderCell(
+            cell: Element,
+            isHeaderRow: Boolean,
+            tableHasBorder: Boolean,
+            widthPct: Double?,
+            dataScope: Map<String, String>? = null
+        ): String {
             val style = StringBuilder()
+
+            if (widthPct != null && widthPct > 0) {
+                style.append("width:${String.format(java.util.Locale.US, "%.2f", widthPct)}%;")
+            }
+
             when (cell.attrOrNull("align")) {
                 "vcenter" -> style.append("vertical-align:middle;")
                 "bottom" -> style.append("vertical-align:bottom;")
@@ -772,7 +945,7 @@ object UdfHtmlConverter {
 
             val inner = StringBuilder()
             forEachChildElement(cell) { child ->
-                inner.append(renderStructuralElement(child))
+                inner.append(renderStructuralElement(child, dataScope))
             }
 
             return "<td$colspanAttr style=\"$style\">$inner</td>"

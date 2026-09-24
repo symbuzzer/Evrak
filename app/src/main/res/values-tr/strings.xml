@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Evrak</string>
 
-    <string name="share_app">Uygulamayı paylaş</string>
+    <string name="about_share_app_desc">Evrak uygulamasını paylaş.</string>
     <string name="about">Hakkında</string>
     <string name="share">Paylaş</string>
     <string name="save">Kaydet</string>
@@ -53,7 +53,6 @@
     <string name="error_heic_open_failed">HEIC dosyası açılamadı: %1$s</string>
     <string name="error_heic_codec_missing">Cihazınız bu HEIC görselini açmak için gerekli donanımsal veya yazılımsal kod çözücüye (HEVC) sahip değil.</string>
     <string name="share_app_text">Evrak Android uygulaması ile; UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF dosyalarını ücretsiz ve reklamsız olarak görüntüleyin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
-    <string name="sharing_app">Uygulama paylaşılıyor&#8230;</string>
 
     <string name="filter_all">Tümü</string>
     <string name="filter_udf">UDF</string>

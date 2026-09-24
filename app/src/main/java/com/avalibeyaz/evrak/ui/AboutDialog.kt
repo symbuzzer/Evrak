@@ -2,6 +2,7 @@ package com.avalibeyaz.evrak.ui
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.MarqueeAnimationMode
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.IntegrationInstructions
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shop
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -150,6 +152,20 @@ fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
                         onClick = { uriHandler.openUri("https://github.com/symbuzzer/UDE_stub#celse-uygulamas%C4%B1-ile-do%C4%9Frudan-3-parti-udf-g%C3%B6r%C3%BCnt%C3%BCleyicilerini-kullanabilmek-i%C3%A7in-gerekli-yama") }
                     )
                 }
+
+                val shareText = stringResource(id = R.string.share_app_text)
+                val shareAppDesc = stringResource(id = R.string.about_share_app_desc)
+                AboutLinkItem(
+                    icon = Icons.Default.Share,
+                    description = shareAppDesc,
+                    onClick = {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, shareText)
+                        }
+                        context.startActivity(Intent.createChooser(shareIntent, shareAppDesc))
+                    }
+                )
 
                 /*AboutLinkItem(
                     icon = ImageVector.vectorResource(id = R.drawable.ic_whatsapp),

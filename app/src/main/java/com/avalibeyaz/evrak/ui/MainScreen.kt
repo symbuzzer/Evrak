@@ -55,7 +55,6 @@ fun MainScreen(
     onRenameClick: (Evrak, String) -> Unit,
     onDeleteAllClick: () -> Unit,
     onRefresh: () -> Unit,
-    onShareAppClick: () -> Unit,
     onPrintClick: (Evrak, (Boolean) -> Unit) -> Unit,
     onAboutClick: () -> Unit,
     onFilePicked: (Uri) -> Unit,
@@ -389,21 +388,6 @@ fun MainScreen(
                                     tint = MaterialTheme.colorScheme.error
                                 )
                             }
-                        }
-                    }
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Above
-                        ),
-                        tooltip = {
-                            PlainTooltip {
-                                Text(stringResource(id = R.string.share_app))
-                            }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = onShareAppClick) {
-                            Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share_app))
                         }
                     }
                     TooltipBox(
