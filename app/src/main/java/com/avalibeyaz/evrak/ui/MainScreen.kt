@@ -57,6 +57,7 @@ fun MainScreen(
     onRefresh: () -> Unit,
     onPrintClick: (Evrak, (Boolean) -> Unit) -> Unit,
     onAboutClick: () -> Unit,
+    onExperimentalClick: () -> Unit,
     onFilePicked: (Uri) -> Unit,
     folderSelectionEnabled: Boolean,
     onDisableFolderSelection: () -> Unit,
@@ -388,6 +389,21 @@ fun MainScreen(
                                     tint = MaterialTheme.colorScheme.error
                                 )
                             }
+                        }
+                    }
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                        tooltip = {
+                            PlainTooltip {
+                                Text(stringResource(id = R.string.experimental_features))
+                            }
+                        },
+                        state = rememberTooltipState()
+                    ) {
+                        IconButton(onClick = onExperimentalClick) {
+                            Icon(Icons.Default.Science, contentDescription = stringResource(id = R.string.experimental_features))
                         }
                     }
                     TooltipBox(

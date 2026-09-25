@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">Evrak</string>
 
-    <string name="about_share_app_desc">Evrak uygulamasını paylaş.</string>
     <string name="about">Hakkında</string>
     <string name="share">Paylaş</string>
     <string name="save">Kaydet</string>
@@ -27,6 +26,7 @@
     <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
     <string name="about_celse_integration_desc">CELSE uygulaması entegrasyonunu gerçekleştirin</string>
+    <string name="about_share_app_desc">Evrak uygulamasını paylaş</string>
     <string name="about_contact_developer_desc">Geliştiriciye hata bildirin veya merhaba diyin</string>
     <string name="about_view_on_play_store_desc">Uygulamayı Play Store üzerinden değerlendirin</string>
     <string name="about_privacy_policy">Gizlilik bildirimine göz atın</string>
@@ -93,4 +93,16 @@
     <string name="select_extraction_location">Dosyaların çıkarılacağı konumu seçin</string>
     <string name="open_action">Aç</string>
     <string name="file_count">%1$d dosya</string>
+
+    <string name="experimental_features">Deneysel özellikler</string>
+    <string name="experimental_features_desc">Burada yer alan özellikler henüz geliştirme aşamasındadır ve doğru çalışmayabilir.</string>
+    <string name="exp_powerpoint">PowerPoint (PPTX ve PPT) desteği</string>
+    <string name="exp_theme">Tema</string>
+    <string name="theme_system">Varsayılan (Sistem)</string>
+    <string name="theme_dark">Karanlık</string>
+    <string name="theme_light">Aydınlık</string>
+    <string name="exp_language">Dil</string>
+    <string name="language_default">Varsayılan (Sistem)</string>
+    <string name="language_turkish">Türkçe</string>
+    <string name="language_english">İngilizce (English)</string>
 </resources>

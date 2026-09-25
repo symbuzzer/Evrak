@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,6 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.avalibeyaz.evrak.ui.AboutDialog
+import com.avalibeyaz.evrak.ui.ExperimentalFeaturesDialog
 import com.avalibeyaz.evrak.ui.MainScreen
 import com.avalibeyaz.evrak.ui.ImageViewerScreen
 import com.avalibeyaz.evrak.ui.TextViewerScreen
@@ -44,7 +46,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by viewModels()
     private var currentIntent by mutableStateOf<Intent?>(null)
     private var showCelseIntegration by mutableStateOf(true)
@@ -61,7 +63,10 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            EvrakTheme {
+            val themeMode by viewModel.themeMode.collectAsState()
+            EvrakTheme(
+                themeMode = themeMode
+            ) {
                 EvrakApp(
                     viewModel = viewModel,
                     intent = currentIntent,
@@ -92,6 +97,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
     val folderSelectionEnabled by viewModel.folderSelectionEnabled.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showExperimentalDialog by remember { mutableStateOf(false) }
     
     val isExternalIntent = remember(intent) {
         intent?.action == Intent.ACTION_VIEW || intent?.action == Intent.ACTION_SEND
@@ -125,6 +131,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                     printFile(context, evrak.path, evrak.name, onConvertingChange)
                 },
                 onAboutClick = { showAboutDialog = true },
+                onExperimentalClick = { showExperimentalDialog = true },
                 onFilePicked = { uri ->
                     viewModel.openDocument(
                         uri = uri, 
@@ -326,6 +333,13 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
 
     if (showAboutDialog) {
         AboutDialog(showCelseIntegration = showCelseIntegration) { showAboutDialog = false }
+    }
+
+    if (showExperimentalDialog) {
+        ExperimentalFeaturesDialog(
+            viewModel = viewModel,
+            onDismiss = { showExperimentalDialog = false }
+        )
     }
 
     val activityContentResolver = androidx.compose.ui.platform.LocalContext.current.contentResolver

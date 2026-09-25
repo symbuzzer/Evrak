@@ -32,6 +32,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val folderSelectionEnabled: StateFlow<Boolean> = _folderSelectionEnabled.asStateFlow()
 
+    private val _themeMode = MutableStateFlow(
+        sharedPrefs.getString("theme_mode", "system") ?: "system"
+    )
+    val themeMode: StateFlow<String> = _themeMode.asStateFlow()
+
+    fun setThemeMode(mode: String) {
+        _themeMode.value = mode
+        sharedPrefs.edit().putString("theme_mode", mode).apply()
+    }
+
     init {
         val database = EvrakDatabase.getDatabase(application)
         repository = EvrakRepository(application, database.evrakDao())

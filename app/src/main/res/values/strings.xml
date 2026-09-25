@@ -1,7 +1,6 @@
 <resources>
     <string name="app_name">Evrak</string>
 
-    <string name="about_share_app_desc">Share the Evrak app.</string>
     <string name="about">About</string>
     <string name="share">Share</string>
     <string name="save">Save</string>
@@ -27,6 +26,7 @@
     <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
     <string name="about_celse_integration_desc">Perform CELSE app integration</string>
+    <string name="about_share_app_desc">Share the Evrak app</string>
     <string name="about_contact_developer_desc">Report a bug to the developer or say hello</string>
     <string name="about_view_on_play_store_desc">Rate the app on the Play Store</string>
     <string name="about_privacy_policy">View the privacy policy</string>
@@ -94,4 +94,16 @@
     <string name="select_extraction_location">Select the location where files will be extracted</string>
     <string name="open_action">Open</string>
     <string name="file_count">%1$d files</string>
+
+    <string name="experimental_features">Experimental features</string>
+    <string name="experimental_features_desc">Features listed here are still under development and may not work correctly.</string>
+    <string name="exp_powerpoint">PowerPoint (PPTX and PPT) support</string>
+    <string name="exp_theme">Theme</string>
+    <string name="theme_system">Default (System)</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="exp_language">Language</string>
+    <string name="language_default">Default (System)</string>
+    <string name="language_turkish">Türkçe</string>
+    <string name="language_english">English</string>
 </resources>
