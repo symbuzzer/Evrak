@@ -29,8 +29,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 // import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
@@ -81,40 +84,38 @@ fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
                     textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                val order = stringResource(id = R.string.about_developer_order)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (order == "format_developed_by_name") {
-                        Text(
-                            text = stringResource(id = R.string.about_developed_by).trim(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(id = R.string.about_developer_name),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clickable { uriHandler.openUri("https://github.com/symbuzzer") }
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(id = R.string.about_developer_name),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.clickable { uriHandler.openUri("https://github.com/symbuzzer") }
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(id = R.string.about_developed_by).trim(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                val developerName = stringResource(id = R.string.about_developer_name)
+                val fullText = stringResource(id = R.string.about_developed_by, developerName)
+                val primaryColor = MaterialTheme.colorScheme.primary
+                val annotatedString = remember(fullText, developerName, primaryColor) {
+                    buildAnnotatedString {
+                        val startIndex = fullText.indexOf(developerName)
+                        if (startIndex >= 0) {
+                            val endIndex = startIndex + developerName.length
+                            append(fullText.substring(0, startIndex))
+                            withStyle(
+                                style = SpanStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    color = primaryColor
+                                )
+                            ) {
+                                append(developerName)
+                            }
+                            append(fullText.substring(endIndex))
+                        } else {
+                            append(fullText)
+                        }
                     }
                 }
+                Text(
+                    text = annotatedString,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { uriHandler.openUri("https://github.com/symbuzzer") }
+                )
             }
         },
         text = {

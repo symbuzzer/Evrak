@@ -21,19 +21,18 @@
     <string name="error">Error</string>
     <string name="error_file_not_found">File not found</string>
     <string name="error_unknown">Unknown error</string>
-    <string name="about_developed_by">Developed by</string>
+    <string name="about_developed_by">Developed by %1$s</string>
     <string name="about_developer_name">Ali BEYAZ</string>
-    <string name="about_developer_order">format_developed_by_name</string>
     <string name="about_supported_formats">Supported formats:</string>
     <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
-    <string name="about_celse_integration_desc">Perform CELSE app integration.</string>
-    <string name="about_contact_developer_desc">Report a bug to the developer or say hello.</string>
-    <string name="about_view_on_play_store_desc">Rate the app on the Play Store.</string>
-    <string name="about_privacy_policy">View the privacy policy.</string>
-    <string name="about_disclaimer">View the disclaimer you accept by using this app.</string>
-    <string name="about_view_libraries_desc">View the open source libraries used in the app.</string>
-    <string name="about_source_code_desc">View the app\'s source code on GitHub.</string>
+    <string name="about_celse_integration_desc">Perform CELSE app integration</string>
+    <string name="about_contact_developer_desc">Report a bug to the developer or say hello</string>
+    <string name="about_view_on_play_store_desc">Rate the app on the Play Store</string>
+    <string name="about_privacy_policy">View the privacy policy</string>
+    <string name="about_disclaimer">View the disclaimer you accept by using this app</string>
+    <string name="about_view_libraries_desc">View the open source libraries used in the app</string>
+    <string name="about_source_code_desc">View the app\'s source code on GitHub</string>
 
     <string name="confirm_delete_all_message">Are you sure you want to delete all history and cached files?</string>
     <string name="unsupported_format_title">Unrecognized format</string>

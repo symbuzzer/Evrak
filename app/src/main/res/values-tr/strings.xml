@@ -21,19 +21,18 @@
     <string name="error">Hata</string>
     <string name="error_file_not_found">Dosya bulunamadı</string>
     <string name="error_unknown">Bilinmeyen hata</string>
-    <string name="about_developed_by"> tarafından geliştirilmiştir.</string>
+    <string name="about_developed_by">%1$s tarafından geliştirilmiştir</string>
     <string name="about_developer_name">Ali BEYAZ</string>
-    <string name="about_developer_order">format_name_developed_by</string>
     <string name="about_supported_formats">Desteklenen formatlar:</string>
     <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
-    <string name="about_celse_integration_desc">CELSE uygulaması entegrasyonunu gerçekleştirin.</string>
+    <string name="about_celse_integration_desc">CELSE uygulaması entegrasyonunu gerçekleştirin</string>
     <string name="about_contact_developer_desc">Geliştiriciye hata bildirin veya merhaba diyin</string>
-    <string name="about_view_on_play_store_desc">Uygulamayı Play Store üzerinden değerlendirin.</string>
-    <string name="about_privacy_policy">Gizlilik bildirimine göz atın.</string>
-    <string name="about_disclaimer">Uygulamayı kullanarak kabul etmiş olduğunuz sorumluluk reddine göz atın.</string>
-    <string name="about_view_libraries_desc">Uygulamada kullanılan açık kaynak kütüphaneleri görüntüleyin.</string>
-    <string name="about_source_code_desc">Uygulamanın kaynak kodunu GitHub üzerinden inceleyin.</string>
+    <string name="about_view_on_play_store_desc">Uygulamayı Play Store üzerinden değerlendirin</string>
+    <string name="about_privacy_policy">Gizlilik bildirimine göz atın</string>
+    <string name="about_disclaimer">Uygulamayı kullanarak kabul etmiş olduğunuz sorumluluk reddine göz atın</string>
+    <string name="about_view_libraries_desc">Uygulamada kullanılan açık kaynak kütüphaneleri görüntüleyin</string>
+    <string name="about_source_code_desc">Uygulamanın kaynak kodunu GitHub üzerinden inceleyin</string>
 
     <string name="confirm_delete_all_message">Bütün geçmişi ve önbelleğe alınmış dosyaları silmek istediğinize emin misiniz?</string>
     <string name="unsupported_format_title">Tanımlanamayan format</string>

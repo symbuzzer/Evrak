@@ -848,7 +848,10 @@ object UdfHtmlConverter {
         ): String {
             val rowStyle = StringBuilder()
             row.attrOrNull("height")?.toDoubleOrNull()?.let {
-                if (it > 0) rowStyle.append("height:${it}pt;")
+                if (it > 0) {
+                    val heightPt = if (it > 100) it / 100.0 else it
+                    rowStyle.append("height:${heightPt}pt;")
+                }
             }
             val isHeaderRow = row.attrOrNull("rowType") == "headerRow"
             val isDataRow = row.attrOrNull("rowType") == "dataRow"
