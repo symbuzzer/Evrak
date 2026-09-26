@@ -47,6 +47,27 @@ fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
     val uriHandler = LocalUriHandler.current
     val scrollState = rememberScrollState()
 
+    val prefs = remember(context) { context.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE) }
+    val pptEnabled = prefs.getBoolean("exp_powerpoint", false)
+
+    val formatsListRaw = stringResource(id = R.string.about_supported_formats_list)
+    val supportedFormatsText = remember(pptEnabled, formatsListRaw) {
+        if (pptEnabled) {
+            formatsListRaw.replace(Regex("\\bXLS\\b"), "XLS PPTX PPT")
+        } else {
+            formatsListRaw
+        }
+    }
+
+    val shareTextRaw = stringResource(id = R.string.share_app_text)
+    val shareText = remember(pptEnabled, shareTextRaw) {
+        if (pptEnabled) {
+            shareTextRaw.replace(Regex("\\bXLS\\b"), "XLS, PPTX, PPT")
+        } else {
+            shareTextRaw
+        }
+    }
+
     val isInstalledFromPlayStore = remember {
         try {
             val installSource = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -135,7 +156,7 @@ fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        text = stringResource(id = R.string.about_supported_formats_list),
+                        text = supportedFormatsText,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -154,7 +175,6 @@ fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
                     )
                 }
 
-                val shareText = stringResource(id = R.string.share_app_text)
                 val shareAppDesc = stringResource(id = R.string.about_share_app_desc)
                 AboutLinkItem(
                     icon = Icons.Default.Share,

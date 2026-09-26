@@ -135,7 +135,7 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
                     checked = pptEnabled,
                     onCheckedChange = {
                         pptEnabled = it
-                        prefs.edit().putBoolean("exp_powerpoint", it).apply()
+                        viewModel.setPowerPointEnabled(it)
                     }
                 )
 

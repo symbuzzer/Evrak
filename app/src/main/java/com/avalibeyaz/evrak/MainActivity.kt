@@ -1,6 +1,7 @@
 package com.avalibeyaz.evrak
 
 import android.content.Intent
+import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -197,6 +198,11 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
             
             val isExcel = filePath.endsWith(".xlsx", true) ||
                           filePath.endsWith(".xls", true)
+
+            val isPowerPoint = filePath.endsWith(".pptx", true) ||
+                              filePath.endsWith(".ppt", true)
+            val prefs = remember(context) { context.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE) }
+            val pptEnabled = prefs.getBoolean("exp_powerpoint", false)
             
             val isUdf = filePath.endsWith(".udf", true)
             
@@ -274,6 +280,29 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         onShareClick = { shareFile(context, filePath) },
                         onRenameClick = onRenameSafe
                     )
+                }
+                isPowerPoint -> {
+                    if (pptEnabled) {
+                        WordToPdfLoader(
+                            filePath = filePath,
+                            displayName = displayName,
+                            onBackClick = onBackSafe,
+                            onShareClick = { shareFile(context, filePath) },
+                            onRenameClick = onRenameSafe
+                        )
+                    } else {
+                        UnsupportedViewerScreen(
+                            filePath = filePath,
+                            displayName = displayName,
+                            onBackClick = onBackSafe,
+                            onShareClick = { shareFile(context, filePath) },
+                            onTryAsTextClick = {
+                                navController.navigate("viewer/${Uri.encode(filePath)}/${Uri.encode(displayName)}?forceText=true") {
+                                    popUpTo("viewer/${Uri.encode(filePath)}/${Uri.encode(displayName)}") { inclusive = true }
+                                }
+                            }
+                        )
+                    }
                 }
                 isUdf -> {
                     UdfViewerScreen(

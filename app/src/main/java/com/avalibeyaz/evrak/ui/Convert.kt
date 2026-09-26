@@ -43,11 +43,11 @@ object DocumentConverter {
                     ConversionResult.Error("Context is required for UDF conversion.")
                 }
             }
-            "doc", "docx" -> {
+            "doc", "docx", "ppt", "pptx" -> {
                 if (context != null) {
                     convertWordToPdfWithLibreOffice(inputFile, outputFile, context)
                 } else {
-                    val errorMsg = "Context is required for Word conversion."
+                    val errorMsg = "Context is required for Office conversion."
                     ConversionResult.Error(errorMsg)
                 }
             }

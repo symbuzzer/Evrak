@@ -127,7 +127,8 @@ fun MainScreen(
         if (historyList.any { 
             val path = it.path.lowercase()
             path.endsWith(".doc") || path.endsWith(".docx") ||
-            path.endsWith(".xls") || path.endsWith(".xlsx")
+            path.endsWith(".xls") || path.endsWith(".xlsx") ||
+            path.endsWith(".ppt") || path.endsWith(".pptx")
         }) filters.add(EvrakFilter.OFFICE)
         if (historyList.any { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }) filters.add(EvrakFilter.TIFF)
         if (historyList.any { it.path.endsWith(".eyp", true) }) filters.add(EvrakFilter.EYP)
@@ -179,6 +180,8 @@ fun MainScreen(
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/vnd.ms-excel",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             "application/eyp",
             "application/x-udf",
             "application/udf",
@@ -215,7 +218,8 @@ fun MainScreen(
             EvrakFilter.OFFICE -> historyList.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".doc") || path.endsWith(".docx") ||
-                path.endsWith(".xls") || path.endsWith(".xlsx")
+                path.endsWith(".xls") || path.endsWith(".xlsx") ||
+                path.endsWith(".ppt") || path.endsWith(".pptx")
             }
             EvrakFilter.TIFF -> historyList.filter { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }
             EvrakFilter.EYP -> historyList.filter { it.path.endsWith(".eyp", true) }
@@ -594,6 +598,8 @@ fun MainScreen(
                                            path.endsWith(".doc", true) ||
                                            path.endsWith(".xls", true) ||
                                            path.endsWith(".xlsx", true) ||
+                                           path.endsWith(".ppt", true) ||
+                                           path.endsWith(".pptx", true) ||
                                            path.endsWith(".html", true) ||
                                            path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
                         
@@ -619,6 +625,8 @@ fun MainScreen(
                                            path.endsWith(".doc", true) ||
                                            path.endsWith(".xls", true) ||
                                            path.endsWith(".xlsx", true) ||
+                                           path.endsWith(".ppt", true) ||
+                                           path.endsWith(".pptx", true) ||
                                            path.endsWith(".html", true) ||
                                            path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
                         
