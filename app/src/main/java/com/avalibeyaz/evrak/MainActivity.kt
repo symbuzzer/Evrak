@@ -373,12 +373,14 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
 
     val activityContentResolver = androidx.compose.ui.platform.LocalContext.current.contentResolver
     val context = androidx.compose.ui.platform.LocalContext.current
+    val appContext = context.applicationContext
     LaunchedEffect(intent) {
         intent?.let {
             if (it.getBooleanExtra("from_open_with", false)) {
                 val path = it.getStringExtra("file_path") ?: ""
                 val name = it.getStringExtra("display_name") ?: ""
                 if (path.isNotEmpty()) {
+                    android.widget.Toast.makeText(appContext, appContext.getString(R.string.opened_with_evrak), android.widget.Toast.LENGTH_SHORT).show()
                     navController.navigate("viewer/${Uri.encode(path)}/${Uri.encode(name)}") {
                         popUpTo(navController.graph.startDestinationId) { inclusive = true }
                     }
@@ -412,7 +414,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                     uri = fileUri, 
                     resolver = activityContentResolver,
                     onError = { error ->
-                        android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_LONG).show()
+                        android.widget.Toast.makeText(appContext, error, android.widget.Toast.LENGTH_LONG).show()
                         if (navController.currentDestination?.route == "intent_processor") {
                             navController.navigate("history") {
                                 popUpTo(navController.graph.startDestinationId) { inclusive = true }
@@ -420,6 +422,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         }
                     },
                     onOpened = { evrak ->
+                        android.widget.Toast.makeText(appContext, appContext.getString(R.string.opened_with_evrak), android.widget.Toast.LENGTH_SHORT).show()
                         navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}") {
                             popUpTo(navController.graph.startDestinationId) { inclusive = true }
                         }

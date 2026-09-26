@@ -15,6 +15,7 @@
     <string name="cancel">İptal</string>
     <string name="open_with">Birlikte aç</string>
     <string name="open_file">Dosya aç</string>
+    <string name="opened_with_evrak">Evrak ile açıldı</string>
     <string name="no_other_apps">Bu dosyayı açmak için başka uygulama yok</string>
 
     <string name="error">Hata</string>
