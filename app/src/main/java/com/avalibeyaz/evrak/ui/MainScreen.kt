@@ -15,6 +15,8 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.*
@@ -32,6 +34,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -62,7 +65,8 @@ fun MainScreen(
     folderSelectionEnabled: Boolean,
     onDisableFolderSelection: () -> Unit,
     selectedFilter: EvrakFilter,
-    onFilterChange: (EvrakFilter) -> Unit
+    onFilterChange: (EvrakFilter) -> Unit,
+    fileSearchEnabled: Boolean = false
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -72,6 +76,16 @@ fun MainScreen(
     var showDeleteAllConfirm by remember { mutableStateOf(false) }
     
     var isExtracting by remember { mutableStateOf(false) }
+
+    var isSearchOpen by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val searchFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    if (!fileSearchEnabled && isSearchOpen) {
+        isSearchOpen = false
+        searchQuery = ""
+    }
 
     val folderPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
@@ -210,8 +224,8 @@ fun MainScreen(
         }
     }
 
-    val filteredList = remember(historyList, selectedFilter) {
-        when (selectedFilter) {
+    val filteredList = remember(historyList, selectedFilter, searchQuery) {
+        val categoryFiltered = when (selectedFilter) {
             EvrakFilter.ALL -> historyList
             EvrakFilter.UDF -> historyList.filter { it.path.endsWith(".udf", true) }
             EvrakFilter.PDF -> historyList.filter { it.path.endsWith(".pdf", true) }
@@ -235,6 +249,11 @@ fun MainScreen(
                 path.endsWith(".html") || path.endsWith(".htm") ||
                 path.endsWith(".txt") || path.endsWith(".zip")
             }
+        }
+        if (searchQuery.isNotBlank()) {
+            categoryFiltered.filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }
+        } else {
+            categoryFiltered
         }
     }
 
@@ -305,128 +324,208 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                    Text(text = stringResource(id = R.string.app_name)) 
-                },
-                actions = {
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Above
-                        ),
-                        tooltip = {
-                            PlainTooltip {
-                                Text(stringResource(id = R.string.open_file))
-                            }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        Box {
-                            IconButton(onClick = { 
-                                if (folderSelectionEnabled) {
-                                    showFolderMenu = true
-                                } else {
-                                    launchFilePicker()
-                                }
-                            }) {
-                                Icon(
-                                    Icons.Default.FileOpen,
-                                    contentDescription = stringResource(id = R.string.open_file),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            
-                            DropdownMenu(
-                                expanded = showFolderMenu,
-                                onDismissRequest = { showFolderMenu = false }
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(id = R.string.downloads)) },
-                                    leadingIcon = { Icon(Icons.Default.Download, contentDescription = null) },
-                                    onClick = {
-                                        showFolderMenu = false
-                                        launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADownload"))
-                                    }
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(id = R.string.documents)) },
-                                    leadingIcon = { Icon(Icons.Default.Description, contentDescription = null) },
-                                    onClick = {
-                                        showFolderMenu = false
-                                        launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments"))
-                                    }
-                                )
-                                if (InstallUtils.isPackageInstalled(context, "com.adalet")) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(id = R.string.celse)) },
-                                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
-                                        onClick = {
-                                            showFolderMenu = false
-                                            val launchIntent = context.packageManager.getLaunchIntentForPackage("com.adalet")
-                                            if (launchIntent != null) {
-                                                context.startActivity(launchIntent)
-                                            } else {
-                                                Toast.makeText(context, "CELSE app launch failed", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    if (historyList.isNotEmpty()) {
+            Column {
+                TopAppBar(
+                    title = { 
+                        Text(text = stringResource(id = R.string.app_name)) 
+                    },
+                    actions = {
                         TooltipBox(
                             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
                             ),
                             tooltip = {
                                 PlainTooltip {
-                                    Text(stringResource(id = R.string.delete))
+                                    Text(stringResource(id = R.string.open_file))
                                 }
                             },
                             state = rememberTooltipState()
                         ) {
-                            IconButton(onClick = { showDeleteAllConfirm = true }) {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = stringResource(id = R.string.delete),
-                                    tint = MaterialTheme.colorScheme.error
-                                )
+                            Box {
+                                IconButton(onClick = { 
+                                    if (folderSelectionEnabled) {
+                                        showFolderMenu = true
+                                    } else {
+                                        launchFilePicker()
+                                    }
+                                }) {
+                                    Icon(
+                                        Icons.Default.FileOpen,
+                                        contentDescription = stringResource(id = R.string.open_file),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                
+                                DropdownMenu(
+                                    expanded = showFolderMenu,
+                                    onDismissRequest = { showFolderMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.downloads)) },
+                                        leadingIcon = { Icon(Icons.Default.Download, contentDescription = null) },
+                                        onClick = {
+                                            showFolderMenu = false
+                                            launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADownload"))
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.documents)) },
+                                        leadingIcon = { Icon(Icons.Default.Description, contentDescription = null) },
+                                        onClick = {
+                                            showFolderMenu = false
+                                            launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments"))
+                                        }
+                                    )
+                                    if (InstallUtils.isPackageInstalled(context, "com.adalet")) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(id = R.string.celse)) },
+                                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
+                                            onClick = {
+                                                showFolderMenu = false
+                                                val launchIntent = context.packageManager.getLaunchIntentForPackage("com.adalet")
+                                                if (launchIntent != null) {
+                                                    context.startActivity(launchIntent)
+                                                } else {
+                                                    Toast.makeText(context, "CELSE app launch failed", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        if (fileSearchEnabled) {
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = R.string.search_files))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = {
+                                    isSearchOpen = !isSearchOpen
+                                    if (!isSearchOpen) {
+                                        searchQuery = ""
+                                    }
+                                }) {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = stringResource(id = R.string.search_files),
+                                        tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                        if (historyList.isNotEmpty()) {
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = R.string.delete))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = { showDeleteAllConfirm = true }) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = stringResource(id = R.string.delete),
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                        }
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.experimental_features))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = onExperimentalClick) {
+                                Icon(Icons.Default.Science, contentDescription = stringResource(id = R.string.experimental_features))
+                            }
+                        }
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.about))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = onAboutClick) {
+                                Icon(Icons.Default.Info, contentDescription = stringResource(id = R.string.about))
                             }
                         }
                     }
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Above
-                        ),
-                        tooltip = {
-                            PlainTooltip {
-                                Text(stringResource(id = R.string.experimental_features))
+                )
+                if (fileSearchEnabled && isSearchOpen) {
+                    LaunchedEffect(Unit) {
+                        searchFocusRequester.requestFocus()
+                    }
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .focusRequester(searchFocusRequester),
+                        placeholder = { Text(text = stringResource(id = R.string.search_hint)) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = stringResource(id = R.string.cancel),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            } else {
+                                IconButton(onClick = {
+                                    isSearchOpen = false
+                                    searchQuery = ""
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = stringResource(id = R.string.cancel),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = onExperimentalClick) {
-                            Icon(Icons.Default.Science, contentDescription = stringResource(id = R.string.experimental_features))
-                        }
-                    }
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            TooltipAnchorPosition.Above
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Search
                         ),
-                        tooltip = {
-                            PlainTooltip {
-                                Text(stringResource(id = R.string.about))
+                        keyboardActions = KeyboardActions(
+                            onSearch = {
+                                keyboardController?.hide()
                             }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = onAboutClick) {
-                            Icon(Icons.Default.Info, contentDescription = stringResource(id = R.string.about))
-                        }
-                    }
+                        )
+                    )
                 }
-            )
+            }
         }
     ) { padding ->
         PullToRefreshBox(

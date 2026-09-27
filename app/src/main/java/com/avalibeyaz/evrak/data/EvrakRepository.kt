@@ -39,21 +39,25 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             }
         }
         
+        val isExistingSupported = extension != null && supportedExtensions.any { it.equals(extension, ignoreCase = true) }
+
         val cacheFile = copyUriToInternalStorageWithSniffing(uri, cr) { sniffedExt ->
             if (sniffedExt != null) {
-                val isExistingUdf = extension?.equals(".udf", ignoreCase = true) == true
-                val isExistingEyp = extension?.equals(".eyp", ignoreCase = true) == true
-                val isSniffedZip = sniffedExt.equals(".docx", ignoreCase = true) || sniffedExt.equals(".zip", ignoreCase = true)
-                
-                if (isExistingUdf && isSniffedZip) return@copyUriToInternalStorageWithSniffing
-                if (isExistingEyp && sniffedExt.equals(".zip", ignoreCase = true)) return@copyUriToInternalStorageWithSniffing
-                
-                val imageExtensions = setOf(".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".heic", ".avif")
-                val isExistingImage = extension?.lowercase() in imageExtensions
-                val isSniffedImage = sniffedExt.lowercase() in imageExtensions
-                
-                if (!(isExistingImage && isSniffedImage)) {
-                    extension = sniffedExt
+                if (isExistingSupported || extension.isNullOrEmpty() || extension == ".bin") {
+                    val isExistingUdf = extension?.equals(".udf", ignoreCase = true) == true
+                    val isExistingEyp = extension?.equals(".eyp", ignoreCase = true) == true
+                    val isSniffedZip = sniffedExt.equals(".docx", ignoreCase = true) || sniffedExt.equals(".zip", ignoreCase = true)
+                    
+                    if (isExistingUdf && isSniffedZip) return@copyUriToInternalStorageWithSniffing
+                    if (isExistingEyp && sniffedExt.equals(".eyp", ignoreCase = true)) return@copyUriToInternalStorageWithSniffing
+                    
+                    val imageExtensions = setOf(".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".heic", ".avif")
+                    val isExistingImage = extension?.lowercase() in imageExtensions
+                    val isSniffedImage = sniffedExt.lowercase() in imageExtensions
+                    
+                    if (!(isExistingImage && isSniffedImage)) {
+                        extension = sniffedExt
+                    }
                 }
             }
         } ?: return null
@@ -65,7 +69,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             }
         }
         
-        if (extension == ".docx" || extension == ".zip") {
+        if (extension == ".docx" || extension == ".zip" || extension.isNullOrEmpty() || extension == ".bin" || !isExistingSupported) {
             val deepExt = deepSniffZip(cacheFile)
             if (deepExt != null) {
                 extension = deepExt
@@ -390,6 +394,10 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 }
                 if (entries.any { it == "xl/workbook.xml" }) {
                     return ".xlsx"
+                }
+                
+                if (entries.any { it.equals("AndroidManifest.xml", ignoreCase = true) || it.startsWith("classes", ignoreCase = true) }) {
+                    return ".apk"
                 }
                 
                 if (entries.any { it == "[Content_Types].xml" }) {

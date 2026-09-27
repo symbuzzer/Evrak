@@ -99,6 +99,9 @@
     <string name="experimental_features">Experimental features</string>
     <string name="experimental_features_desc">Features listed here are still under development and may not work correctly.</string>
     <string name="exp_powerpoint">PowerPoint (PPTX and PPT) support</string>
+    <string name="exp_file_search">File searching support</string>
+    <string name="search_files">Search files</string>
+    <string name="search_hint">Enter file name</string>
     <string name="exp_theme">Theme</string>
     <string name="theme_system">Default (System)</string>
     <string name="theme_dark">Dark</string>

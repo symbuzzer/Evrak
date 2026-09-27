@@ -36,6 +36,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _powerPointEnabled.value = enabled
         sharedPrefs.edit().putBoolean("exp_powerpoint", enabled).apply()
     }
+
+    private val _fileSearchEnabled = MutableStateFlow(
+        sharedPrefs.getBoolean("exp_file_search", false)
+    )
+    val fileSearchEnabled: StateFlow<Boolean> = _fileSearchEnabled.asStateFlow()
+
+    fun setFileSearchEnabled(enabled: Boolean) {
+        _fileSearchEnabled.value = enabled
+        sharedPrefs.edit().putBoolean("exp_file_search", enabled).apply()
+    }
     private val _folderSelectionEnabled = MutableStateFlow(
         sharedPrefs.getBoolean("folder_selection_enabled", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
     )

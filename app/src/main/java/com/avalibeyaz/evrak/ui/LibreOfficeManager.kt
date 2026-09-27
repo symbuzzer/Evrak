@@ -21,6 +21,20 @@ object LibreOfficeManager {
     private var isInitialized = false
     private var office: Office? = null
     private val mutex = Mutex()
+    private val libreOfficeDispatcher = kotlinx.coroutines.newSingleThreadContext("LibreOfficeThread")
+
+    fun cancelActiveConversion(context: Context? = null) {
+        try {
+            if (context != null) {
+                val inputDir = File(context.filesDir, "in")
+                if (inputDir.exists()) {
+                    inputDir.listFiles()?.forEach { it.delete() }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     suspend fun init(context: Context): Boolean {
         if (isInitialized) return true
@@ -168,26 +182,32 @@ object LibreOfficeManager {
         if (!isInitialized) init(context)
         if (!isInitialized) return false
 
-        return withContext(Dispatchers.IO) {
+        return withContext(libreOfficeDispatcher) {
             mutex.withLock {
                 var doc: Document? = null
                 var tempInput: File? = null
                 try {
-                    val inputDir = File(context.filesDir, "in").apply { if (!exists()) mkdirs() }
-                    val ext = inputFile.extension.let { if (it.isEmpty()) "docx" else it }
-                    tempInput = File(inputDir, "lo_${System.currentTimeMillis()}.$ext")
-                    inputFile.copyTo(tempInput!!, overwrite = true)
+                    kotlinx.coroutines.withTimeout(45000) {
+                        val inputDir = File(context.filesDir, "in").apply { if (!exists()) mkdirs() }
+                        val ext = inputFile.extension.let { if (it.isEmpty()) "docx" else it }
+                        tempInput = File(inputDir, "lo_${System.currentTimeMillis()}.$ext")
+                        inputFile.copyTo(tempInput!!, overwrite = true)
 
-                    val inputUri = "file://" + tempInput!!.absolutePath
-                    val outputUri = "file://" + outputFile.absolutePath
-                    
-                    doc = office?.documentLoad(inputUri)
-                    if (doc == null) return@withLock false
+                        val inputUri = "file://" + tempInput!!.absolutePath
+                        val outputUri = "file://" + outputFile.absolutePath
+                        
+                        doc = office?.documentLoad(inputUri)
+                        if (doc == null) {
+                            return@withTimeout false
+                        }
 
-                    outputFile.parentFile?.mkdirs()
-                    doc.saveAs(outputUri, "pdf", "")
-                    
-                    outputFile.exists() && outputFile.length() > 0
+                        outputFile.parentFile?.mkdirs()
+                        doc.saveAs(outputUri, "pdf", "")
+                        
+                        outputFile.exists() && outputFile.length() > 0
+                    }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     false
                 } finally {
@@ -202,26 +222,32 @@ object LibreOfficeManager {
         if (!isInitialized) init(context)
         if (!isInitialized) return false
 
-        return withContext(Dispatchers.IO) {
+        return withContext(libreOfficeDispatcher) {
             mutex.withLock {
                 var doc: Document? = null
                 var tempInput: File? = null
                 try {
-                    val inputDir = File(context.filesDir, "in").apply { if (!exists()) mkdirs() }
-                    val ext = inputFile.extension.let { if (it.isEmpty()) "xlsx" else it }
-                    tempInput = File(inputDir, "lo_${System.currentTimeMillis()}.$ext")
-                    inputFile.copyTo(tempInput!!, overwrite = true)
+                    kotlinx.coroutines.withTimeout(45000) {
+                        val inputDir = File(context.filesDir, "in").apply { if (!exists()) mkdirs() }
+                        val ext = inputFile.extension.let { if (it.isEmpty()) "xlsx" else it }
+                        tempInput = File(inputDir, "lo_${System.currentTimeMillis()}.$ext")
+                        inputFile.copyTo(tempInput!!, overwrite = true)
 
-                    val inputUri = "file://" + tempInput!!.absolutePath
-                    val outputUri = "file://" + outputFile.absolutePath
-                    
-                    doc = office?.documentLoad(inputUri)
-                    if (doc == null) return@withLock false
+                        val inputUri = "file://" + tempInput!!.absolutePath
+                        val outputUri = "file://" + outputFile.absolutePath
+                        
+                        doc = office?.documentLoad(inputUri)
+                        if (doc == null) {
+                            return@withTimeout false
+                        }
 
-                    outputFile.parentFile?.mkdirs()
-                    doc.saveAs(outputUri, "html", "")
-                    
-                    outputFile.exists() && outputFile.length() > 0
+                        outputFile.parentFile?.mkdirs()
+                        doc.saveAs(outputUri, "html", "")
+                        
+                        outputFile.exists() && outputFile.length() > 0
+                    }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     false
                 } finally {

@@ -36,6 +36,7 @@ fun OfficeToHtmlLoader(
     var loadError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(filePath) {
+        LibreOfficeManager.cancelActiveConversion(context)
         withContext(Dispatchers.IO) {
             try {
                 val file = File(filePath)

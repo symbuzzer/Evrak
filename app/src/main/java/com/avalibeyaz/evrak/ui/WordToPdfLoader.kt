@@ -41,6 +41,7 @@ fun WordToPdfLoader(
     var loadError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(filePath) {
+        LibreOfficeManager.cancelActiveConversion(context)
         withContext(Dispatchers.IO) {
             try {
                 val file = File(filePath)
@@ -53,14 +54,29 @@ fun WordToPdfLoader(
 
                 val tempDir = File(context.filesDir, "temp_v").apply { if (!exists()) mkdirs() }
                 val tempPdf = File(tempDir, "view_temp_${System.currentTimeMillis()}.pdf")
-                val success = LibreOfficeManager.convertToPdf(file, tempPdf, context)
+                
+                val success = try {
+                    kotlinx.coroutines.withTimeout(60000) {
+                        val result = DocumentConverter.convert(file, tempPdf, context)
+                        if (result is DocumentConverter.ConversionResult.Success) {
+                            true
+                        } else {
+                            val msg = if (result is DocumentConverter.ConversionResult.Error) result.message else "Conversion failed"
+                            withContext(Dispatchers.Main) {
+                                loadError = context.getString(R.string.error_conversion_failed, msg)
+                            }
+                            false
+                        }
+                    }
+                } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
+                    withContext(Dispatchers.Main) {
+                        loadError = context.getString(R.string.error_conversion_timeout)
+                    }
+                    false
+                }
                 
                 if (success && tempPdf.exists()) {
                     tempPdfPath = tempPdf.absolutePath
-                } else {
-                    withContext(Dispatchers.Main) {
-                        loadError = context.getString(R.string.error_conversion_failed, "LibreOffice engine error")
-                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -74,7 +90,7 @@ fun WordToPdfLoader(
     }
 
     val saveWordLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+        contract = ActivityResultContracts.CreateDocument(getMimeType(filePath))
     ) { uri ->
         uri?.let {
             scope.launch(Dispatchers.IO) {
@@ -179,7 +195,7 @@ fun WordToPdfLoader(
     }
 
     if (showFormatDialog != null) {
-        val ext = if (filePath.endsWith(".docx", true)) "DOCX" else "DOC"
+        val ext = filePath.substringAfterLast(".").uppercase()
         FormatSelectionDialog(
             extension = ext,
             onDismiss = { showFormatDialog = null },

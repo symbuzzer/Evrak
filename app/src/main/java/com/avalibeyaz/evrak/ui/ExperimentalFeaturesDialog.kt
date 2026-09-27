@@ -31,6 +31,7 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
     val coroutineScope = rememberCoroutineScope()
 
     var pptEnabled by remember { mutableStateOf(prefs.getBoolean("exp_powerpoint", false)) }
+    var fileSearchEnabled by remember { mutableStateOf(prefs.getBoolean("exp_file_search", false)) }
     val themeMode by viewModel.themeMode.collectAsState()
     var isChangingLanguage by remember { mutableStateOf(false) }
 
@@ -136,6 +137,15 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
                     onCheckedChange = {
                         pptEnabled = it
                         viewModel.setPowerPointEnabled(it)
+                    }
+                )
+
+                ExperimentalToggleItem(
+                    label = stringResource(id = R.string.exp_file_search),
+                    checked = fileSearchEnabled,
+                    onCheckedChange = {
+                        fileSearchEnabled = it
+                        viewModel.setFileSearchEnabled(it)
                     }
                 )
 

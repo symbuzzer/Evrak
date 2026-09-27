@@ -139,6 +139,7 @@ fun HtmlViewerScreen(
         try {
             var content = File(filePath).readText(Charsets.UTF_8)
             val isExcel = originalExtension?.contains("XLS", true) == true
+            val isPresentation = originalExtension?.contains("PPT", true) == true
             
             val tableStyle = if (isExcel) {
                 "table { border-collapse: collapse; width: auto; min-width: 100%; margin-bottom: 20px; table-layout: auto; }"
@@ -152,10 +153,19 @@ fun HtmlViewerScreen(
                 "th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }"
             }
 
+            val presentationStyle = if (isPresentation) {
+                """
+                body { background-color: #e9ecef; padding: 16px; }
+                img { max-width: 100%; height: auto; display: block; margin: 0 auto 30px auto; box-shadow: 0 6px 20px rgba(0,0,0,0.15); border-radius: 8px; background: #fff; }
+                div, section { background: #ffffff; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); margin-bottom: 30px; padding: 30px; }
+                """.trimIndent()
+            } else ""
+
             val css = """
                 <style>
                     $tableStyle
                     $cellStyle
+                    $presentationStyle
                     th { background-color: #f2f2f2; }
                     body { font-family: sans-serif; padding: 10px; }
                     img { max-width: 100%; height: auto; }

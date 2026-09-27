@@ -34,7 +34,17 @@ object DocumentConverter {
                 ?: "Input file not found: ${inputFile.absolutePath}"
             return ConversionResult.Error(errorMsg)
         }
-        return when (inputFile.extension.lowercase()) {
+
+        val ext = inputFile.extension.lowercase()
+        if (ext in listOf("doc", "docx", "xls", "xlsx", "ppt", "pptx")) {
+            if (!validateOfficeFile(inputFile)) {
+                val errorMsg = context?.getString(R.string.error_file_read_failed, "Invalid or corrupted office file") 
+                    ?: "Invalid or corrupted office file"
+                return ConversionResult.Error(errorMsg)
+            }
+        }
+
+        return when (ext) {
             "tif", "tiff" -> convertTiffToPdf(inputFile, outputFile, context)
             "udf" -> {
                 if (context != null) {
@@ -94,7 +104,6 @@ object DocumentConverter {
             }
         }
     }
-
 
     suspend fun convertHtmlFileToPdf(inputFile: File, outputFile: File, context: Context): ConversionResult {
         return try {
@@ -265,6 +274,38 @@ object DocumentConverter {
             } catch (e: Exception) {
                 ConversionResult.Error("Excel print conversion error: ${e.localizedMessage}")
             }
+        }
+    }
+
+    private fun validateOfficeFile(file: File): Boolean {
+        val ext = file.extension.lowercase()
+        return try {
+            when (ext) {
+                "docx", "xlsx", "pptx" -> {
+                    java.util.zip.ZipFile(file).use { zip ->
+                        val entries = zip.entries().asSequence().map { it.name }.toSet()
+                        when (ext) {
+                            "docx" -> entries.contains("word/document.xml")
+                            "xlsx" -> entries.contains("xl/workbook.xml")
+                            "pptx" -> entries.contains("ppt/presentation.xml")
+                            else -> true
+                        }
+                    }
+                }
+                "doc", "xls", "ppt" -> {
+                    if (file.length() < 512) return false
+                    val bytes = file.readBytes()
+                    if (bytes.size >= 4) {
+                        bytes[0] == 0xD0.toByte() && bytes[1] == 0xCF.toByte() &&
+                        bytes[2] == 0x11.toByte() && bytes[3] == 0xE0.toByte()
+                    } else {
+                        false
+                    }
+                }
+                else -> true
+            }
+        } catch (e: Exception) {
+            false
         }
     }
 
