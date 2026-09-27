@@ -82,7 +82,7 @@ fun MainScreen(
     val searchFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    if (!fileSearchEnabled && isSearchOpen) {
+    if ((!fileSearchEnabled || historyList.isEmpty()) && isSearchOpen) {
         isSearchOpen = false
         searchQuery = ""
     }
@@ -394,7 +394,7 @@ fun MainScreen(
                                 }
                             }
                         }
-                        if (fileSearchEnabled) {
+                        if (fileSearchEnabled && historyList.isNotEmpty()) {
                             TooltipBox(
                                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                     TooltipAnchorPosition.Above
