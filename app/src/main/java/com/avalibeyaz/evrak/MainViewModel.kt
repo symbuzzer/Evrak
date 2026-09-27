@@ -56,6 +56,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setDateFilterEnabled(enabled: Boolean) {
         _dateFilterEnabled.value = enabled
         sharedPrefs.edit().putBoolean("exp_date_filter", enabled).apply()
+        if (!enabled) {
+            _selectedDateFilter.value = EvrakDateFilter.ALL
+        }
     }
 
     private val _selectedDateFilter = MutableStateFlow(EvrakDateFilter.ALL)

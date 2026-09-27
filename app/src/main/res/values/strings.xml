@@ -101,7 +101,7 @@
 
     <string name="experimental_features">Experimental features</string>
     <string name="experimental_features_desc">Features listed here are still under development and may not work correctly.</string>
-    <string name="exp_powerpoint">PowerPoint (PPTX and PPT) support</string>
+    <string name="exp_powerpoint">PowerPoint support</string>
     <string name="exp_file_search">File searching</string>
     <string name="exp_date_filter">Date filtering</string>
     <string name="search_files">Search files</string>

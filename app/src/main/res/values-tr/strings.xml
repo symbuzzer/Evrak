@@ -100,7 +100,7 @@
 
     <string name="experimental_features">Deneysel özellikler</string>
     <string name="experimental_features_desc">Burada yer alan özellikler henüz geliştirme aşamasındadır ve doğru çalışmayabilir.</string>
-    <string name="exp_powerpoint">PowerPoint (PPTX ve PPT) desteği</string>
+    <string name="exp_powerpoint">PowerPoint desteği</string>
     <string name="exp_file_search">Dosya arama</string>
     <string name="exp_date_filter">Tarih filtresi</string>
     <string name="search_files">Dosya ara</string>

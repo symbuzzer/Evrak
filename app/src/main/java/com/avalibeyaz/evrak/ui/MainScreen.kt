@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.avalibeyaz.evrak.R
+import com.avalibeyaz.evrak.EvrakDateFilter
 import com.avalibeyaz.evrak.data.Evrak
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -137,26 +138,71 @@ fun MainScreen(
     var initialUri by remember { mutableStateOf<Uri?>(null) }
     var showFolderMenu by remember { mutableStateOf(false) }
 
-    val availableFilters = remember(historyList) {
+    val startOfToday = remember(historyList) {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        cal.timeInMillis
+    }
+
+    val startOfYesterday = remember(historyList, startOfToday) {
+        val cal = Calendar.getInstance()
+        cal.timeInMillis = startOfToday
+        cal.add(Calendar.DAY_OF_YEAR, -1)
+        cal.timeInMillis
+    }
+
+    val availableDateFilters = remember(historyList, startOfToday, startOfYesterday) {
+        val filters = mutableListOf(EvrakDateFilter.ALL)
+        if (historyList.any { it.dateOpened >= startOfToday }) {
+            filters.add(EvrakDateFilter.TODAY)
+        }
+        if (historyList.any { it.dateOpened >= startOfYesterday && it.dateOpened < startOfToday }) {
+            filters.add(EvrakDateFilter.YESTERDAY)
+        }
+        if (historyList.any { it.dateOpened < startOfYesterday }) {
+            filters.add(EvrakDateFilter.PREVIOUS_DAY)
+        }
+        filters
+    }
+
+    LaunchedEffect(availableDateFilters) {
+        if (selectedDateFilter !in availableDateFilters) {
+            onDateFilterChange(EvrakDateFilter.ALL)
+        }
+    }
+
+    val dateFiltered = remember(historyList, selectedDateFilter, startOfToday, startOfYesterday) {
+        when (selectedDateFilter) {
+            EvrakDateFilter.ALL -> historyList
+            EvrakDateFilter.TODAY -> historyList.filter { it.dateOpened >= startOfToday }
+            EvrakDateFilter.YESTERDAY -> historyList.filter { it.dateOpened >= startOfYesterday && it.dateOpened < startOfToday }
+            EvrakDateFilter.PREVIOUS_DAY -> historyList.filter { it.dateOpened < startOfYesterday }
+        }
+    }
+
+    val availableFilters = remember(dateFiltered) {
         val filters = mutableListOf(EvrakFilter.ALL)
-        if (historyList.any { it.path.endsWith(".udf", true) }) filters.add(EvrakFilter.UDF)
-        if (historyList.any { it.path.endsWith(".pdf", true) }) filters.add(EvrakFilter.PDF)
-        if (historyList.any { 
+        if (dateFiltered.any { it.path.endsWith(".udf", true) }) filters.add(EvrakFilter.UDF)
+        if (dateFiltered.any { it.path.endsWith(".pdf", true) }) filters.add(EvrakFilter.PDF)
+        if (dateFiltered.any { 
             val path = it.path.lowercase()
             path.endsWith(".doc") || path.endsWith(".docx") ||
             path.endsWith(".xls") || path.endsWith(".xlsx") ||
             path.endsWith(".ppt") || path.endsWith(".pptx")
         }) filters.add(EvrakFilter.OFFICE)
-        if (historyList.any { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }) filters.add(EvrakFilter.TIFF)
-        if (historyList.any { it.path.endsWith(".eyp", true) }) filters.add(EvrakFilter.EYP)
-        if (historyList.any {
+        if (dateFiltered.any { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }) filters.add(EvrakFilter.TIFF)
+        if (dateFiltered.any { it.path.endsWith(".eyp", true) }) filters.add(EvrakFilter.EYP)
+        if (dateFiltered.any {
                 val path = it.path.lowercase()
                 path.endsWith(".jpg") || path.endsWith(".jpeg") ||
                 path.endsWith(".gif") || path.endsWith(".png") ||
                 path.endsWith(".webp") || path.endsWith(".bmp") ||
                 path.endsWith(".heic") || path.endsWith(".avif")
             }) filters.add(EvrakFilter.IMAGE)
-        if (historyList.any {
+        if (dateFiltered.any {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
                 path.endsWith(".txt") || path.endsWith(".zip")
@@ -586,7 +632,7 @@ fun MainScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
-                    if (dateFilterEnabled && historyList.isNotEmpty()) {
+                    if (dateFilterEnabled && historyList.isNotEmpty() && availableDateFilters.size > 1) {
                         item {
                             androidx.compose.foundation.lazy.LazyRow(
                                 modifier = Modifier
@@ -594,7 +640,7 @@ fun MainScreen(
                                     .padding(vertical = 4.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                items(com.avalibeyaz.evrak.EvrakDateFilter.entries) { dateFilter ->
+                                items(availableDateFilters) { dateFilter ->
                                     FilterChip(
                                         selected = selectedDateFilter == dateFilter,
                                         onClick = { onDateFilterChange(dateFilter) },
