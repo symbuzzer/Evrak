@@ -66,7 +66,10 @@ fun MainScreen(
     onDisableFolderSelection: () -> Unit,
     selectedFilter: EvrakFilter,
     onFilterChange: (EvrakFilter) -> Unit,
-    fileSearchEnabled: Boolean = false
+    fileSearchEnabled: Boolean = false,
+    dateFilterEnabled: Boolean = false,
+    selectedDateFilter: com.avalibeyaz.evrak.EvrakDateFilter = com.avalibeyaz.evrak.EvrakDateFilter.ALL,
+    onDateFilterChange: (com.avalibeyaz.evrak.EvrakDateFilter) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -224,27 +227,44 @@ fun MainScreen(
         }
     }
 
-    val filteredList = remember(historyList, selectedFilter, searchQuery) {
+    val filteredList = remember(historyList, selectedFilter, selectedDateFilter, searchQuery) {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        val startOfToday = cal.timeInMillis
+
+        cal.add(Calendar.DAY_OF_YEAR, -1)
+        val startOfYesterday = cal.timeInMillis
+
+        val dateFiltered = when (selectedDateFilter) {
+            com.avalibeyaz.evrak.EvrakDateFilter.ALL -> historyList
+            com.avalibeyaz.evrak.EvrakDateFilter.TODAY -> historyList.filter { it.dateOpened >= startOfToday }
+            com.avalibeyaz.evrak.EvrakDateFilter.YESTERDAY -> historyList.filter { it.dateOpened >= startOfYesterday && it.dateOpened < startOfToday }
+            com.avalibeyaz.evrak.EvrakDateFilter.PREVIOUS_DAY -> historyList.filter { it.dateOpened < startOfYesterday }
+        }
+
         val categoryFiltered = when (selectedFilter) {
-            EvrakFilter.ALL -> historyList
-            EvrakFilter.UDF -> historyList.filter { it.path.endsWith(".udf", true) }
-            EvrakFilter.PDF -> historyList.filter { it.path.endsWith(".pdf", true) }
-            EvrakFilter.OFFICE -> historyList.filter {
+            EvrakFilter.ALL -> dateFiltered
+            EvrakFilter.UDF -> dateFiltered.filter { it.path.endsWith(".udf", true) }
+            EvrakFilter.PDF -> dateFiltered.filter { it.path.endsWith(".pdf", true) }
+            EvrakFilter.OFFICE -> dateFiltered.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".doc") || path.endsWith(".docx") ||
                 path.endsWith(".xls") || path.endsWith(".xlsx") ||
                 path.endsWith(".ppt") || path.endsWith(".pptx")
             }
-            EvrakFilter.TIFF -> historyList.filter { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }
-            EvrakFilter.EYP -> historyList.filter { it.path.endsWith(".eyp", true) }
-            EvrakFilter.IMAGE -> historyList.filter {
+            EvrakFilter.TIFF -> dateFiltered.filter { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }
+            EvrakFilter.EYP -> dateFiltered.filter { it.path.endsWith(".eyp", true) }
+            EvrakFilter.IMAGE -> dateFiltered.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".jpg") || path.endsWith(".jpeg") ||
                 path.endsWith(".gif") || path.endsWith(".png") ||
                 path.endsWith(".webp") || path.endsWith(".bmp") ||
                 path.endsWith(".heic") || path.endsWith(".avif")
             }
-            EvrakFilter.OTHER -> historyList.filter {
+            EvrakFilter.OTHER -> dateFiltered.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
                 path.endsWith(".txt") || path.endsWith(".zip")
@@ -565,6 +585,25 @@ fun MainScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+
+                    if (dateFilterEnabled && historyList.isNotEmpty()) {
+                        item {
+                            androidx.compose.foundation.lazy.LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(com.avalibeyaz.evrak.EvrakDateFilter.entries) { dateFilter ->
+                                    FilterChip(
+                                        selected = selectedDateFilter == dateFilter,
+                                        onClick = { onDateFilterChange(dateFilter) },
+                                        label = { Text(text = stringResource(id = dateFilter.labelResId)) }
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     if (historyList.isNotEmpty() && availableFilters.size > 1) {
                         item {

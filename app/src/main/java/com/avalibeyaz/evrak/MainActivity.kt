@@ -98,6 +98,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
     val folderSelectionEnabled by viewModel.folderSelectionEnabled.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
     val fileSearchEnabled by viewModel.fileSearchEnabled.collectAsState()
+    val dateFilterEnabled by viewModel.dateFilterEnabled.collectAsState()
+    val selectedDateFilter by viewModel.selectedDateFilter.collectAsState()
     var showAboutDialog by remember { mutableStateOf(false) }
     var showExperimentalDialog by remember { mutableStateOf(false) }
     
@@ -150,7 +152,10 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                 onDisableFolderSelection = { viewModel.disableFolderSelection() },
                 selectedFilter = selectedFilter,
                 onFilterChange = { viewModel.setFilter(it) },
-                fileSearchEnabled = fileSearchEnabled
+                fileSearchEnabled = fileSearchEnabled,
+                dateFilterEnabled = dateFilterEnabled,
+                selectedDateFilter = selectedDateFilter,
+                onDateFilterChange = { viewModel.setDateFilter(it) }
             )
         }
         composable("intent_processor") {

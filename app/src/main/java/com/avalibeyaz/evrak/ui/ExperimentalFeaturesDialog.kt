@@ -32,6 +32,7 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
 
     var pptEnabled by remember { mutableStateOf(prefs.getBoolean("exp_powerpoint", false)) }
     var fileSearchEnabled by remember { mutableStateOf(prefs.getBoolean("exp_file_search", false)) }
+    var dateFilterEnabled by remember { mutableStateOf(prefs.getBoolean("exp_date_filter", false)) }
     val themeMode by viewModel.themeMode.collectAsState()
     var isChangingLanguage by remember { mutableStateOf(false) }
 
@@ -146,6 +147,15 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
                     onCheckedChange = {
                         fileSearchEnabled = it
                         viewModel.setFileSearchEnabled(it)
+                    }
+                )
+
+                ExperimentalToggleItem(
+                    label = stringResource(id = R.string.exp_date_filter),
+                    checked = dateFilterEnabled,
+                    onCheckedChange = {
+                        dateFilterEnabled = it
+                        viewModel.setDateFilterEnabled(it)
                     }
                 )
 

@@ -12,6 +12,7 @@ import com.avalibeyaz.evrak.data.EvrakDatabase
 import com.avalibeyaz.evrak.data.EvrakRepository
 import com.avalibeyaz.evrak.data.CleanupManager
 import com.avalibeyaz.evrak.ui.EvrakFilter
+import com.avalibeyaz.evrak.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -45,6 +46,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setFileSearchEnabled(enabled: Boolean) {
         _fileSearchEnabled.value = enabled
         sharedPrefs.edit().putBoolean("exp_file_search", enabled).apply()
+    }
+
+    private val _dateFilterEnabled = MutableStateFlow(
+        sharedPrefs.getBoolean("exp_date_filter", false)
+    )
+    val dateFilterEnabled: StateFlow<Boolean> = _dateFilterEnabled.asStateFlow()
+
+    fun setDateFilterEnabled(enabled: Boolean) {
+        _dateFilterEnabled.value = enabled
+        sharedPrefs.edit().putBoolean("exp_date_filter", enabled).apply()
+    }
+
+    private val _selectedDateFilter = MutableStateFlow(EvrakDateFilter.ALL)
+    val selectedDateFilter: StateFlow<EvrakDateFilter> = _selectedDateFilter.asStateFlow()
+
+    fun setDateFilter(filter: EvrakDateFilter) {
+        _selectedDateFilter.value = filter
     }
     private val _folderSelectionEnabled = MutableStateFlow(
         sharedPrefs.getBoolean("folder_selection_enabled", Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -148,4 +166,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setFilter(filter: EvrakFilter) {
         _selectedFilter.value = filter
     }
+}
+
+enum class EvrakDateFilter(val labelResId: Int) {
+    ALL(R.string.filter_all),
+    TODAY(R.string.filter_today),
+    YESTERDAY(R.string.filter_yesterday),
+    PREVIOUS_DAY(R.string.filter_previous_day)
 }

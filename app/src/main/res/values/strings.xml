@@ -56,6 +56,9 @@
     <string name="share_app_text">View UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF files for free and ad-free with the Evrak Android app: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
 
     <string name="filter_all">All</string>
+    <string name="filter_today">Today</string>
+    <string name="filter_yesterday">Yesterday</string>
+    <string name="filter_previous_day">Previous day</string>
     <string name="filter_udf">UDF</string>
     <string name="filter_pdf">PDF</string>
     <string name="filter_tiff">TIFF</string>
@@ -100,6 +103,7 @@
     <string name="experimental_features_desc">Features listed here are still under development and may not work correctly.</string>
     <string name="exp_powerpoint">PowerPoint (PPTX and PPT) support</string>
     <string name="exp_file_search">File searching support</string>
+    <string name="exp_date_filter">Date filtering</string>
     <string name="search_files">Search files</string>
     <string name="search_hint">Enter file name</string>
     <string name="exp_theme">Theme</string>
