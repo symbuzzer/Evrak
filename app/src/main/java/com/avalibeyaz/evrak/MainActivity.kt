@@ -1,7 +1,6 @@
 package com.avalibeyaz.evrak
 
 import android.content.Intent
-import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -10,10 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.FileProvider
 import androidx.navigation.compose.NavHost
@@ -21,25 +17,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-import com.avalibeyaz.evrak.ui.AboutDialog
-import com.avalibeyaz.evrak.ui.ExperimentalFeaturesDialog
-import com.avalibeyaz.evrak.ui.MainScreen
-import com.avalibeyaz.evrak.ui.ImageViewerScreen
-import com.avalibeyaz.evrak.ui.TextViewerScreen
-import com.avalibeyaz.evrak.ui.TiffViewerScreen
-import com.avalibeyaz.evrak.ui.PdfViewerScreen
-import com.avalibeyaz.evrak.ui.OfficeToHtmlLoader
-import com.avalibeyaz.evrak.ui.WordToPdfLoader
-import com.avalibeyaz.evrak.ui.WaitScreenOverlay
-import com.avalibeyaz.evrak.ui.getMimeType
-import com.avalibeyaz.evrak.ui.findActivity
-import com.avalibeyaz.evrak.ui.UdfViewerScreen
-import com.avalibeyaz.evrak.ui.HtmlViewerScreen
-import com.avalibeyaz.evrak.ui.UnsupportedViewerScreen
-import com.avalibeyaz.evrak.ui.ZipViewerScreen
+import com.avalibeyaz.evrak.ui.*
 import com.avalibeyaz.evrak.ui.theme.EvrakTheme
-import com.avalibeyaz.evrak.ui.DocumentConverter
-import com.avalibeyaz.evrak.ui.LibreOfficeManager
 import androidx.lifecycle.lifecycleScope
 import androidx.print.PrintHelper
 import kotlinx.coroutines.Dispatchers
@@ -117,7 +96,11 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                 historyList = historyList,
                 onItemClick = { evrak ->
                     viewModel.updateEvrakTimestamp(evrak)
-                    navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
+                    if (isArchiveType(evrak.path)) {
+                        navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
+                    } else {
+                        openDocumentTask(context, evrak.path, evrak.name)
+                    }
                 },
                 onDeleteClick = { evrak ->
                     viewModel.deleteEvrak(evrak)
@@ -144,7 +127,11 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                             android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_LONG).show()
                         },
                         onOpened = { evrak ->
-                            navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
+                            if (isArchiveType(evrak.path)) {
+                                navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
+                            } else {
+                                openDocumentTask(context, evrak.path, evrak.name)
+                            }
                         }
                     )
                 },
@@ -317,10 +304,18 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                                 uri = Uri.fromFile(File(entryPath)),
                                 resolver = context.contentResolver,
                                 onError = {
-                                    navController.navigate("viewer/${Uri.encode(entryPath)}/${Uri.encode(entryName)}")
+                                    if (isArchiveType(entryPath)) {
+                                        navController.navigate("viewer/${Uri.encode(entryPath)}/${Uri.encode(entryName)}")
+                                    } else {
+                                        openDocumentTask(context, entryPath, entryName)
+                                    }
                                 },
                                 onOpened = { evrak ->
-                                    navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
+                                    if (isArchiveType(evrak.path)) {
+                                        navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
+                                    } else {
+                                        openDocumentTask(context, evrak.path, evrak.name)
+                                    }
                                 }
                             )
                         }
@@ -368,13 +363,33 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
     val appContext = context.applicationContext
     LaunchedEffect(intent) {
         intent?.let {
+            if (it.getBooleanExtra("open_archive", false)) {
+                val path = it.getStringExtra("file_path") ?: ""
+                val name = it.getStringExtra("display_name") ?: ""
+                if (path.isNotEmpty()) {
+                    navController.navigate("viewer/${Uri.encode(path)}/${Uri.encode(name)}") {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
+                }
+                return@LaunchedEffect
+            }
+
             if (it.getBooleanExtra("from_open_with", false)) {
                 val path = it.getStringExtra("file_path") ?: ""
                 val name = it.getStringExtra("display_name") ?: ""
                 if (path.isNotEmpty()) {
                     android.widget.Toast.makeText(appContext, appContext.getString(R.string.opened_with_evrak), android.widget.Toast.LENGTH_SHORT).show()
-                    navController.navigate("viewer/${Uri.encode(path)}/${Uri.encode(name)}") {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    if (isArchiveType(path)) {
+                        navController.navigate("viewer/${Uri.encode(path)}/${Uri.encode(name)}") {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        }
+                    } else {
+                        openDocumentTask(context, path, name)
+                        if (navController.currentDestination?.route == "intent_processor") {
+                            navController.navigate("history") {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            }
+                        }
                     }
                 }
                 return@LaunchedEffect
@@ -415,8 +430,17 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                     },
                     onOpened = { evrak ->
                         android.widget.Toast.makeText(appContext, appContext.getString(R.string.opened_with_evrak), android.widget.Toast.LENGTH_SHORT).show()
-                        navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}") {
-                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        if (isArchiveType(evrak.path)) {
+                            navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}") {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            }
+                        } else {
+                            openDocumentTask(context, evrak.path, evrak.name)
+                            if (navController.currentDestination?.route == "intent_processor") {
+                                navController.navigate("history") {
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                }
+                            }
                         }
                     }
                 )

@@ -3,6 +3,9 @@ package com.avalibeyaz.evrak.ui
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.net.Uri
+import java.io.File
 
 fun Context.findActivity(): Activity? {
     var context = this
@@ -34,6 +37,37 @@ fun getMimeType(path: String): String {
         path.endsWith(".html", true) || path.endsWith(".htm", true) -> "text/html"
         path.endsWith(".txt", true) -> "text/plain"
         path.endsWith(".zip", true) -> "application/zip"
+        path.endsWith(".eyp", true) -> "application/eyp"
         else -> "application/octet-stream"
+    }
+}
+
+fun isArchiveType(path: String): Boolean {
+    return path.endsWith(".zip", ignoreCase = true) || path.endsWith(".eyp", ignoreCase = true)
+}
+
+fun openDocumentTask(context: Context, filePath: String, displayName: String) {
+    if (isArchiveType(filePath)) {
+        val intent = Intent(context, com.avalibeyaz.evrak.MainActivity::class.java).apply {
+            putExtra("file_path", filePath)
+            putExtra("display_name", displayName)
+            putExtra("open_archive", true)
+            if (context !is Activity) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
+        context.startActivity(intent)
+    } else {
+        val file = File(filePath)
+        val uri = Uri.fromFile(file)
+        val intent = Intent(context, com.avalibeyaz.evrak.DocumentActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            setDataAndType(uri, getMimeType(filePath))
+            putExtra("file_path", filePath)
+            putExtra("display_name", displayName)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
+            addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+        }
+        context.startActivity(intent)
     }
 }
