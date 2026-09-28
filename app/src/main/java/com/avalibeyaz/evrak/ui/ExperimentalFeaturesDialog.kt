@@ -30,7 +30,6 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
     val prefs = remember { context.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE) }
     val coroutineScope = rememberCoroutineScope()
 
-    var pptEnabled by remember { mutableStateOf(prefs.getBoolean("exp_powerpoint", false)) }
     var fileSearchEnabled by remember { mutableStateOf(prefs.getBoolean("exp_file_search", false)) }
     var dateFilterEnabled by remember { mutableStateOf(prefs.getBoolean("exp_date_filter", false)) }
     val themeMode by viewModel.themeMode.collectAsState()
@@ -131,15 +130,6 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                ExperimentalToggleItem(
-                    label = stringResource(id = R.string.exp_powerpoint),
-                    checked = pptEnabled,
-                    onCheckedChange = {
-                        pptEnabled = it
-                        viewModel.setPowerPointEnabled(it)
-                    }
-                )
 
                 ExperimentalToggleItem(
                     label = stringResource(id = R.string.exp_file_search),

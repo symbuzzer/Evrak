@@ -2,7 +2,7 @@
 [<img width="220" height="66" src="https://github.com/user-attachments/assets/7c2fadad-e134-4566-a5cb-9f4a0f32732a" />](https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak)
 
 
-**Evrak**, avukatların ve arabulucuların günlük iş akışında en sık karşılaştığı dosya formatlarını (UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, EYP, ZIP, HTML) ve diğer bazı yaygın dosya formatlarını (TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF) tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan ücretsiz ve reklamsız bir Android uygulamasıdır.
+**Evrak**, avukatların ve arabulucuların günlük iş akışında en sık karşılaştığı dosya formatlarını (UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, PPTX, PPT, EYP, ZIP, HTML) ve diğer bazı yaygın dosya formatlarını (TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF) tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan ücretsiz ve reklamsız bir Android uygulamasıdır.
 
 UYAP, CELSE, e-arabulucu, e-Adalet vb. uygulamalar üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygulamaları aracılığıyla gelen evrakları açmak için genellikle birden fazla farklı uygulamaya ihtiyaç duyulur. Evrak Android uygulaması, bu ihtiyacı tek bir yerde, gereksiz karmaşıklık olmadan çözer.  
 
@@ -10,15 +10,16 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 
 ## Özellikler
 
-- **Çoklu format desteği:** UDF, TIFF, PDF, Word (DOCX, DOC), Excel (XLSX, XLS), EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF
+- **Çoklu format desteği:** UDF, TIFF, PDF, Word (DOCX, DOC), Excel (XLSX, XLS), PowerPoint (PPTX, PPT), EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF
 - **Basit ve hızlı:** Dosyayı aç, görüntüle - başka hiçbir şeye gerek yok
 - **Paylaşma ve kaydetme:** Görüntülenen dosyalar istenilen yere kaydedilebilir veya doğrudan başka uygulamalarla paylaşılabilir
-- **UDF, TIFF, Word (DOCX, DOC), Excel (XLSX, XLS) ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında istenirse bu dosyalar PDF'e çevrilebilir
+- **UDF, TIFF, Word (DOCX, DOC), Excel (XLSX, XLS), PowerPoint (PPTX, PPT) ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında istenirse bu dosyalar PDF'e çevrilebilir
 - **Sorunsuz Türkçe karakterler:** Özellikle UDF'den dönüştürülen PDF dosyalarındaki Türkçe karakterlerin görüntülenememe sorunu yok
 - **ZIP dosyalarını görüntüleme ve ayıklama:** ZIP paketlerinin içeriği görüntülenebilir ve istenilen klasöre ayıklanabilir
-- **Yazdırma:** Bütün dosya türleri, Android'in kendi yazdırma özelliği ile doğrudan cihazınızdan yazdırılabilir
+- **Yazdırma:** Bütün dosya türleri (EYP ve ZIP hariç), Android'in kendi yazdırma özelliği ile doğrudan cihazınızdan yazdırılabilir
 - **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
-- **Filtreleme:** Geçmişteki dosyaları dosya türüne göre filtreleyebilirsiniz
+- **Dosya arama:** Geçmişteki dosyalar isimleri ile aranabilir
+- **Filtreleme:** Geçmişteki dosyaları dosya türüne ve görüntüleme tarihine göre filtrelenebilir
 - **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmeleri için istenildiğinde yeniden adlandırılabilir veya silinebilir
 - **Tam ekran görüntüleme:** Bütün dosya formatları tam ekran görüntülenebilir
 - **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir

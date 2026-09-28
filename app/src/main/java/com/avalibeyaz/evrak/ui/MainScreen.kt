@@ -594,137 +594,157 @@ fun MainScreen(
             }
         }
     ) { padding ->
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = {
-                scope.launch {
-                    isRefreshing = true
-                    onRefresh()
-                    delay(1000)
-                    isRefreshing = false
+        if (historyList.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Description,
+                        contentDescription = null,
+                        modifier = Modifier.size(72.dp),
+                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(id = R.string.no_history),
+                        color = MaterialTheme.colorScheme.outline
+                    )
                 }
-            },
-            modifier = Modifier.padding(padding)
-        ) {
-            if (historyList.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+            }
+        } else {
+            if (!isSearchOpen) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                ) {
+                    FilterSection(
+                        dateFilterEnabled = dateFilterEnabled,
+                        historyList = historyList,
+                        availableDateFilters = availableDateFilters,
+                        selectedDateFilter = selectedDateFilter,
+                        onDateFilterChange = onDateFilterChange,
+                        availableFilters = availableFilters,
+                        selectedFilter = selectedFilter,
+                        onFilterChange = onFilterChange,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = {
+                            scope.launch {
+                                isRefreshing = true
+                                onRefresh()
+                                delay(1000)
+                                isRefreshing = false
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Description,
-                            contentDescription = null,
-                            modifier = Modifier.size(72.dp),
-                            tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = stringResource(id = R.string.no_history),
-                            color = MaterialTheme.colorScheme.outline
+                        EvrakLazyContent(
+                            filteredList = filteredList,
+                            onItemClick = onItemClick,
+                            onLongClick = { evrak ->
+                                selectedEvrak = evrak
+                                showSheet = true
+                            }
                         )
                     }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = {
+                        scope.launch {
+                            isRefreshing = true
+                            onRefresh()
+                            delay(1000)
+                            isRefreshing = false
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
                 ) {
-
-                    if (dateFilterEnabled && historyList.isNotEmpty() && availableDateFilters.size > 1) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         item {
-                            androidx.compose.foundation.lazy.LazyRow(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(availableDateFilters) { dateFilter ->
-                                    FilterChip(
-                                        selected = selectedDateFilter == dateFilter,
-                                        onClick = { onDateFilterChange(dateFilter) },
-                                        label = { Text(text = stringResource(id = dateFilter.labelResId)) }
-                                    )
-                                }
-                            }
+                            FilterSection(
+                                dateFilterEnabled = dateFilterEnabled,
+                                historyList = historyList,
+                                availableDateFilters = availableDateFilters,
+                                selectedDateFilter = selectedDateFilter,
+                                onDateFilterChange = onDateFilterChange,
+                                availableFilters = availableFilters,
+                                selectedFilter = selectedFilter,
+                                onFilterChange = onFilterChange,
+                                modifier = Modifier.padding(horizontal = 0.dp, vertical = 0.dp)
+                            )
                         }
-                    }
-
-                    if (historyList.isNotEmpty() && availableFilters.size > 1) {
-                        item {
-                            androidx.compose.foundation.lazy.LazyRow(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(availableFilters) { filter ->
-                                    FilterChip(
-                                        selected = selectedFilter == filter,
-                                        onClick = { onFilterChange(filter) },
-                                        label = { Text(text = stringResource(id = filter.labelResId)) }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    items(filteredList, key = { it.id }) { evrak ->
-                        val dismissState = rememberSwipeToDismissBoxState(
-                            confirmValueChange = { value ->
-                                if (value != SwipeToDismissBoxValue.Settled) {
-                                    selectedEvrak = evrak
-                                    showSheet = true
-                                    false
-                                } else {
-                                    true
-                                }
-                            }
-                        )
-
-                        SwipeToDismissBox(
-                            state = dismissState,
-                            backgroundContent = {
-                                val direction = dismissState.dismissDirection
-                                val color = when (direction) {
-                                    SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
-                                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
-                                    else -> androidx.compose.ui.graphics.Color.Transparent
-                                }
-                                val alignment = when (direction) {
-                                    SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
-                                    SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
-                                    else -> Alignment.Center
-                                }
-                                val icon = Icons.Default.Menu
-
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(color, MaterialTheme.shapes.medium)
-                                        .padding(horizontal = 24.dp),
-                                    contentAlignment = alignment
-                                ) {
-                                    if (direction != SwipeToDismissBoxValue.Settled) {
-                                        Icon(
-                                            imageVector = icon,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
-                                }
-                            },
-                            content = {
-                                EvrakItem(
-                                    evrak = evrak,
-                                    onClick = { onItemClick(evrak) },
-                                    onLongClick = {
+                        items(filteredList, key = { it.id }) { evrak ->
+                            val dismissState = rememberSwipeToDismissBoxState(
+                                confirmValueChange = { value ->
+                                    if (value != SwipeToDismissBoxValue.Settled) {
                                         selectedEvrak = evrak
                                         showSheet = true
+                                        false
+                                    } else {
+                                        true
                                     }
-                                )
-                            }
-                        )
+                                }
+                            )
+
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                backgroundContent = {
+                                    val direction = dismissState.dismissDirection
+                                    val color = when (direction) {
+                                        SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
+                                        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
+                                        else -> androidx.compose.ui.graphics.Color.Transparent
+                                    }
+                                    val alignment = when (direction) {
+                                        SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                                        SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+                                        else -> Alignment.Center
+                                    }
+                                    val icon = Icons.Default.Menu
+
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(color, MaterialTheme.shapes.medium)
+                                            .padding(horizontal = 24.dp),
+                                        contentAlignment = alignment
+                                    ) {
+                                        if (direction != SwipeToDismissBoxValue.Settled) {
+                                            Icon(
+                                                imageVector = icon,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                            )
+                                        }
+                                    }
+                                },
+                                content = {
+                                    EvrakItem(
+                                        evrak = evrak,
+                                        onClick = { onItemClick(evrak) },
+                                        onLongClick = {
+                                            selectedEvrak = evrak
+                                            showSheet = true
+                                        }
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -1127,6 +1147,124 @@ fun OptionItem(
             color = color, 
             style = MaterialTheme.typography.bodyLarge
         )
+    }
+}
+
+@Composable
+fun FilterSection(
+    dateFilterEnabled: Boolean,
+    historyList: List<Evrak>,
+    availableDateFilters: List<com.avalibeyaz.evrak.EvrakDateFilter>,
+    selectedDateFilter: com.avalibeyaz.evrak.EvrakDateFilter,
+    onDateFilterChange: (com.avalibeyaz.evrak.EvrakDateFilter) -> Unit,
+    availableFilters: List<EvrakFilter>,
+    selectedFilter: EvrakFilter,
+    onFilterChange: (EvrakFilter) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        if (dateFilterEnabled && historyList.isNotEmpty() && availableDateFilters.size > 1) {
+            androidx.compose.foundation.lazy.LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(availableDateFilters) { dateFilter ->
+                    FilterChip(
+                        selected = selectedDateFilter == dateFilter,
+                        onClick = { onDateFilterChange(dateFilter) },
+                        label = { Text(text = stringResource(id = dateFilter.labelResId)) }
+                    )
+                }
+            }
+        }
+
+        if (historyList.isNotEmpty() && availableFilters.size > 1) {
+            androidx.compose.foundation.lazy.LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(availableFilters) { filter ->
+                    FilterChip(
+                        selected = selectedFilter == filter,
+                        onClick = { onFilterChange(filter) },
+                        label = { Text(text = stringResource(id = filter.labelResId)) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun EvrakLazyContent(
+    filteredList: List<Evrak>,
+    onItemClick: (Evrak) -> Unit,
+    onLongClick: (Evrak) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(filteredList, key = { it.id }) { evrak ->
+            val dismissState = rememberSwipeToDismissBoxState(
+                confirmValueChange = { value ->
+                    if (value != SwipeToDismissBoxValue.Settled) {
+                        onLongClick(evrak)
+                        false
+                    } else {
+                        true
+                    }
+                }
+            )
+
+            SwipeToDismissBox(
+                state = dismissState,
+                backgroundContent = {
+                    val direction = dismissState.dismissDirection
+                    val color = when (direction) {
+                        SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
+                        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
+                        else -> androidx.compose.ui.graphics.Color.Transparent
+                    }
+                    val alignment = when (direction) {
+                        SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                        SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+                        else -> Alignment.Center
+                    }
+                    val icon = Icons.Default.Menu
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(color, MaterialTheme.shapes.medium)
+                            .padding(horizontal = 24.dp),
+                        contentAlignment = alignment
+                    ) {
+                        if (direction != SwipeToDismissBoxValue.Settled) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                },
+                content = {
+                    EvrakItem(
+                        evrak = evrak,
+                        onClick = { onItemClick(evrak) },
+                        onLongClick = { onLongClick(evrak) }
+                    )
+                }
+            )
+        }
     }
 }
 

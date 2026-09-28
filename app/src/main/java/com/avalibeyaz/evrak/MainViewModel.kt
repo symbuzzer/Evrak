@@ -28,15 +28,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val selectedFilter: StateFlow<EvrakFilter> = _selectedFilter.asStateFlow()
 
     private val sharedPrefs = application.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE)
-    private val _powerPointEnabled = MutableStateFlow(
-        sharedPrefs.getBoolean("exp_powerpoint", false)
-    )
-    val powerPointEnabled: StateFlow<Boolean> = _powerPointEnabled.asStateFlow()
-
-    fun setPowerPointEnabled(enabled: Boolean) {
-        _powerPointEnabled.value = enabled
-        sharedPrefs.edit().putBoolean("exp_powerpoint", enabled).apply()
-    }
 
     private val _fileSearchEnabled = MutableStateFlow(
         sharedPrefs.getBoolean("exp_file_search", false)
@@ -85,16 +76,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     init {
         val database = EvrakDatabase.getDatabase(application)
         repository = EvrakRepository(application, database.evrakDao())
-        historyList = kotlinx.coroutines.flow.combine(
-            repository.allEvraklar,
-            _powerPointEnabled
-        ) { evraklar, pptEnabled ->
-            if (pptEnabled) {
-                evraklar
-            } else {
-                evraklar.filter { !it.path.endsWith(".ppt", true) && !it.path.endsWith(".pptx", true) }
-            }
-        }.stateIn(
+        historyList = repository.allEvraklar.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()

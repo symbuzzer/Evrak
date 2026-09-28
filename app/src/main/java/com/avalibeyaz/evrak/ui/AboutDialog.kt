@@ -47,26 +47,8 @@ fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
     val uriHandler = LocalUriHandler.current
     val scrollState = rememberScrollState()
 
-    val prefs = remember(context) { context.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE) }
-    val pptEnabled = prefs.getBoolean("exp_powerpoint", false)
-
-    val formatsListRaw = stringResource(id = R.string.about_supported_formats_list)
-    val supportedFormatsText = remember(pptEnabled, formatsListRaw) {
-        if (pptEnabled) {
-            formatsListRaw.replace(Regex("\\bXLS\\b"), "XLS PPTX PPT")
-        } else {
-            formatsListRaw
-        }
-    }
-
-    val shareTextRaw = stringResource(id = R.string.share_app_text)
-    val shareText = remember(pptEnabled, shareTextRaw) {
-        if (pptEnabled) {
-            shareTextRaw.replace(Regex("\\bXLS\\b"), "XLS, PPTX, PPT")
-        } else {
-            shareTextRaw
-        }
-    }
+    val supportedFormatsText = stringResource(id = R.string.about_supported_formats_list)
+    val shareText = stringResource(id = R.string.share_app_text)
 
     val isInstalledFromPlayStore = remember {
         try {
