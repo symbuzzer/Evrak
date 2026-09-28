@@ -11,6 +11,8 @@
     <string name="rename_title">Rename file</string>
     <string name="rename_hint">New file name</string>
     <string name="no_history">No documents viewed yet</string>
+    <string name="no_search_results">No files found matching your search</string>
+    <string name="no_filter_results">No files found for selected filter</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="open_with">Open with</string>

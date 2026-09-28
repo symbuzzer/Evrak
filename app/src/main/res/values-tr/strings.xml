@@ -11,6 +11,8 @@
     <string name="rename_title">Dosyayı yeniden adlandır</string>
     <string name="rename_hint">Yeni dosya adı</string>
     <string name="no_history">Henüz görüntülenen belge yok</string>
+    <string name="no_search_results">Aramanıza uygun dosya bulunamadı</string>
+    <string name="no_filter_results">Seçilen filtreye uygun dosya bulunamadı</string>
     <string name="ok">Tamam</string>
     <string name="cancel">İptal</string>
     <string name="open_with">Birlikte aç</string>

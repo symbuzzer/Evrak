@@ -24,6 +24,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -81,8 +82,9 @@ fun MainScreen(
     
     var isExtracting by remember { mutableStateOf(false) }
 
-    var isSearchOpen by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
+    var isSearchOpen by rememberSaveable { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var shouldFocusSearch by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -154,6 +156,38 @@ fun MainScreen(
         cal.timeInMillis
     }
 
+    val searchFiltered = remember(historyList, searchQuery) {
+        if (searchQuery.isNotBlank()) {
+            val trLocale = Locale.forLanguageTag("tr-TR")
+            val query = searchQuery.trim().lowercase(trLocale)
+            val asciiQuery = query
+                .replace('ç', 'c')
+                .replace('ğ', 'g')
+                .replace('ı', 'i')
+                .replace('ö', 'o')
+                .replace('ş', 's')
+                .replace('ü', 'u')
+
+            historyList.filter { evrak ->
+                val nameLower = evrak.name.lowercase(trLocale)
+                if (nameLower.contains(query)) {
+                    true
+                } else {
+                    val asciiName = nameLower
+                        .replace('ç', 'c')
+                        .replace('ğ', 'g')
+                        .replace('ı', 'i')
+                        .replace('ö', 'o')
+                        .replace('ş', 's')
+                        .replace('ü', 'u')
+                    asciiName.contains(asciiQuery)
+                }
+            }
+        } else {
+            historyList
+        }
+    }
+
     val availableDateFilters = remember(historyList, startOfToday, startOfYesterday) {
         val filters = mutableListOf(EvrakDateFilter.ALL)
         if (historyList.any { it.dateOpened >= startOfToday }) {
@@ -168,41 +202,35 @@ fun MainScreen(
         filters
     }
 
-    LaunchedEffect(availableDateFilters) {
-        if (selectedDateFilter !in availableDateFilters) {
-            onDateFilterChange(EvrakDateFilter.ALL)
-        }
-    }
-
-    val dateFiltered = remember(historyList, selectedDateFilter, startOfToday, startOfYesterday) {
+    val dateFiltered = remember(searchFiltered, selectedDateFilter, startOfToday, startOfYesterday) {
         when (selectedDateFilter) {
-            EvrakDateFilter.ALL -> historyList
-            EvrakDateFilter.TODAY -> historyList.filter { it.dateOpened >= startOfToday }
-            EvrakDateFilter.YESTERDAY -> historyList.filter { it.dateOpened >= startOfYesterday && it.dateOpened < startOfToday }
-            EvrakDateFilter.PREVIOUS_DAY -> historyList.filter { it.dateOpened < startOfYesterday }
+            EvrakDateFilter.ALL -> searchFiltered
+            EvrakDateFilter.TODAY -> searchFiltered.filter { it.dateOpened >= startOfToday }
+            EvrakDateFilter.YESTERDAY -> searchFiltered.filter { it.dateOpened >= startOfYesterday && it.dateOpened < startOfToday }
+            EvrakDateFilter.PREVIOUS_DAY -> searchFiltered.filter { it.dateOpened < startOfYesterday }
         }
     }
 
-    val availableFilters = remember(dateFiltered) {
+    val availableFilters = remember(historyList) {
         val filters = mutableListOf(EvrakFilter.ALL)
-        if (dateFiltered.any { it.path.endsWith(".udf", true) }) filters.add(EvrakFilter.UDF)
-        if (dateFiltered.any { it.path.endsWith(".pdf", true) }) filters.add(EvrakFilter.PDF)
-        if (dateFiltered.any { 
+        if (historyList.any { it.path.endsWith(".udf", true) }) filters.add(EvrakFilter.UDF)
+        if (historyList.any { it.path.endsWith(".pdf", true) }) filters.add(EvrakFilter.PDF)
+        if (historyList.any { 
             val path = it.path.lowercase()
             path.endsWith(".doc") || path.endsWith(".docx") ||
             path.endsWith(".xls") || path.endsWith(".xlsx") ||
             path.endsWith(".ppt") || path.endsWith(".pptx")
         }) filters.add(EvrakFilter.OFFICE)
-        if (dateFiltered.any { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }) filters.add(EvrakFilter.TIFF)
-        if (dateFiltered.any { it.path.endsWith(".eyp", true) }) filters.add(EvrakFilter.EYP)
-        if (dateFiltered.any {
+        if (historyList.any { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }) filters.add(EvrakFilter.TIFF)
+        if (historyList.any { it.path.endsWith(".eyp", true) }) filters.add(EvrakFilter.EYP)
+        if (historyList.any {
                 val path = it.path.lowercase()
                 path.endsWith(".jpg") || path.endsWith(".jpeg") ||
                 path.endsWith(".gif") || path.endsWith(".png") ||
                 path.endsWith(".webp") || path.endsWith(".bmp") ||
                 path.endsWith(".heic") || path.endsWith(".avif")
             }) filters.add(EvrakFilter.IMAGE)
-        if (dateFiltered.any {
+        if (historyList.any {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
                 path.endsWith(".txt") || path.endsWith(".zip")
@@ -267,31 +295,10 @@ fun MainScreen(
         }
     }
 
-    LaunchedEffect(availableFilters) {
-        if (historyList.isNotEmpty() && selectedFilter !in availableFilters) {
-            onFilterChange(EvrakFilter.ALL)
-        }
-    }
 
-    val filteredList = remember(historyList, selectedFilter, selectedDateFilter, searchQuery) {
-        val cal = Calendar.getInstance()
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        val startOfToday = cal.timeInMillis
 
-        cal.add(Calendar.DAY_OF_YEAR, -1)
-        val startOfYesterday = cal.timeInMillis
-
-        val dateFiltered = when (selectedDateFilter) {
-            com.avalibeyaz.evrak.EvrakDateFilter.ALL -> historyList
-            com.avalibeyaz.evrak.EvrakDateFilter.TODAY -> historyList.filter { it.dateOpened >= startOfToday }
-            com.avalibeyaz.evrak.EvrakDateFilter.YESTERDAY -> historyList.filter { it.dateOpened >= startOfYesterday && it.dateOpened < startOfToday }
-            com.avalibeyaz.evrak.EvrakDateFilter.PREVIOUS_DAY -> historyList.filter { it.dateOpened < startOfYesterday }
-        }
-
-        val categoryFiltered = when (selectedFilter) {
+    val filteredList = remember(dateFiltered, selectedFilter) {
+        when (selectedFilter) {
             EvrakFilter.ALL -> dateFiltered
             EvrakFilter.UDF -> dateFiltered.filter { it.path.endsWith(".udf", true) }
             EvrakFilter.PDF -> dateFiltered.filter { it.path.endsWith(".pdf", true) }
@@ -315,11 +322,6 @@ fun MainScreen(
                 path.endsWith(".html") || path.endsWith(".htm") ||
                 path.endsWith(".txt") || path.endsWith(".zip")
             }
-        }
-        if (searchQuery.isNotBlank()) {
-            categoryFiltered.filter { it.name.contains(searchQuery.trim(), ignoreCase = true) }
-        } else {
-            categoryFiltered
         }
     }
 
@@ -476,6 +478,8 @@ fun MainScreen(
                                     isSearchOpen = !isSearchOpen
                                     if (!isSearchOpen) {
                                         searchQuery = ""
+                                    } else {
+                                        shouldFocusSearch = true
                                     }
                                 }) {
                                     Icon(
@@ -540,8 +544,11 @@ fun MainScreen(
                     }
                 )
                 if (fileSearchEnabled && isSearchOpen) {
-                    LaunchedEffect(Unit) {
-                        searchFocusRequester.requestFocus()
+                    if (shouldFocusSearch) {
+                        LaunchedEffect(Unit) {
+                            searchFocusRequester.requestFocus()
+                            shouldFocusSearch = false
+                        }
                     }
                     OutlinedTextField(
                         value = searchQuery,
@@ -614,48 +621,22 @@ fun MainScreen(
                 }
             }
         } else {
-            if (!isSearchOpen) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                ) {
-                    FilterSection(
-                        dateFilterEnabled = dateFilterEnabled,
-                        historyList = historyList,
-                        availableDateFilters = availableDateFilters,
-                        selectedDateFilter = selectedDateFilter,
-                        onDateFilterChange = onDateFilterChange,
-                        availableFilters = availableFilters,
-                        selectedFilter = selectedFilter,
-                        onFilterChange = onFilterChange,
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    PullToRefreshBox(
-                        isRefreshing = isRefreshing,
-                        onRefresh = {
-                            scope.launch {
-                                isRefreshing = true
-                                onRefresh()
-                                delay(1000)
-                                isRefreshing = false
-                            }
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    ) {
-                        EvrakLazyContent(
-                            filteredList = filteredList,
-                            onItemClick = onItemClick,
-                            onLongClick = { evrak ->
-                                selectedEvrak = evrak
-                                showSheet = true
-                            }
-                        )
-                    }
-                }
-            } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                FilterSection(
+                    dateFilterEnabled = dateFilterEnabled,
+                    historyList = historyList,
+                    availableDateFilters = availableDateFilters,
+                    selectedDateFilter = selectedDateFilter,
+                    onDateFilterChange = onDateFilterChange,
+                    availableFilters = availableFilters,
+                    selectedFilter = selectedFilter,
+                    onFilterChange = onFilterChange,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
                 PullToRefreshBox(
                     isRefreshing = isRefreshing,
                     onRefresh = {
@@ -667,84 +648,45 @@ fun MainScreen(
                         }
                     },
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
+                        .fillMaxWidth()
+                        .weight(1f)
                 ) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        item {
-                            FilterSection(
-                                dateFilterEnabled = dateFilterEnabled,
-                                historyList = historyList,
-                                availableDateFilters = availableDateFilters,
-                                selectedDateFilter = selectedDateFilter,
-                                onDateFilterChange = onDateFilterChange,
-                                availableFilters = availableFilters,
-                                selectedFilter = selectedFilter,
-                                onFilterChange = onFilterChange,
-                                modifier = Modifier.padding(horizontal = 0.dp, vertical = 0.dp)
-                            )
-                        }
-                        items(filteredList, key = { it.id }) { evrak ->
-                            val dismissState = rememberSwipeToDismissBoxState(
-                                confirmValueChange = { value ->
-                                    if (value != SwipeToDismissBoxValue.Settled) {
-                                        selectedEvrak = evrak
-                                        showSheet = true
-                                        false
+                    if (filteredList.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = if (searchQuery.isNotBlank()) {
+                                        stringResource(id = R.string.no_search_results)
                                     } else {
-                                        true
-                                    }
-                                }
-                            )
-
-                            SwipeToDismissBox(
-                                state = dismissState,
-                                backgroundContent = {
-                                    val direction = dismissState.dismissDirection
-                                    val color = when (direction) {
-                                        SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
-                                        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
-                                        else -> androidx.compose.ui.graphics.Color.Transparent
-                                    }
-                                    val alignment = when (direction) {
-                                        SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
-                                        SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
-                                        else -> Alignment.Center
-                                    }
-                                    val icon = Icons.Default.Menu
-
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(color, MaterialTheme.shapes.medium)
-                                            .padding(horizontal = 24.dp),
-                                        contentAlignment = alignment
-                                    ) {
-                                        if (direction != SwipeToDismissBoxValue.Settled) {
-                                            Icon(
-                                                imageVector = icon,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                            )
-                                        }
-                                    }
-                                },
-                                content = {
-                                    EvrakItem(
-                                        evrak = evrak,
-                                        onClick = { onItemClick(evrak) },
-                                        onLongClick = {
-                                            selectedEvrak = evrak
-                                            showSheet = true
-                                        }
-                                    )
-                                }
-                            )
+                                        stringResource(id = R.string.no_filter_results)
+                                    },
+                                    color = MaterialTheme.colorScheme.outline,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
                         }
+                    } else {
+                        EvrakLazyContent(
+                            filteredList = filteredList,
+                            onItemClick = onItemClick,
+                            onLongClick = { evrak ->
+                                selectedEvrak = evrak
+                                showSheet = true
+                            }
+                        )
                     }
                 }
             }
