@@ -41,31 +41,32 @@ Evrak uygulamasının, CELSE ile Uyap Doküman Editör'ü uygulaması olmadan do
 
 ## Desteklenen dosya formatları
 
-| Format   | Uzantı                          |
-|----------|---------------------------------|
-| UYAP UDF | `.udf`                          |
-| TIFF     | `.tif`, `.tiff`                 |
-| PDF      | `.pdf`                          |
-| Word     | `.docx`, `.doc`                 |
-| Excel    | `.xlsx`, `.xls`                 |
-| EYP      | `.eyp`                          |
-| Arşiv    | `.zip`                          |
-| HTML     | `.html`, `.htm`                 |
-| Metin    | `.txt`                          |
-| Görsel   | `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.heic`, `.avif` |
+| Format     | Uzantı                                                             |
+|------------|--------------------------------------------------------------------|
+| UYAP UDF   | `.udf`                                                             |
+| TIFF       | `.tif`, `.tiff`                                                    |
+| PDF        | `.pdf`                                                             |
+| Word       | `.docx`, `.doc`                                                    |
+| Excel      | `.xlsx`, `.xls`                                                    |
+| PowerPoint | `.pptx`, `.ppt`                                                    |
+| EYP        | `.eyp`                                                             |
+| Arşiv      | `.zip`                                                             |
+| HTML       | `.html`, `.htm`                                                    |
+| Metin      | `.txt`                                                             |
+| Görsel     | `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.heic`, `.avif` |
 ## Kullanılan kütüphaneler ve lisansları
 
 Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 
 ### Dosya görüntüleme ve dönüştürme
 
-| Kütüphane                                                                                                                                                    | Lisans |
-|--------------------------------------------------------------------------------------------------------------------------------------------------------------| --- |
-| [Coil](https://github.com/coil-kt/coil) (coil-compose, coil-gif) — görsel yükleme (JPG/PNG/GIF/WEBP/BMP/HEIC/AVIF)                                                              | Apache License 2.0 |
-| [PDF.js](https://mozilla.github.io/pdf.js/) — Mozilla tarafından geliştirilen PDF görüntüleme motoru                                                          | Apache License 2.0 |
-| [tiffrenderer](https://github.com/lucf15/TiffRenderer) — TIFF render motoru ve PDF dönüşümü                                                                  | Apache License 2.0 |
-| [LibreOffice Core](https://www.libreoffice.org/) (LibreOfficeKit) — DOC/DOCX/XLS/XLSX görüntüleme ve PDF dönüşümü                                             | Mozilla Public License 2.0 |
-| [Zip4j](https://github.com/srikanth-lingala/zip4j) — ZIP görüntüleme, ayıklama ve karakter kodlama desteği                                                  | Apache License 2.0 |
+| Kütüphane                                                                                                                  | Lisans |
+|----------------------------------------------------------------------------------------------------------------------------| --- |
+| [Coil](https://github.com/coil-kt/coil) (coil-compose, coil-gif) — görsel yükleme (JPG/PNG/GIF/WEBP/BMP/HEIC/AVIF)         | Apache License 2.0 |
+| [PDF.js](https://mozilla.github.io/pdf.js/) — Mozilla tarafından geliştirilen PDF görüntüleme motoru                       | Apache License 2.0 |
+| [tiffrenderer](https://github.com/lucf15/TiffRenderer) — TIFF render motoru ve PDF dönüşümü                                | Apache License 2.0 |
+| [LibreOffice Core](https://www.libreoffice.org/) (LibreOfficeKit) — DOCX/DOC/XLSX/XLS/PPTX/PPT görüntüleme ve PDF dönüşümü | Mozilla Public License 2.0 |
+| [Zip4j](https://github.com/srikanth-lingala/zip4j) — ZIP görüntüleme, ayıklama ve karakter kodlama desteği                 | Apache License 2.0 |
 
 ### Android / Kotlin
 
