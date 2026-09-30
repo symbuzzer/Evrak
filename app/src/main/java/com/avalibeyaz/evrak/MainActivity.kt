@@ -209,14 +209,15 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
             val isEyp = filePath.endsWith(".eyp", ignoreCase = true)
             
             val onRenameSafe: (String) -> Unit = { newName ->
-                val currentEvrak = historyList.find { it.path == filePath }
-                if (currentEvrak != null) {
-                    viewModel.renameEvrak(currentEvrak, newName) { updated ->
-                        navController.navigate("viewer/${Uri.encode(updated.path)}/${Uri.encode(updated.name)}?forceText=$forceText") {
-                            popUpTo("viewer/${Uri.encode(filePath)}/${Uri.encode(displayName)}?forceText=$forceText") { inclusive = true }
-                        }
+                viewModel.renameDocument(filePath, displayName, newName) { updated ->
+                    navController.navigate("viewer/${Uri.encode(updated.path)}/${Uri.encode(updated.name)}?forceText=$forceText") {
+                        popUpTo("viewer/${Uri.encode(filePath)}/${Uri.encode(displayName)}?forceText=$forceText") { inclusive = true }
                     }
                 }
+            }
+
+            LaunchedEffect(filePath) {
+                viewModel.ensureEvrak(filePath, displayName) { _ -> }
             }
 
             when {

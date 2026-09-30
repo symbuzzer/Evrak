@@ -97,6 +97,10 @@ class DocumentActivity : AppCompatActivity() {
                 } else if (currentFilePath.isNotEmpty()) {
                     setDocumentTaskDescription(currentDisplayName)
                     isLoading = false
+                    viewModel.ensureEvrak(currentFilePath, currentDisplayName) { evrak ->
+                        currentFilePath = evrak.path
+                        currentDisplayName = evrak.name
+                    }
                 }
             }
 
@@ -114,14 +118,10 @@ class DocumentActivity : AppCompatActivity() {
                         onBack = { finish() },
                         onShare = { shareFile(currentFilePath) },
                         onRename = { newName ->
-                            val historyList = viewModel.historyList.value
-                            val currentEvrak = historyList.find { it.path == currentFilePath }
-                            if (currentEvrak != null) {
-                                viewModel.renameEvrak(currentEvrak, newName) { updated ->
-                                    currentFilePath = updated.path
-                                    currentDisplayName = updated.name
-                                    setDocumentTaskDescription(updated.name)
-                                }
+                            viewModel.renameDocument(currentFilePath, currentDisplayName, newName) { updated ->
+                                currentFilePath = updated.path
+                                currentDisplayName = updated.name
+                                setDocumentTaskDescription(updated.name)
                             }
                         },
                         onTryAsText = { forceTextState = true }

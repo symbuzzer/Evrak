@@ -85,8 +85,6 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         val finalCacheFile = File(cacheFile.parent, "${System.currentTimeMillis()}_$finalName")
         cacheFile.renameTo(finalCacheFile)
         
-        val isSupported = supportedExtensions.any { finalName.endsWith(it, ignoreCase = true) }
-        
         val fileSize = finalCacheFile.length()
         val existingEvrak = evrakDao.getEvrakByNameAndSize(finalName, fileSize)
 
@@ -103,19 +101,28 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 path = finalCacheFile.absolutePath,
                 dateOpened = System.currentTimeMillis()
             )
-            if (isSupported) {
-                evrakDao.updateEvrak(updated)
-            }
+            evrakDao.updateEvrak(updated)
             updated
         } else {
             val newEvrak = Evrak(name = finalName, path = finalCacheFile.absolutePath, size = fileSize)
-            if (isSupported) {
-                evrakDao.insertEvrak(newEvrak)
-            }
+            evrakDao.insertEvrak(newEvrak)
             newEvrak
         }
         
         return evrak
+    }
+
+    suspend fun ensureEvrak(path: String, name: String): Evrak {
+        val existing = evrakDao.getEvrakByPath(path) ?: evrakDao.getEvrakByNameAndSize(name, File(path).length())
+        if (existing != null) {
+            val updated = existing.copy(dateOpened = System.currentTimeMillis(), path = path, name = name)
+            evrakDao.updateEvrak(updated)
+            return updated
+        } else {
+            val newEvrak = Evrak(name = name, path = path, size = File(path).length())
+            evrakDao.insertEvrak(newEvrak)
+            return evrakDao.getEvrakByPath(path) ?: newEvrak
+        }
     }
 
     suspend fun updateEvrakTimestamp(evrak: Evrak) {
@@ -188,14 +195,43 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
 
         if (parentDir != null && oldFile.exists()) {
             val newFile = File(parentDir, "${System.currentTimeMillis()}_$finalName")
-            if (oldFile.renameTo(newFile)) {
-                newPath = newFile.absolutePath
+            try {
+                oldFile.copyTo(newFile, overwrite = true)
+                if (newFile.exists() && newFile.length() > 0) {
+                    newPath = newFile.absolutePath
+                    try {
+                        if (oldFile.absolutePath != newPath) {
+                            oldFile.delete()
+                        }
+                    } catch (_: Exception) {}
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                if (oldFile.renameTo(newFile)) {
+                    newPath = newFile.absolutePath
+                }
             }
         }
         
-        val updatedEvrak = evrak.copy(name = finalName, path = newPath)
-        evrakDao.insertEvrak(updatedEvrak)
-        return updatedEvrak
+        val realEvrak = if (evrak.id != 0) {
+            evrak
+        } else {
+            evrakDao.getEvrakByPath(evrak.path) ?: evrakDao.getEvrakByNameAndSize(evrak.name, evrak.size) ?: evrak
+        }
+
+        val updatedEvrak = realEvrak.copy(
+            name = finalName,
+            path = newPath,
+            dateOpened = System.currentTimeMillis()
+        )
+
+        if (updatedEvrak.id != 0) {
+            evrakDao.updateEvrak(updatedEvrak)
+        } else {
+            evrakDao.insertEvrak(updatedEvrak)
+        }
+
+        return evrakDao.getEvrakByPath(newPath) ?: updatedEvrak
     }
 
     suspend fun deleteAllEvrak() {

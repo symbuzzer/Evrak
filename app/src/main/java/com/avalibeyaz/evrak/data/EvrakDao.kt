@@ -23,6 +23,9 @@ interface EvrakDao {
     @Query("SELECT * FROM evraklar WHERE name = :name AND size = :size LIMIT 1")
     suspend fun getEvrakByNameAndSize(name: String, size: Long): Evrak?
 
+    @Query("SELECT * FROM evraklar WHERE path = :path LIMIT 1")
+    suspend fun getEvrakByPath(path: String): Evrak?
+
     @Query("DELETE FROM evraklar WHERE path = :path")
     suspend fun deleteByPath(path: String)
 

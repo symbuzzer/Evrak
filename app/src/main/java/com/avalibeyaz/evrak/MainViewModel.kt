@@ -131,6 +131,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun ensureEvrak(path: String, name: String, onEnsured: (Evrak) -> Unit) {
+        viewModelScope.launch {
+            val evrak = repository.ensureEvrak(path, name)
+            onEnsured(evrak)
+        }
+    }
+
+    fun renameDocument(filePath: String, displayName: String, newName: String, onRenamed: (Evrak) -> Unit) {
+        viewModelScope.launch {
+            val evrak = repository.ensureEvrak(filePath, displayName)
+            val updated = repository.renameEvrak(evrak, newName)
+            onRenamed(updated)
+        }
+    }
+
     fun deleteAllEvrak() {
         viewModelScope.launch {
             repository.deleteAllEvrak()

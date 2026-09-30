@@ -12,8 +12,8 @@ android {
         applicationId = "com.avalibeyaz.evrak"
         minSdk = 30
         targetSdk = 37
-        versionCode = 47
-        versionName = "1.8.5"
+        versionCode = 48
+        versionName = "1.8.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
