@@ -85,6 +85,8 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         val finalCacheFile = File(cacheFile.parent, "${System.currentTimeMillis()}_$finalName")
         cacheFile.renameTo(finalCacheFile)
         
+        val isSupported = supportedExtensions.any { finalName.endsWith(it, ignoreCase = true) }
+        
         val fileSize = finalCacheFile.length()
         val existingEvrak = evrakDao.getEvrakByNameAndSize(finalName, fileSize)
 
@@ -101,11 +103,15 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 path = finalCacheFile.absolutePath,
                 dateOpened = System.currentTimeMillis()
             )
-            evrakDao.updateEvrak(updated)
+            if (isSupported) {
+                evrakDao.updateEvrak(updated)
+            }
             updated
         } else {
             val newEvrak = Evrak(name = finalName, path = finalCacheFile.absolutePath, size = fileSize)
-            evrakDao.insertEvrak(newEvrak)
+            if (isSupported) {
+                evrakDao.insertEvrak(newEvrak)
+            }
             newEvrak
         }
         
@@ -113,15 +119,21 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     }
 
     suspend fun ensureEvrak(path: String, name: String): Evrak {
+        val isSupported = supportedExtensions.any { name.endsWith(it, ignoreCase = true) || path.endsWith(it, ignoreCase = true) }
         val existing = evrakDao.getEvrakByPath(path) ?: evrakDao.getEvrakByNameAndSize(name, File(path).length())
         if (existing != null) {
             val updated = existing.copy(dateOpened = System.currentTimeMillis(), path = path, name = name)
-            evrakDao.updateEvrak(updated)
+            if (isSupported) {
+                evrakDao.updateEvrak(updated)
+            }
             return updated
         } else {
             val newEvrak = Evrak(name = name, path = path, size = File(path).length())
-            evrakDao.insertEvrak(newEvrak)
-            return evrakDao.getEvrakByPath(path) ?: newEvrak
+            if (isSupported) {
+                evrakDao.insertEvrak(newEvrak)
+                return evrakDao.getEvrakByPath(path) ?: newEvrak
+            }
+            return newEvrak
         }
     }
 
