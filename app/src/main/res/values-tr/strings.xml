@@ -115,6 +115,4 @@
     <string name="language_default">Varsayılan (Sistem)</string>
     <string name="language_turkish">Türkçe</string>
     <string name="language_english">İngilizce (English)</string>
-    <string name="open_udf_file">UDF dosyası aç</string>
-    <string name="open_eyp_file">EYP dosyası aç</string>
 </resources>

@@ -75,6 +75,10 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 extension = deepExt
             }
         }
+
+        if (fileName.endsWith(".eyp", ignoreCase = true) && extension == ".zip") {
+            extension = ".eyp"
+            }
         
         var finalName = fileName
         if (extension != null && !finalName.endsWith(extension, ignoreCase = true)) {

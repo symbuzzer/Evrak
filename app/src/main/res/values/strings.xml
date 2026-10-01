@@ -116,6 +116,4 @@
     <string name="language_default">Default (System)</string>
     <string name="language_turkish">Türkçe</string>
     <string name="language_english">English</string>
-    <string name="open_udf_file">Open UDF file</string>
-    <string name="open_eyp_file">Open EYP file</string>
 </resources>

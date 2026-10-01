@@ -1,10 +1,12 @@
 package com.avalibeyaz.evrak
 
 import android.app.ActivityManager
+import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -55,6 +57,25 @@ class DocumentActivity : AppCompatActivity() {
                 }
             }
             else -> null
+        }
+
+       if (filePathExtra.isEmpty() && uriExtra != null) {
+            val name = queryDisplayName(uriExtra).orEmpty()
+            val type = intent.type.orEmpty()
+            val forwardToMain = when {
+                name.endsWith(".udf", true) -> false
+                name.isNotEmpty() -> name.endsWith(".zip", true) || name.endsWith(".eyp", true)
+                else -> type == "application/zip" ||
+                        type == "application/x-zip-compressed" ||
+                        type == "application/eyp"
+            }
+            if (forwardToMain) {
+                startActivity(
+                    Intent(intent).setComponent(ComponentName(this, MainActivity::class.java))
+                )
+                finish()
+                return
+            }
         }
 
         if (displayNameExtra.isNotEmpty()) {
@@ -129,6 +150,16 @@ class DocumentActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun queryDisplayName(uri: Uri): String? {
+        val name = try {
+            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { if (it.moveToFirst()) it.getString(0) else null }
+        } catch (_: Exception) {
+            null
+        }
+        return name ?: uri.lastPathSegment
     }
 
     private fun setDocumentTaskDescription(title: String) {
