@@ -57,7 +57,7 @@
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
-            <data android:mimeType="application/x-cd-image" />
+            <data android:mimeType="application/udf" />
         </intent>
         <package android:name="tr.gov.uyap.editor" />
         <package android:name="com.adalet" />
@@ -93,7 +93,6 @@
                 <data android:mimeType="application/zip" />
                 <data android:mimeType="application/x-zip-compressed" />
                 <data android:mimeType="application/eyp" />
-                <data android:mimeType="application/x-cd-image" />
             </intent-filter>
 
             <intent-filter android:priority="100">
@@ -104,10 +103,6 @@
                 <data android:scheme="file" />
                 <data android:host="*" />
                 <data android:mimeType="*/*" />
-                <data android:pathPattern=".*\\.udf" />
-                <data android:pathPattern=".*\\.UDF" />
-                <data android:pathPattern=".*\\..*\\.udf" />
-                <data android:pathPattern=".*\\..*\\.UDF" />
                 <data android:pathPattern=".*\\.eyp" />
                 <data android:pathPattern=".*\\.EYP" />
                 <data android:pathPattern=".*\\..*\\.eyp" />
@@ -155,6 +150,64 @@
                 <data android:mimeType="text/html" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
+            
+            <intent-filter android:label="@string/open_udf_file" android:priority="300">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="*/*" />
+                <data android:pathPattern=".*\\.udf" />
+                <data android:pathPattern=".*\\.UDF" />
+                <data android:pathPattern=".*\\..*\\.udf" />
+                <data android:pathPattern=".*\\..*\\.UDF" />
+            </intent-filter>
+
+            <intent-filter android:label="@string/open_udf_file" android:priority="290">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="application/udf"/>
+                <data android:mimeType="application/vnd.udf"/>
+                <data android:mimeType="application/x-udf"/>
+                <data android:mimeType="application/octet-stream"/>
+                <data android:pathPattern=".*\\.udf" />
+                <data android:pathPattern=".*\\.UDF" />
+            </intent-filter>
+
+            <intent-filter android:label="@string/open_eyp_file" android:priority="280">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="*/*" />
+                <data android:pathPattern=".*\\.eyp" />
+                <data android:pathPattern=".*\\.EYP" />
+                <data android:pathPattern=".*\\..*\\.eyp" />
+                <data android:pathPattern=".*\\..*\\.EYP" />
+            </intent-filter>
+
+            <intent-filter android:label="@string/open_eyp_file" android:priority="270">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="application/eyp"/>
+                <data android:mimeType="application/zip"/>
+                <data android:mimeType="application/x-zip-compressed"/>
+                <data android:mimeType="application/octet-stream"/>
+                <data android:pathPattern=".*\\.eyp" />
+                <data android:pathPattern=".*\\.EYP" />
+            </intent-filter>
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -165,8 +218,6 @@
                 <data android:mimeType="application/x-udf" />
                 <data android:mimeType="application/udf" />
                 <data android:mimeType="application/vnd.udf" />
-                <data android:mimeType="application/x-cd-image" />
-                <data android:mimeType="application/eyp" />
             </intent-filter>
 
             <intent-filter android:priority="100">
@@ -181,28 +232,6 @@
                 <data android:pathPattern=".*\\.UDF" />
                 <data android:pathPattern=".*\\..*\\.udf" />
                 <data android:pathPattern=".*\\..*\\.UDF" />
-                <data android:pathPattern=".*\\.eyp" />
-                <data android:pathPattern=".*\\.EYP" />
-                <data android:pathPattern=".*\\..*\\.eyp" />
-                <data android:pathPattern=".*\\..*\\.EYP" />
-            </intent-filter>
-
-            <intent-filter android:priority="90">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="content" />
-                <data android:scheme="file" />
-                <data android:host="*" />
-                <data android:mimeType="application/octet-stream" />
-                <data android:pathPattern=".*\\.udf" />
-                <data android:pathPattern=".*\\.UDF" />
-                <data android:pathPattern=".*\\..*\\.udf" />
-                <data android:pathPattern=".*\\..*\\.UDF" />
-                <data android:pathPattern=".*\\.eyp" />
-                <data android:pathPattern=".*\\.EYP" />
-                <data android:pathPattern=".*\\..*\\.eyp" />
-                <data android:pathPattern=".*\\..*\\.EYP" />
             </intent-filter>
 
             <intent-filter>
@@ -239,7 +268,6 @@
                 <data android:mimeType="application/x-udf" />
                 <data android:mimeType="application/udf" />
                 <data android:mimeType="application/vnd.udf" />
-                <data android:mimeType="application/x-cd-image" />
                 <data android:mimeType="text/html" />
                 <data android:mimeType="text/plain" />
                 <data android:mimeType="application/octet-stream" />
@@ -247,7 +275,7 @@
         </activity>
 
         <provider
-            android:name=".EvrakFileProvider"
+            android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
