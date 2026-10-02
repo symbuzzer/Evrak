@@ -101,7 +101,24 @@ fun TiffViewerScreen(
     var renderer by remember { mutableStateOf<TiffRenderer?>(null) }
     val mutex = remember { Mutex() }
     val bitmapCache = remember { 
-        LruCache<Int, Bitmap>(10)
+        object : LruCache<Int, Bitmap>(10) {
+            override fun entryRemoved(
+                evicted: Boolean,
+                key: Int,
+                oldValue: Bitmap,
+                newValue: Bitmap?
+            ) {
+                if (evicted && !oldValue.isRecycled) {
+                    oldValue.recycle()
+                }
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            bitmapCache.evictAll()
+        }
     }
 
     LaunchedEffect(filePath) {
@@ -376,8 +393,11 @@ fun TiffViewerScreen(
 
 @Composable
 fun TiffPageItem(renderer: TiffRenderer?, index: Int, mutex: Mutex, cache: LruCache<Int, Bitmap>) {
-    val bitmapState = produceState<Bitmap?>(initialValue = cache.get(index), renderer, index) {
-        if (renderer == null || value != null) return@produceState
+    val cached = cache.get(index)
+    val initialBitmap = if (cached != null && !cached.isRecycled) cached else null
+    val bitmapState = produceState<Bitmap?>(initialValue = initialBitmap, renderer, index) {
+        val current = value
+        if (renderer == null || (current != null && !current.isRecycled)) return@produceState
         value = withContext(Dispatchers.IO) {
             mutex.withLock {
                 try {

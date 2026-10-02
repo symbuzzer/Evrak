@@ -121,6 +121,7 @@ object DocumentConverter {
     ): ConversionResult = withContext(Dispatchers.Main) {
         val deferred = CompletableDeferred<ConversionResult>()
         val webView = WebView(context)
+        var activePfd: ParcelFileDescriptor? = null
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -146,6 +147,7 @@ object DocumentConverter {
 
                         val adapter = webView.createPrintDocumentAdapter(context.getString(R.string.print_adapter_name))
                         val pfd = ParcelFileDescriptor.open(outputFile, ParcelFileDescriptor.MODE_READ_WRITE or ParcelFileDescriptor.MODE_CREATE or ParcelFileDescriptor.MODE_TRUNCATE)
+                        activePfd = pfd
 
                         val layoutCallback = PrintResultCallback.createLayoutCallback(
                             onSuccess = { _, _ ->
@@ -153,20 +155,23 @@ object DocumentConverter {
                                     onSuccess = {
                                         try {
                                             pfd.close()
+                                            activePfd = null
                                             deferred.complete(ConversionResult.Success(outputFile))
                                         } catch (e: Exception) {
                                             deferred.complete(ConversionResult.Error("PDF close error"))
                                         }
                                     },
                                     onFailure = { error ->
-                                        pfd.close()
+                                        try { pfd.close() } catch (_: Exception) {}
+                                        activePfd = null
                                         deferred.complete(ConversionResult.Error("PDF write failed: $error"))
                                     }
                                 )
                                 adapter.onWrite(arrayOf(android.print.PageRange.ALL_PAGES), pfd, null, writeCallback)
                             },
                             onFailure = { error ->
-                                pfd.close()
+                                try { pfd.close() } catch (_: Exception) {}
+                                activePfd = null
                                 deferred.complete(ConversionResult.Error("PDF layout failed: $error"))
                             }
                         )
@@ -202,12 +207,15 @@ object DocumentConverter {
             withTimeout(60000) { deferred.await() }
         } catch (e: Exception) {
             webView.stopLoading()
+            try { activePfd?.close() } catch (_: Exception) {}
             if (deferred.isCompleted) {
                 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
                 deferred.getCompleted()
             } else {
                 ConversionResult.Error(context.getString(R.string.error_conversion_timeout))
             }
+        } finally {
+            try { webView.destroy() } catch (_: Exception) {}
         }
     }
 

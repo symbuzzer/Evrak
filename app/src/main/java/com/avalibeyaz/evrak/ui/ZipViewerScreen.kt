@@ -156,6 +156,14 @@ fun ZipViewerScreen(
     fun openZipEntry(name: String) {
         scope.launch(Dispatchers.IO) {
             try {
+                try {
+                    context.cacheDir.listFiles()?.forEach { f ->
+                        if (f.isDirectory && f.name.startsWith("zip_temp_")) {
+                            f.deleteRecursively()
+                        }
+                    }
+                } catch (_: Exception) {}
+
                 val file = File(filePath)
                 ZipFile(file).use { zip ->
                     zip.charset = currentCharset

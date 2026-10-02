@@ -18,7 +18,9 @@ import kotlinx.coroutines.delay
 
 object LibreOfficeManager {
     private const val TAG = "LibreOfficeManager"
+    @Volatile
     private var isInitialized = false
+    @Volatile
     private var office: Office? = null
     private val mutex = Mutex()
     private val libreOfficeDispatcher = kotlinx.coroutines.newSingleThreadContext("LibreOfficeThread")
@@ -28,7 +30,12 @@ object LibreOfficeManager {
             if (context != null) {
                 val inputDir = File(context.filesDir, "in")
                 if (inputDir.exists()) {
-                    inputDir.listFiles()?.forEach { it.delete() }
+                    val now = System.currentTimeMillis()
+                    inputDir.listFiles()?.forEach { file ->
+                        if (now - file.lastModified() > 60000) {
+                            file.delete()
+                        }
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -206,13 +213,13 @@ object LibreOfficeManager {
                         
                         outputFile.exists() && outputFile.length() > 0
                     }
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    throw e
                 } catch (e: Exception) {
                     false
                 } finally {
-                    try { doc?.destroy() } catch (_: Exception) {}
-                    try { tempInput?.delete() } catch (_: Exception) {}
+                    withContext(kotlinx.coroutines.NonCancellable) {
+                        try { doc?.destroy() } catch (_: Exception) {}
+                        try { tempInput?.delete() } catch (_: Exception) {}
+                    }
                 }
             }
         }
@@ -246,13 +253,13 @@ object LibreOfficeManager {
                         
                         outputFile.exists() && outputFile.length() > 0
                     }
-                } catch (e: kotlinx.coroutines.CancellationException) {
-                    throw e
                 } catch (e: Exception) {
                     false
                 } finally {
-                    try { doc?.destroy() } catch (_: Exception) {}
-                    try { tempInput?.delete() } catch (_: Exception) {}
+                    withContext(kotlinx.coroutines.NonCancellable) {
+                        try { doc?.destroy() } catch (_: Exception) {}
+                        try { tempInput?.delete() } catch (_: Exception) {}
+                    }
                 }
             }
         }

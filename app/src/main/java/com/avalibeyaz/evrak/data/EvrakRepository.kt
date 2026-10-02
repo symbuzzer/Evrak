@@ -95,22 +95,33 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         val existingEvrak = evrakDao.getEvrakByNameAndSize(finalName, fileSize)
 
         val evrak = if (existingEvrak != null) {
-            if (existingEvrak.path != finalCacheFile.absolutePath) {
+            val oldFile = File(existingEvrak.path)
+            if (oldFile.exists() && oldFile.length() == fileSize && existingEvrak.path != finalCacheFile.absolutePath) {
                 try {
-                    val oldFile = File(existingEvrak.path)
-                    if (oldFile.exists()) oldFile.delete()
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                    finalCacheFile.delete()
+                } catch (_: Exception) {}
+                val updated = existingEvrak.copy(dateOpened = System.currentTimeMillis())
+                if (isSupported) {
+                    evrakDao.updateEvrak(updated)
                 }
+                updated
+            } else {
+                if (existingEvrak.path != finalCacheFile.absolutePath) {
+                    try {
+                        if (oldFile.exists()) oldFile.delete()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                val updated = existingEvrak.copy(
+                    path = finalCacheFile.absolutePath,
+                    dateOpened = System.currentTimeMillis()
+                )
+                if (isSupported) {
+                    evrakDao.updateEvrak(updated)
+                }
+                updated
             }
-            val updated = existingEvrak.copy(
-                path = finalCacheFile.absolutePath,
-                dateOpened = System.currentTimeMillis()
-            )
-            if (isSupported) {
-                evrakDao.updateEvrak(updated)
-            }
-            updated
         } else {
             val newEvrak = Evrak(name = finalName, path = finalCacheFile.absolutePath, size = fileSize)
             if (isSupported) {
