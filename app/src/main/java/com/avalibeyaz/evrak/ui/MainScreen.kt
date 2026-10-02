@@ -511,6 +511,7 @@ fun MainScreen(
                                 }
                             }
                         }
+                        /*
                         TooltipBox(
                             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
@@ -526,6 +527,7 @@ fun MainScreen(
                                 Icon(Icons.Default.Science, contentDescription = stringResource(id = R.string.experimental_features))
                             }
                         }
+                        */
                         TooltipBox(
                             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above

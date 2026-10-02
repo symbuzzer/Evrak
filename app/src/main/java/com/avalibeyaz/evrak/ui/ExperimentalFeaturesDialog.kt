@@ -91,24 +91,7 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                ExperimentalToggleItem(
-                    label = stringResource(id = R.string.exp_file_search),
-                    checked = fileSearchEnabled,
-                    onCheckedChange = {
-                        fileSearchEnabled = it
-                        viewModel.setFileSearchEnabled(it)
-                    }
-                )
-
-                ExperimentalToggleItem(
-                    label = stringResource(id = R.string.exp_date_filter),
-                    checked = dateFilterEnabled,
-                    onCheckedChange = {
-                        dateFilterEnabled = it
-                        viewModel.setDateFilterEnabled(it)
-                    }
-                )
+                // Experimental features are currently empty / hidden
             }
         },
         confirmButton = {}

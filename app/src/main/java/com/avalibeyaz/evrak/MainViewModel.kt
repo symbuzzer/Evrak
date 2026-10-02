@@ -29,9 +29,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val sharedPrefs = application.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE)
 
-    private val _fileSearchEnabled = MutableStateFlow(
-        sharedPrefs.getBoolean("exp_file_search", false)
-    )
+    private val _fileSearchEnabled = MutableStateFlow(true)
     val fileSearchEnabled: StateFlow<Boolean> = _fileSearchEnabled.asStateFlow()
 
     fun setFileSearchEnabled(enabled: Boolean) {
@@ -39,9 +37,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         sharedPrefs.edit().putBoolean("exp_file_search", enabled).apply()
     }
 
-    private val _dateFilterEnabled = MutableStateFlow(
-        sharedPrefs.getBoolean("exp_date_filter", false)
-    )
+    private val _dateFilterEnabled = MutableStateFlow(true)
     val dateFilterEnabled: StateFlow<Boolean> = _dateFilterEnabled.asStateFlow()
 
     fun setDateFilterEnabled(enabled: Boolean) {
