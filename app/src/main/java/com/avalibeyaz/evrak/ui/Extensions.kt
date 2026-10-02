@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
+import com.avalibeyaz.evrak.R
 import java.io.File
 
 fun Context.findActivity(): Activity? {
@@ -46,12 +48,24 @@ fun isArchiveType(path: String): Boolean {
     return path.endsWith(".zip", ignoreCase = true) || path.endsWith(".eyp", ignoreCase = true)
 }
 
+fun Intent?.isExternalOpenIntent(): Boolean {
+    if (this == null) return false
+    if (getBooleanExtra("from_open_with", false)) return true
+    if (getBooleanExtra("internal_open", false)) return false
+    return action == Intent.ACTION_VIEW || action == Intent.ACTION_SEND
+}
+
+fun Context.showOpenedWithEvrakToast() {
+    Toast.makeText(applicationContext, getString(R.string.opened_with_evrak), Toast.LENGTH_SHORT).show()
+}
+
 fun openDocumentTask(context: Context, filePath: String, displayName: String) {
     if (isArchiveType(filePath)) {
         val intent = Intent(context, com.avalibeyaz.evrak.MainActivity::class.java).apply {
             putExtra("file_path", filePath)
             putExtra("display_name", displayName)
             putExtra("open_archive", true)
+            putExtra("internal_open", true)
             if (context !is Activity) {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
@@ -65,6 +79,7 @@ fun openDocumentTask(context: Context, filePath: String, displayName: String) {
             setDataAndType(uri, getMimeType(filePath))
             putExtra("file_path", filePath)
             putExtra("display_name", displayName)
+            putExtra("internal_open", true)
             addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
             addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
         }

@@ -90,6 +90,7 @@ class DocumentActivity : AppCompatActivity() {
             var isLoading by remember { mutableStateOf(currentFilePath.isEmpty() && uriExtra != null) }
 
             LaunchedEffect(intent) {
+                val isExternal = intent.isExternalOpenIntent()
                 if (currentFilePath.isEmpty() && uriExtra != null) {
                     try {
                         contentResolver.takePersistableUriPermission(
@@ -109,6 +110,9 @@ class DocumentActivity : AppCompatActivity() {
                             }
                         },
                         onOpened = { evrak ->
+                            if (isExternal) {
+                                showOpenedWithEvrakToast()
+                            }
                             currentFilePath = evrak.path
                             currentDisplayName = evrak.name
                             setDocumentTaskDescription(evrak.name)
@@ -116,6 +120,9 @@ class DocumentActivity : AppCompatActivity() {
                         }
                     )
                 } else if (currentFilePath.isNotEmpty()) {
+                    if (isExternal) {
+                        showOpenedWithEvrakToast()
+                    }
                     setDocumentTaskDescription(currentDisplayName)
                     isLoading = false
                     viewModel.ensureEvrak(currentFilePath, currentDisplayName) { evrak ->

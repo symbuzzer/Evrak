@@ -364,10 +364,15 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
     val appContext = context.applicationContext
     LaunchedEffect(intent) {
         intent?.let {
+            val isExternal = it.isExternalOpenIntent()
+
             if (it.getBooleanExtra("open_archive", false)) {
                 val path = it.getStringExtra("file_path") ?: ""
                 val name = it.getStringExtra("display_name") ?: ""
                 if (path.isNotEmpty()) {
+                    if (isExternal) {
+                        context.showOpenedWithEvrakToast()
+                    }
                     navController.navigate("viewer/${Uri.encode(path)}/${Uri.encode(name)}") {
                         popUpTo(navController.graph.startDestinationId) { inclusive = true }
                     }
@@ -379,7 +384,9 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                 val path = it.getStringExtra("file_path") ?: ""
                 val name = it.getStringExtra("display_name") ?: ""
                 if (path.isNotEmpty()) {
-                    android.widget.Toast.makeText(appContext, appContext.getString(R.string.opened_with_evrak), android.widget.Toast.LENGTH_SHORT).show()
+                    if (isExternal) {
+                        context.showOpenedWithEvrakToast()
+                    }
                     if (isArchiveType(path)) {
                         navController.navigate("viewer/${Uri.encode(path)}/${Uri.encode(name)}") {
                             popUpTo(navController.graph.startDestinationId) { inclusive = true }
@@ -430,7 +437,9 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         }
                     },
                     onOpened = { evrak ->
-                        android.widget.Toast.makeText(appContext, appContext.getString(R.string.opened_with_evrak), android.widget.Toast.LENGTH_SHORT).show()
+                        if (isExternal) {
+                            context.showOpenedWithEvrakToast()
+                        }
                         if (isArchiveType(evrak.path)) {
                             navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}") {
                                 popUpTo(navController.graph.startDestinationId) { inclusive = true }
