@@ -112,8 +112,4 @@
     <string name="theme_system">Default (System)</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_light">Light</string>
-    <string name="exp_language">Language</string>
-    <string name="language_default">Default (System)</string>
-    <string name="language_turkish">Türkçe</string>
-    <string name="language_english">English</string>
 </resources>

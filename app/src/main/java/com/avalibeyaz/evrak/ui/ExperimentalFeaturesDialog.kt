@@ -2,7 +2,6 @@ package com.avalibeyaz.evrak.ui
 
 import android.content.Context
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -21,52 +20,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.avalibeyaz.evrak.MainViewModel
 import com.avalibeyaz.evrak.R
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @Composable
 fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE) }
-    val coroutineScope = rememberCoroutineScope()
 
     var fileSearchEnabled by remember { mutableStateOf(prefs.getBoolean("exp_file_search", false)) }
     var dateFilterEnabled by remember { mutableStateOf(prefs.getBoolean("exp_date_filter", false)) }
     val themeMode by viewModel.themeMode.collectAsState()
-    var isChangingLanguage by remember { mutableStateOf(false) }
-
-    if (isChangingLanguage) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Image(
-                    painter = rememberAsyncImagePainter(model = R.mipmap.ic_launcher),
-                    contentDescription = null,
-                    modifier = Modifier.size(80.dp)
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                CircularProgressIndicator(
-                    modifier = Modifier.size(48.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    strokeWidth = 4.dp
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = stringResource(id = R.string.loading),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        }
-        return
-    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -155,25 +117,6 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
                         viewModel.setThemeMode(it)
                     }
                 )
-
-                val currentLocales = androidx.appcompat.app.AppCompatDelegate.getApplicationLocales()
-                val currentTag = if (currentLocales.isEmpty) "" else currentLocales.toLanguageTags()
-                ExperimentalLanguageItem(
-                    currentTag = currentTag,
-                    onLanguageSelected = { tag ->
-                        isChangingLanguage = true
-                        coroutineScope.launch {
-                            delay(400)
-                            val locales = if (tag.isEmpty()) {
-                                androidx.core.os.LocaleListCompat.forLanguageTags("")
-                            } else {
-                                androidx.core.os.LocaleListCompat.forLanguageTags(tag)
-                            }
-                            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(locales)
-                            context.findActivity()?.recreate()
-                        }
-                    }
-                )
             }
         },
         confirmButton = {}
@@ -223,57 +166,6 @@ private fun ExperimentalThemeItem(
                         onClick = {
                             expanded = false
                             onThemeModeSelected(mode)
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ExperimentalLanguageItem(
-    currentTag: String,
-    onLanguageSelected: (String) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    val languages = listOf(
-        "" to stringResource(id = R.string.language_default),
-        "tr" to stringResource(id = R.string.language_turkish),
-        "en" to stringResource(id = R.string.language_english)
-    )
-
-    val currentLabel = languages.find { it.first == currentTag }?.second ?: stringResource(id = R.string.language_default)
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = stringResource(id = R.string.exp_language),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp)
-        )
-        Box {
-            OutlinedButton(onClick = { expanded = true }) {
-                Text(text = currentLabel, style = MaterialTheme.typography.bodySmall)
-            }
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                languages.forEach { (tag, label) ->
-                    DropdownMenuItem(
-                        text = { Text(text = label) },
-                        onClick = {
-                            expanded = false
-                            onLanguageSelected(tag)
                         }
                     )
                 }
