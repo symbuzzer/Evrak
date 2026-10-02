@@ -108,8 +108,4 @@
     <string name="exp_date_filter">Date filtering</string>
     <string name="search_files">Search files</string>
     <string name="search_hint">Enter file name</string>
-    <string name="exp_theme">Theme</string>
-    <string name="theme_system">Default (System)</string>
-    <string name="theme_dark">Dark</string>
-    <string name="theme_light">Light</string>
 </resources>

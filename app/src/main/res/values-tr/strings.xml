@@ -107,8 +107,4 @@
     <string name="exp_date_filter">Tarih filtresi</string>
     <string name="search_files">Dosya ara</string>
     <string name="search_hint">Dosya adı girin</string>
-    <string name="exp_theme">Tema</string>
-    <string name="theme_system">Varsayılan (Sistem)</string>
-    <string name="theme_dark">Karanlık</string>
-    <string name="theme_light">Aydınlık</string>
 </resources>

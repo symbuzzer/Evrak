@@ -83,7 +83,6 @@ class DocumentActivity : AppCompatActivity() {
         }
 
         setContent {
-            val themeMode by viewModel.themeMode.collectAsState()
             var currentFilePath by remember { mutableStateOf(filePathExtra) }
             var currentDisplayName by remember { mutableStateOf(displayNameExtra) }
             var forceTextState by remember { mutableStateOf(false) }
@@ -132,7 +131,7 @@ class DocumentActivity : AppCompatActivity() {
                 }
             }
 
-            EvrakTheme(themeMode = themeMode) {
+            EvrakTheme {
                 if (isLoading || currentFilePath.isEmpty()) {
                     WaitScreenOverlay(
                         show = true,

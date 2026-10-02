@@ -43,10 +43,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContent {
-            val themeMode by viewModel.themeMode.collectAsState()
-            EvrakTheme(
-                themeMode = themeMode
-            ) {
+            EvrakTheme {
                 EvrakApp(
                     viewModel = viewModel,
                     intent = currentIntent,

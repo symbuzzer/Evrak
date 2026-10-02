@@ -20,16 +20,10 @@ private val LightColorScheme = lightColorScheme()
 
 @Composable
 fun EvrakTheme(
-    themeMode: String = "system",
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val systemDark = isSystemInDarkTheme()
-    val darkTheme = when (themeMode) {
-        "dark" -> true
-        "light" -> false
-        else -> systemDark
-    }
+    val darkTheme = isSystemInDarkTheme()
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current

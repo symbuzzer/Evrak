@@ -28,7 +28,6 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
 
     var fileSearchEnabled by remember { mutableStateOf(prefs.getBoolean("exp_file_search", false)) }
     var dateFilterEnabled by remember { mutableStateOf(prefs.getBoolean("exp_date_filter", false)) }
-    val themeMode by viewModel.themeMode.collectAsState()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -110,68 +109,10 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
                         viewModel.setDateFilterEnabled(it)
                     }
                 )
-
-                ExperimentalThemeItem(
-                    currentThemeMode = themeMode,
-                    onThemeModeSelected = {
-                        viewModel.setThemeMode(it)
-                    }
-                )
             }
         },
         confirmButton = {}
     )
-}
-
-@Composable
-private fun ExperimentalThemeItem(
-    currentThemeMode: String,
-    onThemeModeSelected: (String) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    val themes = listOf(
-        "system" to stringResource(id = R.string.theme_system),
-        "dark" to stringResource(id = R.string.theme_dark),
-        "light" to stringResource(id = R.string.theme_light)
-    )
-
-    val currentLabel = themes.find { it.first == currentThemeMode }?.second ?: stringResource(id = R.string.theme_system)
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = stringResource(id = R.string.exp_theme),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp)
-        )
-        Box {
-            OutlinedButton(onClick = { expanded = true }) {
-                Text(text = currentLabel, style = MaterialTheme.typography.bodySmall)
-            }
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                themes.forEach { (mode, label) ->
-                    DropdownMenuItem(
-                        text = { Text(text = label) },
-                        onClick = {
-                            expanded = false
-                            onThemeModeSelected(mode)
-                        }
-                    )
-                }
-            }
-        }
-    }
 }
 
 @Composable
