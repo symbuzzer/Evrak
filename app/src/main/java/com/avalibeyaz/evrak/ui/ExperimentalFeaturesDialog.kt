@@ -1,6 +1,5 @@
 package com.avalibeyaz.evrak.ui
 
-import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -23,12 +21,6 @@ import com.avalibeyaz.evrak.R
 
 @Composable
 fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE) }
-
-    var fileSearchEnabled by remember { mutableStateOf(prefs.getBoolean("exp_file_search", false)) }
-    var dateFilterEnabled by remember { mutableStateOf(prefs.getBoolean("exp_date_filter", false)) }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = {

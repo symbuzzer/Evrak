@@ -346,7 +346,14 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
     }
 
     if (showAboutDialog) {
-        AboutDialog(showCelseIntegration = showCelseIntegration) { showAboutDialog = false }
+        AboutDialog(
+            showCelseIntegration = showCelseIntegration,
+            onDismiss = { showAboutDialog = false },
+            onOpenExperimental = {
+                showAboutDialog = false
+                showExperimentalDialog = true
+            }
+        )
     }
 
     if (showExperimentalDialog) {

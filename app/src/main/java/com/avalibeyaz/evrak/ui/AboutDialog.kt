@@ -4,10 +4,12 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -20,8 +22,7 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shop
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -42,10 +43,41 @@ import com.avalibeyaz.evrak.R
 import com.google.android.play.core.review.ReviewManagerFactory
 
 @Composable
-fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
+fun AboutDialog(
+    showCelseIntegration: Boolean,
+    onDismiss: () -> Unit,
+    onOpenExperimental: () -> Unit = {}
+) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val scrollState = rememberScrollState()
+
+    var tapCount by remember { mutableIntStateOf(0) }
+    var lastTapTime by remember { mutableLongStateOf(0L) }
+    var currentToast by remember { mutableStateOf<Toast?>(null) }
+
+    val handleHeaderTap = {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastTapTime > 1500) {
+            tapCount = 1
+        } else {
+            tapCount += 1
+        }
+        lastTapTime = currentTime
+
+        val remaining = 7 - tapCount
+        if (remaining in 1..4) {
+            currentToast?.cancel()
+            val msg = context.resources.getString(R.string.experimental_steps_remaining, remaining)
+            currentToast = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply { show() }
+        } else if (remaining <= 0) {
+            currentToast?.cancel()
+            val msg = context.resources.getString(R.string.experimental_unlocked)
+            currentToast = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply { show() }
+            tapCount = 0
+            onOpenExperimental()
+        }
+    }
 
     val supportedFormatsText = stringResource(id = R.string.about_supported_formats_list)
     val shareText = stringResource(id = R.string.share_app_text)
@@ -70,7 +102,13 @@ fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
             Image(
                 painter = rememberAsyncImagePainter(model = R.mipmap.ic_launcher),
                 contentDescription = null,
-                modifier = Modifier.size(64.dp)
+                modifier = Modifier
+                    .size(64.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = handleHeaderTap
+                    )
             )
         },
         title = {
@@ -84,7 +122,12 @@ fun AboutDialog(showCelseIntegration: Boolean, onDismiss: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
                     ),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = handleHeaderTap
+                    )
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 val developerName = stringResource(id = R.string.about_developer_name)

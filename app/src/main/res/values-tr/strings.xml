@@ -24,7 +24,7 @@
     <string name="error_file_not_found">Dosya bulunamadı</string>
     <string name="error_unknown">Bilinmeyen hata</string>
     <string name="about_developed_by">%1$s tarafından geliştirilmiştir</string>
-    <string name="about_developer_name">Ali BEYAZ</string>
+    <string name="about_developer_name">Av. Arb. Ali BEYAZ</string>
     <string name="about_supported_formats">Desteklenen formatlar:</string>
     <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS PPTX PPT EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
@@ -102,9 +102,8 @@
 
     <string name="experimental_features">Deneysel özellikler</string>
     <string name="experimental_features_desc">Burada yer alan özellikler henüz geliştirme aşamasındadır ve doğru çalışmayabilir.</string>
-    <string name="exp_powerpoint">PowerPoint desteği</string>
-    <string name="exp_file_search">Dosya arama</string>
-    <string name="exp_date_filter">Tarih filtresi</string>
+    <string name="experimental_steps_remaining">Deneysel özelliklerin açılmasına %1$d adım kaldı.</string>
+    <string name="experimental_unlocked">Deneysel özellikler açıldı!</string>
     <string name="search_files">Dosya ara</string>
     <string name="search_hint">Dosya adı girin</string>
 </resources>

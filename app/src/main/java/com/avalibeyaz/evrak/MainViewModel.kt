@@ -34,7 +34,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setFileSearchEnabled(enabled: Boolean) {
         _fileSearchEnabled.value = enabled
-        sharedPrefs.edit().putBoolean("exp_file_search", enabled).apply()
     }
 
     private val _dateFilterEnabled = MutableStateFlow(true)
@@ -42,7 +41,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setDateFilterEnabled(enabled: Boolean) {
         _dateFilterEnabled.value = enabled
-        sharedPrefs.edit().putBoolean("exp_date_filter", enabled).apply()
         if (!enabled) {
             _selectedDateFilter.value = EvrakDateFilter.ALL
         }
