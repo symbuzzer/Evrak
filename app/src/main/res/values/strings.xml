@@ -22,6 +22,7 @@
 
     <string name="error">Error</string>
     <string name="error_file_not_found">File not found</string>
+    <string name="error_file_incomplete">The file has not been completely downloaded yet or is empty. Please try again.</string>
     <string name="error_unknown">Unknown error</string>
     <string name="about_developed_by">Developed by %1$s</string>
     <string name="about_developer_name">Ali BEYAZ</string>

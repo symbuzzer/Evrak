@@ -90,10 +90,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (evrak != null) {
                     onOpened(evrak)
                 } else {
-                    onError(getApplication<Application>().getString(R.string.error_unknown))
+                    onError(getApplication<Application>().getString(R.string.error_file_incomplete))
                 }
             } catch (e: Exception) {
-                onError(e.localizedMessage ?: getApplication<Application>().getString(R.string.error_unknown))
+                onError(e.localizedMessage ?: getApplication<Application>().getString(R.string.error_file_incomplete))
             }
         }
     }

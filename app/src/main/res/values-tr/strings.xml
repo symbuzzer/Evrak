@@ -22,6 +22,7 @@
 
     <string name="error">Hata</string>
     <string name="error_file_not_found">Dosya bulunamadı</string>
+    <string name="error_file_incomplete">Dosya henüz tamamen indirilmedi veya boş. Lütfen tekrar deneyin.</string>
     <string name="error_unknown">Bilinmeyen hata</string>
     <string name="about_developed_by">%1$s tarafından geliştirilmiştir</string>
     <string name="about_developer_name">Av. Arb. Ali BEYAZ</string>

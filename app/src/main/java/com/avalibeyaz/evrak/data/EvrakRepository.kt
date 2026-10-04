@@ -13,6 +13,8 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.zip.ZipFile
 
+class IncompleteDownloadException(message: String) : Exception(message)
+
 class EvrakRepository(private val context: Context, private val evrakDao: EvrakDao) {
     val allEvraklar: Flow<List<Evrak>> = evrakDao.getAllEvraklar()
 
@@ -25,6 +27,26 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
 
     suspend fun addEvrakFromUri(uri: Uri, resolver: ContentResolver? = null): Evrak? {
         val cr = resolver ?: context.contentResolver
+
+        if (uri.scheme == "content") {
+            try {
+                cr.query(uri, arrayOf(OpenableColumns.SIZE, "is_pending"), null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val pendingIndex = cursor.getColumnIndex("is_pending")
+                        if (pendingIndex != -1 && !cursor.isNull(pendingIndex) && cursor.getInt(pendingIndex) == 1) {
+                            throw IncompleteDownloadException(context.getString(R.string.error_file_incomplete))
+                        }
+                        val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                        if (sizeIndex != -1 && !cursor.isNull(sizeIndex) && cursor.getLong(sizeIndex) == 0L) {
+                            throw IncompleteDownloadException(context.getString(R.string.error_file_incomplete))
+                        }
+                    }
+                }
+            } catch (e: IncompleteDownloadException) {
+                throw e
+            } catch (_: Exception) {
+            }
+        }
         
         val mimeType = try { cr.getType(uri) } catch (_: Exception) { null }
         var extension = getExtensionFromMime(mimeType, uri)
@@ -323,7 +345,9 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                         onSniffed(sniffedExtension)
 
                         FileOutputStream(tempFile).use { output ->
-                            output.write(header, 0, read)
+                            if (read > 0) {
+                                output.write(header, 0, read)
+                            }
                             val buffer = ByteArray(16384)
                             var bytesRead: Int
                             while (input.read(buffer).also { bytesRead = it } != -1) {
@@ -333,7 +357,9 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                     }
                 }
                 true
-            } catch (e: Exception) {
+            } catch (e: IncompleteDownloadException) {
+                throw e
+            } catch (_: Exception) {
                 try {
                     cr.openInputStream(uri)?.use { input ->
                         FileOutputStream(tempFile).use { output ->
@@ -345,6 +371,8 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                         }
                     }
                     true
+                } catch (e2: IncompleteDownloadException) {
+                    throw e2
                 } catch (_: Exception) {
                     false
                 }
@@ -354,8 +382,10 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 tempFile
             } else {
                 if (tempFile.exists()) tempFile.delete()
-                null
+                throw IncompleteDownloadException(context.getString(R.string.error_file_incomplete))
             }
+        } catch (e: IncompleteDownloadException) {
+            throw e
         } catch (e: Exception) {
             null
         }
