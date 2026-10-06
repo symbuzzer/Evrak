@@ -38,7 +38,7 @@ object DocumentConverter {
         val ext = inputFile.extension.lowercase()
         if (ext in listOf("doc", "docx", "xls", "xlsx", "ppt", "pptx")) {
             if (!validateOfficeFile(inputFile)) {
-                val errorMsg = context?.getString(R.string.error_file_read_failed, "Invalid or corrupted office file") 
+                val errorMsg = context?.let { FileErrorUtils.getStandardizedErrorMessage(it, "Invalid or corrupted office file") } 
                     ?: "Invalid or corrupted office file"
                 return ConversionResult.Error(errorMsg)
             }
@@ -341,7 +341,8 @@ object DocumentConverter {
             writePdf(pdfDocument, outputFile)
             return ConversionResult.Success(outputFile)
         } catch (e: Exception) {
-            return ConversionResult.Error("TIFF error: ${e.message}")
+            val msg = context?.let { FileErrorUtils.getStandardizedErrorMessage(it, e) } ?: "TIFF error: ${e.message}"
+            return ConversionResult.Error(msg)
         } finally {
             try { tiffRenderer?.close() } catch (_: Exception) {}
             pfd?.close(); pdfDocument.close()
@@ -357,9 +358,9 @@ object DocumentConverter {
             try {
                 val success = LibreOfficeManager.convertToPdf(inputFile, outputFile, context)
                 if (success) ConversionResult.Success(outputFile)
-                else ConversionResult.Error(context.getString(R.string.error_libreoffice_failed))
+                else ConversionResult.Error(FileErrorUtils.getStandardizedErrorMessage(context, "LibreOffice failed"))
             } catch (e: Exception) {
-                ConversionResult.Error("Word error: ${e.message}")
+                ConversionResult.Error(FileErrorUtils.getStandardizedErrorMessage(context, e))
             }
         }
     }

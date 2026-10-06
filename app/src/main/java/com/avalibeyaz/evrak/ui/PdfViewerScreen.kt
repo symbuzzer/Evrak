@@ -75,6 +75,7 @@ fun PdfViewerScreen(
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
     var isFullScreen by remember { mutableStateOf(false) }
+    var loadError by remember { mutableStateOf<String?>(null) }
 
     BackHandler(enabled = isFullScreen) {
         isFullScreen = false
@@ -250,6 +251,16 @@ fun PdfViewerScreen(
                     }
                 }
             }
+        } else if (loadError != null) {
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
+                    Text(text = loadError!!, color = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = onBackClick) {
+                        Text(text = stringResource(id = R.string.ok))
+                    }
+                }
+            }
         } else {
             Box(
                 modifier = Modifier
@@ -281,7 +292,16 @@ fun PdfViewerScreen(
                             
                             webChromeClient = object : WebChromeClient() {
                                 override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
-                                    Log.d("PdfViewerJS", "${consoleMessage?.message()} -- From line ${consoleMessage?.lineNumber()} of ${consoleMessage?.sourceId()}")
+                                    val msg = consoleMessage?.message() ?: ""
+                                    Log.d("PdfViewerJS", "$msg -- From line ${consoleMessage?.lineNumber()} of ${consoleMessage?.sourceId()}")
+                                    if (msg.contains("InvalidPDFException", true) ||
+                                        msg.contains("Invalid or corrupted PDF", true) ||
+                                        msg.contains("MissingPDFException", true) ||
+                                        msg.contains("UnexpectedResponseException", true) ||
+                                        msg.contains("An error occurred while loading the PDF", true)) {
+                                        loadError = FileErrorUtils.getStandardizedErrorMessage(context, msg)
+                                        isLoading = false
+                                    }
                                     return true
                                 }
                             }

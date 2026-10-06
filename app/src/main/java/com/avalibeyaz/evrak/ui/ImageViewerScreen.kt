@@ -290,7 +290,7 @@ fun ImageViewerScreen(
                     onError = { state ->
                         if (!isHeic) {
                             isLoading = false
-                            loadError = state.result.throwable.message ?: "Unknown Coil error"
+                            loadError = FileErrorUtils.getStandardizedErrorMessage(context, state.result.throwable)
                             android.util.Log.e("Evrak", "Coil error loading $filePath: ${state.result.throwable}")
                         }
                     },

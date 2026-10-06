@@ -58,13 +58,13 @@ fun OfficeToHtmlLoader(
                 } else {
                     withContext(Dispatchers.Main) {
                         val msg = if (result is DocumentConverter.ConversionResult.Error) result.message else "Conversion failed"
-                        loadError = msg
+                        loadError = FileErrorUtils.getStandardizedErrorMessage(context, msg)
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
-                    loadError = e.localizedMessage ?: context.getString(R.string.error_unknown)
+                    loadError = FileErrorUtils.getStandardizedErrorMessage(context, e)
                 }
             } finally {
                 withContext(Dispatchers.Main) {

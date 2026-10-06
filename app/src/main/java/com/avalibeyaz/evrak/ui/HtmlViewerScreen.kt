@@ -119,7 +119,7 @@ fun HtmlViewerScreen(
                         }
                     } else if (result is DocumentConverter.ConversionResult.Error) {
                         withContext(Dispatchers.Main) {
-                            loadError = context.getString(R.string.error_conversion_failed, result.message)
+                            loadError = FileErrorUtils.getStandardizedErrorMessage(context, result.message)
                             Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -337,7 +337,7 @@ fun HtmlViewerScreen(
                                     DocumentConverter.shareFile(context, tempPdf, "application/pdf")
                                 } else if (result is DocumentConverter.ConversionResult.Error) {
                                     withContext(Dispatchers.Main) {
-                                        loadError = context.getString(R.string.error_conversion_failed, result.message)
+                                        loadError = FileErrorUtils.getStandardizedErrorMessage(context, result.message)
                                     }
                                 }
                             } finally {

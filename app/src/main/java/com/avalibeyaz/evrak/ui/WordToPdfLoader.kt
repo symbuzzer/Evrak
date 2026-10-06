@@ -63,7 +63,7 @@ fun WordToPdfLoader(
                         } else {
                             val msg = if (result is DocumentConverter.ConversionResult.Error) result.message else "Conversion failed"
                             withContext(Dispatchers.Main) {
-                                loadError = context.getString(R.string.error_conversion_failed, msg)
+                                loadError = FileErrorUtils.getStandardizedErrorMessage(context, msg)
                             }
                             false
                         }
@@ -81,7 +81,7 @@ fun WordToPdfLoader(
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
-                    loadError = e.localizedMessage ?: context.getString(R.string.error_unknown)
+                    loadError = FileErrorUtils.getStandardizedErrorMessage(context, e)
                 }
             } finally {
                 isLoading = false

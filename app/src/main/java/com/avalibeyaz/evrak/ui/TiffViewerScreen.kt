@@ -139,7 +139,7 @@ fun TiffViewerScreen(
                 awaitCancellation()
             } catch (e: Exception) {
                 e.printStackTrace()
-                loadError = context.getString(R.string.error_tiff_open_failed, e.message ?: "")
+                loadError = FileErrorUtils.getStandardizedErrorMessage(context, e)
                 withContext(Dispatchers.Main) { isLoading = false }
             } finally {
                 withContext(NonCancellable) {

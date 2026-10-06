@@ -141,7 +141,7 @@ fun ZipViewerScreen(
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            errorMessage = context.getString(R.string.error_file_read_failed, e.localizedMessage)
+            errorMessage = FileErrorUtils.getStandardizedErrorMessage(context, e)
         } finally {
             isLoading = false
         }

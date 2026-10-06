@@ -86,14 +86,14 @@ fun UdfViewerScreen(
                 } else {
                     val html = UdfHtmlConverter.convertUdfToHtml(file, context)
                     if (html.isEmpty()) {
-                        wrapUdfHtmlError(context, context.getString(R.string.error_udf_read))
+                        wrapUdfHtmlError(context, FileErrorUtils.getStandardizedErrorMessage(context, "error_udf_read"))
                     } else {
                         html
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                wrapUdfHtmlError(context, e.localizedMessage ?: context.getString(R.string.error_unknown))
+                wrapUdfHtmlError(context, FileErrorUtils.getStandardizedErrorMessage(context, e))
             } finally {
                 isLoading = false
             }
