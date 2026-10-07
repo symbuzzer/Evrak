@@ -347,7 +347,7 @@ fun MainScreen(
                             }
                         } else if (result is DocumentConverter.ConversionResult.Error) {
                             withContext(Dispatchers.Main) {
-                                conversionError = context.getString(R.string.error_conversion_failed, result.message)
+                                conversionError = FileErrorUtils.getStandardizedErrorMessage(context, result.message)
                                 Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
                             }
                         }
@@ -953,7 +953,7 @@ fun MainScreen(
                                     DocumentConverter.shareFile(context, tempPdf, "application/pdf")
                                 } else if (result is DocumentConverter.ConversionResult.Error) {
                                     withContext(Dispatchers.Main) {
-                                        conversionError = context.getString(R.string.error_conversion_failed, result.message)
+                                        conversionError = FileErrorUtils.getStandardizedErrorMessage(context, result.message)
                                     }
                                 }
                             } finally {

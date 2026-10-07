@@ -94,10 +94,10 @@ fun TextViewerScreen(
         withContext(Dispatchers.IO) {
             try {
                 val file = File(filePath)
-                if (file.exists()) {
+                if (file.exists() && file.length() > 0L) {
                     textContent = file.readText(Charset.forName("UTF-8"))
                 } else {
-                    errorMessage = context.getString(R.string.error_file_not_found)
+                    errorMessage = FileErrorUtils.getStandardizedErrorMessage(context, "not_found")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

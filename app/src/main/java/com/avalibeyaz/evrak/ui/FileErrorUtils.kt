@@ -19,11 +19,7 @@ object FileErrorUtils {
             return cause.localizedMessage ?: context.getString(R.string.error_file_incomplete)
         }
 
-        if (cause is FileNotFoundException) {
-            return context.getString(R.string.error_file_not_found)
-        }
-
-        if (cause is ZipException || cause is EOFException || cause is StreamCorruptedException) {
+        if (cause is FileNotFoundException || cause is ZipException || cause is EOFException || cause is StreamCorruptedException) {
             return context.getString(R.string.error_file_incomplete)
         }
 
@@ -40,6 +36,8 @@ object FileErrorUtils {
         return when {
             lower.contains("incomplete") ||
             lower.contains("tamamen indirilmedi") ||
+            lower.contains("not found") ||
+            lower.contains("bulunamadı") ||
             lower.contains("central directory") ||
             lower.contains("eof") ||
             lower.contains("corrupt") ||
@@ -56,9 +54,6 @@ object FileErrorUtils {
             lower.contains("unexpected end") ||
             lower.contains("stream ended") -> {
                 context.getString(R.string.error_file_incomplete)
-            }
-            lower.contains("not found") || lower.contains("bulunamadı") -> {
-                context.getString(R.string.error_file_not_found)
             }
             else -> rawMessage
         }

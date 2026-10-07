@@ -45,9 +45,9 @@ fun WordToPdfLoader(
         withContext(Dispatchers.IO) {
             try {
                 val file = File(filePath)
-                if (!file.exists()) {
+                if (!file.exists() || file.length() == 0L) {
                     withContext(Dispatchers.Main) {
-                        loadError = context.getString(R.string.error_file_not_found)
+                        loadError = FileErrorUtils.getStandardizedErrorMessage(context, "not_found")
                     }
                     return@withContext
                 }

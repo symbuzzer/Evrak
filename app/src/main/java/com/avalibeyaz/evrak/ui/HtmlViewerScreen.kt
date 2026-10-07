@@ -78,6 +78,7 @@ fun HtmlViewerScreen(
     val defaultConvertingMessage = stringResource(id = R.string.converting)
     var showFormatDialog by remember { mutableStateOf<String?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    var readError by remember { mutableStateOf<String?>(null) }
 
     val saveHtmlLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/html")
@@ -136,50 +137,57 @@ fun HtmlViewerScreen(
     }
 
     val htmlContent = remember(filePath) {
-        try {
-            var content = File(filePath).readText(Charsets.UTF_8)
-            val isExcel = originalExtension?.contains("XLS", true) == true
-            val isPresentation = originalExtension?.contains("PPT", true) == true
-            
-            val tableStyle = if (isExcel) {
-                "table { border-collapse: collapse; width: auto; min-width: 100%; margin-bottom: 20px; table-layout: auto; }"
-            } else {
-                "table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }"
-            }
-            
-            val cellStyle = if (isExcel) {
-                "th, td { border: 1px solid #ccc; padding: 8px; text-align: left; white-space: nowrap; }"
-            } else {
-                "th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }"
-            }
-
-            val presentationStyle = if (isPresentation) {
-                """
-                body { background-color: #e9ecef; padding: 16px; }
-                img { max-width: 100%; height: auto; display: block; margin: 0 auto 30px auto; box-shadow: 0 6px 20px rgba(0,0,0,0.15); border-radius: 8px; background: #fff; }
-                div, section { background: #ffffff; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); margin-bottom: 30px; padding: 30px; }
-                """.trimIndent()
-            } else ""
-
-            val css = """
-                <style>
-                    $tableStyle
-                    $cellStyle
-                    $presentationStyle
-                    th { background-color: #f2f2f2; }
-                    body { font-family: sans-serif; padding: 10px; }
-                    img { max-width: 100%; height: auto; }
-                </style>
-            """.trimIndent()
-            
-            if (content.contains("<head>", ignoreCase = true)) {
-                content = content.replace("<head>", "<head>$css", ignoreCase = true)
-            } else {
-                content = "<html><head>$css</head><body>$content</body></html>"
-            }
-            content
-        } catch (e: Exception) {
+        val file = File(filePath)
+        if (!file.exists() || file.length() == 0L) {
+            readError = FileErrorUtils.getStandardizedErrorMessage(context, "not_found")
             null
+        } else {
+            try {
+                var content = file.readText(Charsets.UTF_8)
+                val isExcel = originalExtension?.contains("XLS", true) == true
+                val isPresentation = originalExtension?.contains("PPT", true) == true
+                
+                val tableStyle = if (isExcel) {
+                    "table { border-collapse: collapse; width: auto; min-width: 100%; margin-bottom: 20px; table-layout: auto; }"
+                } else {
+                    "table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }"
+                }
+                
+                val cellStyle = if (isExcel) {
+                    "th, td { border: 1px solid #ccc; padding: 8px; text-align: left; white-space: nowrap; }"
+                } else {
+                    "th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }"
+                }
+
+                val presentationStyle = if (isPresentation) {
+                    """
+                    body { background-color: #e9ecef; padding: 16px; }
+                    img { max-width: 100%; height: auto; display: block; margin: 0 auto 30px auto; box-shadow: 0 6px 20px rgba(0,0,0,0.15); border-radius: 8px; background: #fff; }
+                    div, section { background: #ffffff; border-radius: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); margin-bottom: 30px; padding: 30px; }
+                    """.trimIndent()
+                } else ""
+
+                val css = """
+                    <style>
+                        $tableStyle
+                        $cellStyle
+                        $presentationStyle
+                        th { background-color: #f2f2f2; }
+                        body { font-family: sans-serif; padding: 10px; }
+                        img { max-width: 100%; height: auto; }
+                    </style>
+                """.trimIndent()
+                
+                if (content.contains("<head>", ignoreCase = true)) {
+                    content = content.replace("<head>", "<head>$css", ignoreCase = true)
+                } else {
+                    content = "<html><head>$css</head><body>$content</body></html>"
+                }
+                content
+            } catch (e: Exception) {
+                readError = FileErrorUtils.getStandardizedErrorMessage(context, e)
+                null
+            }
         }
     }
 
@@ -258,32 +266,39 @@ fun HtmlViewerScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            AndroidView(
-                factory = { ctx ->
-                    WebView(ctx).apply {
-                        webViewClient = WebViewClient()
-                        settings.apply {
-                            javaScriptEnabled = true
-                            loadWithOverviewMode = true
-                            useWideViewPort = true
-                            builtInZoomControls = true
-                            displayZoomControls = false
-                            allowFileAccess = true
-                            allowContentAccess = true
-                            domStorageEnabled = true
-                            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                        }
-                        
-                        if (htmlContent != null) {
-                            loadDataWithBaseURL("https://evrak.app/", htmlContent, "text/html", "UTF-8", null)
-                        } else {
-                            loadUrl("file://$filePath")
+            if (readError != null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
+                        Text(text = readError!!, color = MaterialTheme.colorScheme.error)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = onBackClick) {
+                            Text(text = stringResource(id = R.string.ok))
                         }
                     }
-                },
-                update = { },
-                modifier = Modifier.fillMaxSize()
-            )
+                }
+            } else if (htmlContent != null) {
+                AndroidView(
+                    factory = { ctx ->
+                        WebView(ctx).apply {
+                            webViewClient = WebViewClient()
+                            settings.apply {
+                                javaScriptEnabled = true
+                                loadWithOverviewMode = true
+                                useWideViewPort = true
+                                builtInZoomControls = true
+                                displayZoomControls = false
+                                allowFileAccess = true
+                                allowContentAccess = true
+                                domStorageEnabled = true
+                                mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                            }
+                            loadDataWithBaseURL("https://evrak.app/", htmlContent, "text/html", "UTF-8", null)
+                        }
+                    },
+                    update = { },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             WaitScreenOverlay(
                 show = isConverting,

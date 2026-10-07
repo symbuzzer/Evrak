@@ -137,7 +137,7 @@ fun ZipViewerScreen(
                 }
                 errorMessage = null
             } else {
-                errorMessage = context.getString(R.string.error_file_not_found)
+                errorMessage = FileErrorUtils.getStandardizedErrorMessage(context, "not_found")
             }
         } catch (e: Exception) {
             e.printStackTrace()

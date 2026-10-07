@@ -81,8 +81,8 @@ fun UdfViewerScreen(
         withContext(Dispatchers.IO) {
             htmlContent = try {
                 val file = File(filePath)
-                if (!file.exists()) {
-                    wrapUdfHtmlError(context, context.getString(R.string.error_file_not_found))
+                if (!file.exists() || file.length() == 0L) {
+                    wrapUdfHtmlError(context, FileErrorUtils.getStandardizedErrorMessage(context, "file_not_found"))
                 } else {
                     val html = UdfHtmlConverter.convertUdfToHtml(file, context)
                     if (html.isEmpty()) {
