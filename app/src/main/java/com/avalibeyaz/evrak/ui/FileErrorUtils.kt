@@ -32,7 +32,7 @@ object FileErrorUtils {
             return context.getString(R.string.error_file_incomplete)
         }
 
-        val lower = rawMessage.lowercase()
+        val lower = rawMessage.lowercase().replace("_", " ").replace("-", " ")
         return when {
             lower.contains("incomplete") ||
             lower.contains("tamamen indirilmedi") ||
@@ -46,10 +46,10 @@ object FileErrorUtils {
             lower.contains("invalid zip") ||
             lower.contains("parse failed") ||
             lower.contains("read error") ||
-            lower.contains("read_failed") ||
-            lower.contains("udf_read") ||
-            lower.contains("tiff_open_failed") ||
-            lower.contains("conversion_failed") ||
+            lower.contains("read failed") ||
+            lower.contains("udf read") ||
+            lower.contains("tiff open failed") ||
+            lower.contains("conversion failed") ||
             lower.contains("invalid or corrupted") ||
             lower.contains("unexpected end") ||
             lower.contains("stream ended") -> {
