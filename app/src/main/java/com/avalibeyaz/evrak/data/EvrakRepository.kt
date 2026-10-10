@@ -131,6 +131,14 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             return null
         }
 
+        if (actualCacheFile.length() <= 0L) {
+            try {
+                if (actualCacheFile.exists()) actualCacheFile.delete()
+                if (cacheFile.exists() && cacheFile.absolutePath != actualCacheFile.absolutePath) cacheFile.delete()
+            } catch (_: Exception) {}
+            throw IncompleteDownloadException(context.getString(R.string.error_file_incomplete))
+        }
+
         val isSupported = supportedExtensions.any { finalName.endsWith(it, ignoreCase = true) }
         
         val fileSize = actualCacheFile.length()
@@ -351,51 +359,34 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             if (!cacheDir.exists()) cacheDir.mkdirs()
             
             val tempFile = File(cacheDir, "temp_${System.currentTimeMillis()}")
-            
             var sniffedExtension: String? = null
 
             val success = try {
-                cr.openFileDescriptor(uri, "r")?.use { pfd ->
-                    FileInputStream(pfd.fileDescriptor).use { input ->
-                        val header = ByteArray(12)
-                        val read = input.read(header)
-                        if (read >= 4) {
-                            sniffedExtension = sniffFileType(header)
-                        }
-                        onSniffed(sniffedExtension)
+                cr.openInputStream(uri)?.use { input ->
+                    val header = ByteArray(12)
+                    val read = input.read(header)
+                    if (read >= 4) {
+                        sniffedExtension = sniffFileType(header)
+                    }
+                    onSniffed(sniffedExtension)
 
-                        FileOutputStream(tempFile).use { output ->
-                            if (read > 0) {
-                                output.write(header, 0, read)
-                            }
-                            val buffer = ByteArray(16384)
-                            var bytesRead: Int
-                            while (input.read(buffer).also { bytesRead = it } != -1) {
-                                output.write(buffer, 0, bytesRead)
-                            }
+                    FileOutputStream(tempFile).use { output ->
+                        if (read > 0) {
+                            output.write(header, 0, read)
+                        }
+                        val buffer = ByteArray(16384)
+                        var bytesRead: Int
+                        while (input.read(buffer).also { bytesRead = it } != -1) {
+                            output.write(buffer, 0, bytesRead)
                         }
                     }
                 }
                 true
             } catch (e: IncompleteDownloadException) {
                 throw e
-            } catch (_: Exception) {
-                try {
-                    cr.openInputStream(uri)?.use { input ->
-                        FileOutputStream(tempFile).use { output ->
-                            val buffer = ByteArray(16384)
-                            var bytesRead: Int
-                            while (input.read(buffer).also { bytesRead = it } != -1) {
-                                output.write(buffer, 0, bytesRead)
-                            }
-                        }
-                    }
-                    true
-                } catch (e2: IncompleteDownloadException) {
-                    throw e2
-                } catch (_: Exception) {
-                    false
-                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
             }
 
             if (success && tempFile.exists() && tempFile.length() > 0) {
@@ -546,5 +537,55 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         } catch (e: Exception) {
             null
         }
+    }
+
+    fun validateFileIntegrity(file: File, extension: String? = null): Boolean {
+        if (!file.exists() || file.length() <= 0L) {
+            return false
+        }
+
+        val ext = (extension ?: file.name.substringAfterLast('.', "")).lowercase().removePrefix(".")
+        val zipExtensions = setOf("zip", "udf", "docx", "xlsx", "pptx", "eyp")
+
+        if (ext in zipExtensions || file.name.endsWith(".udf", true) || file.name.endsWith(".zip", true) || file.name.endsWith(".eyp", true)) {
+            return try {
+                ZipFile(file).use { zip ->
+                    val entries = zip.entries()
+                    if (!entries.hasMoreElements()) return false
+                    if (ext == "udf" || file.name.endsWith(".udf", ignoreCase = true)) {
+                        zip.entries().asSequence().any { it.name.equals("content.xml", ignoreCase = true) }
+                    } else {
+                        true
+                    }
+                }
+            } catch (_: Exception) {
+                false
+            }
+        }
+
+        if (ext == "pdf" || file.name.endsWith(".pdf", ignoreCase = true)) {
+            val fileLength = file.length()
+            if (fileLength < 10) return false
+            return try {
+                val headerBuffer = ByteArray(1024)
+                val readHeader = FileInputStream(file).use { fis -> fis.read(headerBuffer) }
+                if (readHeader < 4) return false
+                val headerStr = String(headerBuffer, 0, readHeader, Charsets.ISO_8859_1)
+                if (!headerStr.contains("%PDF")) return false
+
+                val readFooterLength = 65536.coerceAtMost(fileLength.toInt())
+                val footerBuffer = ByteArray(readFooterLength)
+                java.io.RandomAccessFile(file, "r").use { raf ->
+                    raf.seek(fileLength - readFooterLength)
+                    raf.readFully(footerBuffer)
+                }
+                val footerStr = String(footerBuffer, Charsets.ISO_8859_1)
+                footerStr.contains("%%EOF") || fileLength > 512
+            } catch (_: Exception) {
+                false
+            }
+        }
+
+        return true
     }
 }

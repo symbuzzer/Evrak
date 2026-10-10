@@ -195,7 +195,7 @@ fun PdfViewerScreen(
     ) { padding ->
         val file = File(filePath)
         
-        val assetLoader = remember {
+        val assetLoader = remember(filePath) {
             val assetsHandler = object : WebViewAssetLoader.PathHandler {
                 private val inner = WebViewAssetLoader.AssetsPathHandler(context)
                 override fun handle(path: String): WebResourceResponse? {
@@ -335,7 +335,15 @@ fun PdfViewerScreen(
                                     "https://appassets.androidplatform.net/internal$encodedPath"
                                 }
                                 else -> {
-                                    "https://appassets.androidplatform.net/internal/${android.net.Uri.encode(file.name)}"
+                                    val extDir = File(context.cacheDir, "ext_pdf").apply { if (!exists()) mkdirs() }
+                                    val tempViewFile = File(extDir, "view_${file.name}")
+                                    if (!tempViewFile.exists() || tempViewFile.length() != file.length()) {
+                                        try { file.copyTo(tempViewFile, overwrite = true) } catch (_: Exception) {}
+                                    }
+                                    val target = if (tempViewFile.exists()) tempViewFile else file
+                                    val relativePath = target.absolutePath.substring(context.cacheDir.absolutePath.length)
+                                    val encodedPath = relativePath.split('/').joinToString("/") { android.net.Uri.encode(it) }
+                                    "https://appassets.androidplatform.net/cache$encodedPath"
                                 }
                             }
                             
@@ -348,7 +356,7 @@ fun PdfViewerScreen(
         }
 
         WaitScreenOverlay(
-            show = isLoading,
+            show = isLoading && loadError == null && !jsMissing,
             message = stringResource(id = R.string.loading)
         )
     }

@@ -131,8 +131,9 @@ fun UdfViewerScreen(
                     conversionMessage = defaultConvertingMessage
                     isConverting = true
                 }
+                var tempPdf: File? = null
                 try {
-                    val tempPdf = File(context.cacheDir, "temp_udf_convert.pdf")
+                    tempPdf = File(context.cacheDir, "temp_udf_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}.pdf")
                     val result = DocumentConverter.convert(File(filePath), tempPdf, context)
                     if (result is DocumentConverter.ConversionResult.Success) {
                         context.contentResolver.openOutputStream(destUri)?.use { output ->
@@ -153,6 +154,7 @@ fun UdfViewerScreen(
                         Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
                     }
                 } finally {
+                    try { tempPdf?.let { if (it.exists()) it.delete() } } catch (_: Exception) {}
                     isConverting = false
                 }
             }
@@ -286,9 +288,10 @@ fun UdfViewerScreen(
                                 conversionMessage = defaultConvertingMessage
                                 isConverting = true
                             }
+                            var tempPdf: File? = null
                             try {
                                 val pdfName = displayName.substringBeforeLast(".") + ".pdf"
-                                val tempPdf = File(context.cacheDir, pdfName)
+                                tempPdf = File(context.cacheDir, "share_${System.currentTimeMillis()}_$pdfName")
                                 val result = DocumentConverter.convert(File(filePath), tempPdf, context)
                                 if (result is DocumentConverter.ConversionResult.Success) {
                                     DocumentConverter.shareFile(context, tempPdf, "application/pdf")

@@ -48,7 +48,7 @@ fun OfficeToHtmlLoader(
                 }
 
                 val tempDir = File(context.filesDir, "temp_h").apply { if (!exists()) mkdirs() }
-                val tempHtml = File(tempDir, "view_temp_${System.currentTimeMillis()}.html")
+                val tempHtml = File(tempDir, "view_temp_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}.html")
                 val result = DocumentConverter.convertToHtml(file, tempHtml, context)
                 
                 if (result is DocumentConverter.ConversionResult.Success && tempHtml.exists()) {

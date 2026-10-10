@@ -251,8 +251,8 @@ object DocumentConverter {
         context: Context
     ): ConversionResult {
         return withContext(Dispatchers.IO) {
+            val tempHtml = File(context.cacheDir, "excel_print_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}.html")
             try {
-                val tempHtml = File(context.cacheDir, "excel_print_${System.currentTimeMillis()}.html")
                 val htmlResult = convertToHtml(inputFile, tempHtml, context)
                 if (htmlResult is ConversionResult.Success) {
                     var htmlContent = tempHtml.readText(Charsets.UTF_8)
@@ -273,14 +273,14 @@ object DocumentConverter {
                         htmlContent = "<html><head>$css</head><body>$htmlContent</body></html>"
                     }
                     
-                    val pdfResult = convertHtmlToPdfWithWebView(htmlContent, outputFile, context)
-                    tempHtml.delete()
-                    pdfResult
+                    convertHtmlToPdfWithWebView(htmlContent, outputFile, context)
                 } else {
                     htmlResult
                 }
             } catch (e: Exception) {
                 ConversionResult.Error("Excel print conversion error: ${e.localizedMessage}")
+            } finally {
+                try { if (tempHtml.exists()) tempHtml.delete() } catch (_: Exception) {}
             }
         }
     }

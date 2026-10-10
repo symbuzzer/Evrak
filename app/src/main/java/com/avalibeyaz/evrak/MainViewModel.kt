@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository: EvrakRepository
@@ -93,7 +94,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     onError(getApplication<Application>().getString(R.string.error_file_incomplete))
                 }
             } catch (e: Exception) {
-                onError(e.localizedMessage ?: getApplication<Application>().getString(R.string.error_file_incomplete))
+                val errorMessage = e.localizedMessage 
+                    ?: getApplication<Application>().getString(R.string.error_file_incomplete)
+                onError(errorMessage)
             }
         }
     }

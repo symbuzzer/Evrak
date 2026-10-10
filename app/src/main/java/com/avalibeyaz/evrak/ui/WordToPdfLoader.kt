@@ -53,7 +53,7 @@ fun WordToPdfLoader(
                 }
 
                 val tempDir = File(context.filesDir, "temp_v").apply { if (!exists()) mkdirs() }
-                val tempPdf = File(tempDir, "view_temp_${System.currentTimeMillis()}.pdf")
+                val tempPdf = File(tempDir, "view_temp_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}.pdf")
                 
                 val success = try {
                     kotlinx.coroutines.withTimeout(60000) {
