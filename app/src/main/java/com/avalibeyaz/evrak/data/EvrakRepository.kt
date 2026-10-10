@@ -27,26 +27,6 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
 
     suspend fun addEvrakFromUri(uri: Uri, resolver: ContentResolver? = null): Evrak? {
         val cr = resolver ?: context.contentResolver
-
-        if (uri.scheme == "content") {
-            try {
-                cr.query(uri, arrayOf(OpenableColumns.SIZE, "is_pending"), null, null, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        val pendingIndex = cursor.getColumnIndex("is_pending")
-                        if (pendingIndex != -1 && !cursor.isNull(pendingIndex) && cursor.getInt(pendingIndex) == 1) {
-                            throw IncompleteDownloadException(context.getString(R.string.error_file_incomplete))
-                        }
-                        val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-                        if (sizeIndex != -1 && !cursor.isNull(sizeIndex) && cursor.getLong(sizeIndex) == 0L) {
-                            throw IncompleteDownloadException(context.getString(R.string.error_file_incomplete))
-                        }
-                    }
-                }
-            } catch (e: IncompleteDownloadException) {
-                throw e
-            } catch (_: Exception) {
-            }
-        }
         
         val mimeType = try { cr.getType(uri) } catch (_: Exception) { null }
         var extension = getExtensionFromMime(mimeType, uri)
@@ -361,32 +341,48 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             val tempFile = File(cacheDir, "temp_${System.currentTimeMillis()}")
             var sniffedExtension: String? = null
 
-            val success = try {
-                cr.openInputStream(uri)?.use { input ->
-                    val header = ByteArray(12)
-                    val read = input.read(header)
-                    if (read >= 4) {
-                        sniffedExtension = sniffFileType(header)
-                    }
-                    onSniffed(sniffedExtension)
+            var success = false
+            var attempt = 0
+            val maxAttempts = 3
 
-                    FileOutputStream(tempFile).use { output ->
-                        if (read > 0) {
-                            output.write(header, 0, read)
+            while (attempt < maxAttempts && !success) {
+                attempt++
+                try {
+                    if (tempFile.exists()) tempFile.delete()
+                    cr.openInputStream(uri)?.use { input ->
+                        val header = ByteArray(12)
+                        val read = input.read(header)
+                        if (read >= 4) {
+                            sniffedExtension = sniffFileType(header)
                         }
-                        val buffer = ByteArray(16384)
-                        var bytesRead: Int
-                        while (input.read(buffer).also { bytesRead = it } != -1) {
-                            output.write(buffer, 0, bytesRead)
+                        onSniffed(sniffedExtension)
+
+                        FileOutputStream(tempFile).use { output ->
+                            if (read > 0) {
+                                output.write(header, 0, read)
+                            }
+                            val buffer = ByteArray(16384)
+                            var bytesRead: Int
+                            while (input.read(buffer).also { bytesRead = it } != -1) {
+                                output.write(buffer, 0, bytesRead)
+                            }
                         }
+                    }
+                    if (tempFile.exists() && tempFile.length() > 0) {
+                        success = true
+                    } else {
+                        if (attempt < maxAttempts) {
+                            Thread.sleep(300)
+                        }
+                    }
+                } catch (e: IncompleteDownloadException) {
+                    throw e
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    if (attempt < maxAttempts) {
+                        try { Thread.sleep(300) } catch (_: InterruptedException) {}
                     }
                 }
-                true
-            } catch (e: IncompleteDownloadException) {
-                throw e
-            } catch (e: Exception) {
-                e.printStackTrace()
-                false
             }
 
             if (success && tempFile.exists() && tempFile.length() > 0) {
