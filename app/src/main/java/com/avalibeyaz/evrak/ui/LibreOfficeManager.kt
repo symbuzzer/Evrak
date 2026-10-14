@@ -46,7 +46,7 @@ object LibreOfficeManager {
     suspend fun init(context: Context): Boolean {
         if (isInitialized) return true
 
-        return withContext(Dispatchers.IO) {
+        return withContext(libreOfficeDispatcher) {
             mutex.withLock {
                 if (isInitialized) return@withLock true
                 
@@ -200,16 +200,22 @@ object LibreOfficeManager {
                         tempInput = File(inputDir, "lo_${System.currentTimeMillis()}.$ext")
                         inputFile.copyTo(tempInput!!, overwrite = true)
 
-                        val inputUri = "file://" + tempInput!!.absolutePath
-                        val outputUri = "file://" + outputFile.absolutePath
+                        val inputUri = Uri.fromFile(tempInput!!).toString()
+                        val outputUri = Uri.fromFile(outputFile).toString()
                         
-                        doc = office?.documentLoad(inputUri)
+                        doc = office?.documentLoad(inputUri) ?: office?.documentLoad(tempInput!!.absolutePath)
                         if (doc == null) {
+                            val err = try { office?.getError() } catch (_: Exception) { null }
+                            Log.e(TAG, "Document load failed for PDF. Native error: $err")
                             return@withTimeout false
                         }
 
                         outputFile.parentFile?.mkdirs()
-                        doc.saveAs(outputUri, "pdf", "")
+                        try {
+                            doc.saveAs(outputUri, "pdf", "")
+                        } catch (_: Exception) {
+                            doc.saveAs(outputFile.absolutePath, "pdf", "")
+                        }
                         
                         outputFile.exists() && outputFile.length() > 0
                     }
@@ -240,16 +246,22 @@ object LibreOfficeManager {
                         tempInput = File(inputDir, "lo_${System.currentTimeMillis()}.$ext")
                         inputFile.copyTo(tempInput!!, overwrite = true)
 
-                        val inputUri = "file://" + tempInput!!.absolutePath
-                        val outputUri = "file://" + outputFile.absolutePath
+                        val inputUri = Uri.fromFile(tempInput!!).toString()
+                        val outputUri = Uri.fromFile(outputFile).toString()
                         
-                        doc = office?.documentLoad(inputUri)
+                        doc = office?.documentLoad(inputUri) ?: office?.documentLoad(tempInput!!.absolutePath)
                         if (doc == null) {
+                            val err = try { office?.getError() } catch (_: Exception) { null }
+                            Log.e(TAG, "Document load failed for HTML. Native error: $err")
                             return@withTimeout false
                         }
 
                         outputFile.parentFile?.mkdirs()
-                        doc.saveAs(outputUri, "html", "")
+                        try {
+                            doc.saveAs(outputUri, "html", "")
+                        } catch (_: Exception) {
+                            doc.saveAs(outputFile.absolutePath, "html", "")
+                        }
                         
                         outputFile.exists() && outputFile.length() > 0
                     }

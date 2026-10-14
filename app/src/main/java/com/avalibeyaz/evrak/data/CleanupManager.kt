@@ -27,6 +27,11 @@ object CleanupManager {
                     cleanupDirectory(loInputDir)
                 }
 
+                val tempVDir = File(context.filesDir, "temp_v")
+                if (tempVDir.exists()) {
+                    cleanupDirectory(tempVDir)
+                }
+
                 cleanupOrphanFiles(context, repository)
 
                 Log.d(TAG, "Cleanup process finished.")
@@ -57,8 +62,9 @@ object CleanupManager {
         if (!evrakCacheDir.exists()) return
 
         val databasePaths = repository.getAllPaths().toSet()
+        val now = System.currentTimeMillis()
         evrakCacheDir.listFiles()?.forEach { file ->
-            if (file.isFile && !databasePaths.contains(file.absolutePath)) {
+            if (file.isFile && (now - file.lastModified() > CLEANUP_THRESHOLD_MS) && !databasePaths.contains(file.absolutePath)) {
                 if (file.delete()) {
                     Log.d(TAG, "Deleted orphan file: ${file.name}")
                 }

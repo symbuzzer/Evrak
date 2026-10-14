@@ -56,6 +56,15 @@ class DocumentActivity : AppCompatActivity() {
                     intent.getParcelableExtra(Intent.EXTRA_STREAM)
                 }
             }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                val uris = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)
+                }
+                uris?.firstOrNull()
+            }
             else -> null
         }
 

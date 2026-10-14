@@ -119,66 +119,45 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             throw IncompleteDownloadException(context.getString(R.string.error_file_incomplete))
         }
 
-        val isSupported = supportedExtensions.any { finalName.endsWith(it, ignoreCase = true) }
-        
         val fileSize = actualCacheFile.length()
-        val existingEvrak = evrakDao.getEvrakByNameAndSize(finalName, fileSize)
+        val existingEvrak = evrakDao.getEvrakByNameAndSize(finalName, fileSize) ?: evrakDao.getEvrakByPath(actualCacheFile.absolutePath)
 
-        val evrak = if (existingEvrak != null) {
-            val oldFile = File(existingEvrak.path)
-            if (oldFile.exists() && oldFile.length() == fileSize && existingEvrak.path != actualCacheFile.absolutePath) {
-                try {
-                    actualCacheFile.delete()
-                } catch (_: Exception) {}
-                val updated = existingEvrak.copy(dateOpened = System.currentTimeMillis())
-                if (isSupported) {
-                    evrakDao.updateEvrak(updated)
+        if (existingEvrak != null) {
+            try {
+                val oldFile = File(existingEvrak.path)
+                if (oldFile.exists() && oldFile.absolutePath != actualCacheFile.absolutePath) {
+                    oldFile.delete()
                 }
-                updated
-            } else {
-                if (existingEvrak.path != actualCacheFile.absolutePath) {
-                    try {
-                        if (oldFile.exists()) oldFile.delete()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-                val updated = existingEvrak.copy(
-                    path = actualCacheFile.absolutePath,
-                    dateOpened = System.currentTimeMillis()
-                )
-                if (isSupported) {
-                    evrakDao.updateEvrak(updated)
-                }
-                updated
-            }
-        } else {
-            val newEvrak = Evrak(name = finalName, path = actualCacheFile.absolutePath, size = fileSize)
-            if (isSupported) {
-                evrakDao.insertEvrak(newEvrak)
-            }
-            newEvrak
+            } catch (_: Exception) {}
+            evrakDao.delete(existingEvrak)
         }
+
+        val newEvrak = Evrak(
+            name = finalName,
+            path = actualCacheFile.absolutePath,
+            size = fileSize,
+            dateOpened = System.currentTimeMillis()
+        )
+        evrakDao.insertEvrak(newEvrak)
         
-        return evrak
+        return newEvrak
     }
 
     suspend fun ensureEvrak(path: String, name: String): Evrak {
-        val isSupported = supportedExtensions.any { name.endsWith(it, ignoreCase = true) || path.endsWith(it, ignoreCase = true) }
         val existing = evrakDao.getEvrakByPath(path) ?: evrakDao.getEvrakByNameAndSize(name, File(path).length())
         if (existing != null) {
             val updated = existing.copy(dateOpened = System.currentTimeMillis(), path = path, name = name)
-            if (isSupported) {
-                evrakDao.updateEvrak(updated)
-            }
+            evrakDao.updateEvrak(updated)
             return updated
         } else {
-            val newEvrak = Evrak(name = name, path = path, size = File(path).length())
-            if (isSupported) {
-                evrakDao.insertEvrak(newEvrak)
-                return evrakDao.getEvrakByPath(path) ?: newEvrak
-            }
-            return newEvrak
+            val newEvrak = Evrak(
+                name = name,
+                path = path,
+                size = File(path).length(),
+                dateOpened = System.currentTimeMillis()
+            )
+            evrakDao.insertEvrak(newEvrak)
+            return evrakDao.getEvrakByPath(path) ?: newEvrak
         }
     }
 
