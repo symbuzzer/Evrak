@@ -298,16 +298,12 @@ fun TiffViewerScreen(
                 .padding(padding)
         ) {
             if (loadError != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
-                        Text(text = loadError!!, color = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onBackClick) {
-                            Text(text = stringResource(id = R.string.ok))
-                        }
-                    }
-                }
+                ErrorView(
+                    errorMessage = loadError!!,
+                    onBackClick = onBackClick
+                )
             } else {
+                val scrollbarAdapter = rememberLazyColumnScrollbarAdapter(listState = listState)
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -336,6 +332,10 @@ fun TiffViewerScreen(
                             TiffPageItem(renderer = renderer, index = index, mutex = mutex, cache = bitmapCache)
                         }
                     }
+
+                    DraggableScrollbar(
+                        adapter = scrollbarAdapter
+                    )
                 }
             }
             

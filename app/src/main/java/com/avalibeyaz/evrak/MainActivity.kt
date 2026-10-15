@@ -78,6 +78,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
     val selectedDateFilter by viewModel.selectedDateFilter.collectAsState()
     var showAboutDialog by remember { mutableStateOf(false) }
     var showExperimentalDialog by remember { mutableStateOf(false) }
+    var openDocumentError by remember { mutableStateOf<String?>(null) }
     
     val isExternalIntent = remember(intent) {
         intent?.action == Intent.ACTION_VIEW || intent?.action == Intent.ACTION_SEND
@@ -121,7 +122,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         uri = uri, 
                         resolver = context.contentResolver,
                         onError = { error ->
-                            android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_LONG).show()
+                            openDocumentError = error
                         },
                         onOpened = { evrak ->
                             if (isArchiveType(evrak.path)) {
@@ -433,7 +434,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                     uri = fileUri, 
                     resolver = activityContentResolver,
                     onError = { error ->
-                        android.widget.Toast.makeText(appContext, error, android.widget.Toast.LENGTH_LONG).show()
+                        openDocumentError = error
                         if (navController.currentDestination?.route == "intent_processor") {
                             navController.navigate("history") {
                                 popUpTo(navController.graph.startDestinationId) { inclusive = true }
@@ -460,6 +461,14 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                 )
             }
         }
+    }
+
+    if (openDocumentError != null) {
+        ErrorDialog(
+            errorMessage = openDocumentError!!,
+            viewModel = viewModel,
+            onDismiss = { openDocumentError = null }
+        )
     }
 }
 

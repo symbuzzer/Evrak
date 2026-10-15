@@ -171,7 +171,7 @@ fun TextViewerScreen(
                         ) {
                             IconButton(onClick = {
                                 if (isEvrakLog) {
-                                    shareEvrakLogEmail(context, filePath)
+                                    shareEvrakLogEmail(context, filePath, displayName)
                                 } else {
                                     onShareClick()
                                 }
@@ -196,18 +196,18 @@ fun TextViewerScreen(
                     message = stringResource(id = R.string.loading)
                 )
             } else if (errorMessage != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = errorMessage!!,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
+                ErrorView(
+                    errorMessage = errorMessage!!,
+                    onBackClick = onBackClick
+                )
             } else {
+                val scrollState = rememberScrollState()
+                val scrollbarAdapter = rememberScrollStateAdapter(scrollState = scrollState)
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
+                        .verticalScroll(scrollState)
                         .padding(16.dp)
                 ) {
                     SelectionContainer {
@@ -218,6 +218,10 @@ fun TextViewerScreen(
                         )
                     }
                 }
+
+                DraggableScrollbar(
+                    adapter = scrollbarAdapter
+                )
             }
         }
     }

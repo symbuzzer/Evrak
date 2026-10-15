@@ -183,13 +183,11 @@ fun WordToPdfLoader(
                 )
             }
         ) { padding ->
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = loadError ?: stringResource(id = R.string.error_unknown), color = MaterialTheme.colorScheme.error)
-                    Button(onClick = onBackClick, modifier = Modifier.padding(top = 16.dp)) {
-                        Text(text = stringResource(id = R.string.ok))
-                    }
-                }
+            Box(modifier = Modifier.padding(padding)) {
+                ErrorView(
+                    errorMessage = loadError ?: stringResource(id = R.string.error_unknown),
+                    onBackClick = onBackClick
+                )
             }
         }
     }

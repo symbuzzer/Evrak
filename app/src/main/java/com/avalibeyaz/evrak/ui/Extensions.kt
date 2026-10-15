@@ -88,9 +88,12 @@ fun openDocumentTask(context: Context, filePath: String, displayName: String) {
     }
 }
 
-fun shareEvrakLogEmail(context: Context, filePath: String) {
+fun shareEvrakLogEmail(context: Context, filePath: String, displayName: String? = null) {
     val file = File(filePath)
     if (!file.exists()) return
+    val subject = displayName ?: file.name.let {
+        if (it.contains("_") && it.substringBefore("_").all { c -> c.isDigit() }) it.substringAfter("_") else it
+    }
     val uri = androidx.core.content.FileProvider.getUriForFile(
         context,
         "${context.packageName}.fileprovider",
@@ -99,8 +102,8 @@ fun shareEvrakLogEmail(context: Context, filePath: String) {
     val emailIntent = Intent(Intent.ACTION_SEND).apply {
         type = "message/rfc822"
         putExtra(Intent.EXTRA_EMAIL, arrayOf("alipolatbeyaz@gmail.com"))
-        putExtra(Intent.EXTRA_SUBJECT, "Evrak Logcat Raporu")
-        putExtra(Intent.EXTRA_TEXT, "Logcat raporu ekte yer almaktadır.")
+        putExtra(Intent.EXTRA_SUBJECT, subject)
+        putExtra(Intent.EXTRA_TEXT, "")
         putExtra(Intent.EXTRA_STREAM, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }

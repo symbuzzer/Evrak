@@ -87,6 +87,7 @@ class DocumentActivity : AppCompatActivity() {
             var currentDisplayName by remember { mutableStateOf(displayNameExtra) }
             var forceTextState by remember { mutableStateOf(false) }
             var isLoading by remember { mutableStateOf(currentFilePath.isEmpty() && uriExtra != null) }
+            var documentError by remember { mutableStateOf<String?>(null) }
 
             LaunchedEffect(intent) {
                 val isExternal = intent.isExternalOpenIntent()
@@ -102,11 +103,8 @@ class DocumentActivity : AppCompatActivity() {
                         uri = uriExtra,
                         resolver = contentResolver,
                         onError = { error ->
-                            Toast.makeText(applicationContext, error, Toast.LENGTH_LONG).show()
+                            documentError = error
                             isLoading = false
-                            if (currentFilePath.isEmpty()) {
-                                finish()
-                            }
                         },
                         onOpened = { evrak ->
                             if (isExternal) {
@@ -132,9 +130,21 @@ class DocumentActivity : AppCompatActivity() {
             }
 
             EvrakTheme {
+                if (documentError != null) {
+                    ErrorDialog(
+                        errorMessage = documentError!!,
+                        viewModel = viewModel,
+                        onDismiss = {
+                            documentError = null
+                            if (currentFilePath.isEmpty()) {
+                                finish()
+                            }
+                        }
+                    )
+                }
                 if (isLoading || currentFilePath.isEmpty()) {
                     WaitScreenOverlay(
-                        show = true,
+                        show = isLoading,
                         message = stringResource(id = R.string.loading)
                     )
                 } else {
@@ -184,7 +194,7 @@ class DocumentActivity : AppCompatActivity() {
 
     private fun shareFile(filePath: String) {
         if (filePath.endsWith(".evraklog", true)) {
-            shareEvrakLogEmail(this, filePath)
+            shareEvrakLogEmail(this, filePath, queryDisplayName(Uri.fromFile(File(filePath))) ?: File(filePath).name)
             return
         }
         val file = File(filePath)

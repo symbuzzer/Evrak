@@ -312,15 +312,9 @@ fun ImageViewerScreen(
         )
 
         loadError?.let { error ->
-            AlertDialog(
-                onDismissRequest = { loadError = null },
-                title = { Text(text = stringResource(id = R.string.error)) },
-                text = { Text(text = error) },
-                confirmButton = {
-                    TextButton(onClick = { loadError = null }) {
-                        Text(text = stringResource(id = R.string.ok))
-                    }
-                }
+            ErrorDialog(
+                errorMessage = error,
+                onDismiss = { loadError = null }
             )
         }
     }

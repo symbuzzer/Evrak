@@ -974,22 +974,16 @@ fun MainScreen(
     )
 
     if (conversionError != null) {
-        AlertDialog(
-            onDismissRequest = { conversionError = null },
-            title = { Text(text = stringResource(id = R.string.error)) },
-            text = { Text(text = conversionError!!) },
-            confirmButton = {
-                TextButton(onClick = { conversionError = null }) {
-                    Text(text = stringResource(id = R.string.ok))
-                }
-            }
+        ErrorDialog(
+            errorMessage = conversionError!!,
+            onDismiss = { conversionError = null }
         )
     }
 }
 
 private fun shareFile(context: android.content.Context, evrak: Evrak) {
     if (evrak.path.endsWith(".evraklog", true)) {
-        shareEvrakLogEmail(context, evrak.path)
+        shareEvrakLogEmail(context, evrak.path, evrak.name)
         return
     }
     val file = File(evrak.path)

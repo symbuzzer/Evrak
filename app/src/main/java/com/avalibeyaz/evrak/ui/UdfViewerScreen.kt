@@ -222,6 +222,9 @@ fun UdfViewerScreen(
             }
         }
     ) { padding ->
+        var webViewInstance by remember { mutableStateOf<ObservableWebView?>(null) }
+        val webViewScrollState = rememberWebViewScrollState()
+
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (isLoading) {
                 WaitScreenOverlay(
@@ -232,7 +235,19 @@ fun UdfViewerScreen(
                 AndroidView(
                     modifier = Modifier.fillMaxSize(),
                     factory = { ctx ->
-                        WebView(ctx).apply {
+                        ObservableWebView(ctx).apply {
+                            webViewInstance = this
+                            onScrollStateChanged = { offset, range, extent ->
+                                webViewScrollState.offset = offset
+                                webViewScrollState.range = range
+                                webViewScrollState.extent = extent
+                            }
+                            webViewClient = object : android.webkit.WebViewClient() {
+                                override fun onPageFinished(view: WebView?, url: String?) {
+                                    super.onPageFinished(view, url)
+                                    (view as? ObservableWebView)?.notifyScroll()
+                                }
+                            }
                             settings.loadWithOverviewMode = true
                             settings.useWideViewPort = true
                             settings.builtInZoomControls = true
@@ -247,6 +262,10 @@ fun UdfViewerScreen(
                         }
                     }
                 )
+
+                DraggableScrollbar(
+                    adapter = webViewScrollbarAdapter(webViewScrollState, webViewInstance)
+                )
             }
 
             WaitScreenOverlay(
@@ -255,15 +274,9 @@ fun UdfViewerScreen(
             )
 
             loadError?.let { error ->
-                AlertDialog(
-                    onDismissRequest = { loadError = null },
-                    title = { Text(text = stringResource(id = R.string.error)) },
-                    text = { Text(text = error) },
-                    confirmButton = {
-                        TextButton(onClick = { loadError = null }) {
-                            Text(text = stringResource(id = R.string.ok))
-                        }
-                    }
+                ErrorDialog(
+                    errorMessage = error,
+                    onDismiss = { loadError = null }
                 )
             }
         }

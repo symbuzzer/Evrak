@@ -58,6 +58,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val folderSelectionEnabled: StateFlow<Boolean> = _folderSelectionEnabled.asStateFlow()
 
+    private val _scrollbarEnabled = MutableStateFlow(
+        sharedPrefs.getBoolean("scrollbar_enabled", false)
+    )
+    val scrollbarEnabled: StateFlow<Boolean> = _scrollbarEnabled.asStateFlow()
+
+    fun setScrollbarEnabled(enabled: Boolean) {
+        _scrollbarEnabled.value = enabled
+        sharedPrefs.edit().putBoolean("scrollbar_enabled", enabled).apply()
+    }
+
 
 
     init {

@@ -105,7 +105,9 @@
     <string name="experimental_features_desc">Burada yer alan özellikler henüz geliştirme aşamasındadır ve doğru çalışmayabilir.</string>
     <string name="experimental_steps_remaining">Deneysel özelliklerin açılmasına %1$d adım kaldı.</string>
     <string name="experimental_unlocked">Deneysel özellikler açıldı!</string>
+    <string name="scrollbar_feature_title">Scrollbar</string>
     <string name="logcat_feature_title">Logcat</string>
     <string name="search_files">Dosya ara</string>
     <string name="search_hint">Dosya adı girin</string>
+    <string name="send_feedback_to_developer">Geliştiriciye hatayı raporla</string>
 </resources>

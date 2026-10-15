@@ -252,16 +252,14 @@ fun PdfViewerScreen(
                 }
             }
         } else if (loadError != null) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
-                    Text(text = loadError!!, color = MaterialTheme.colorScheme.error)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onBackClick) {
-                        Text(text = stringResource(id = R.string.ok))
-                    }
-                }
-            }
+            ErrorView(
+                errorMessage = loadError!!,
+                onBackClick = onBackClick
+            )
         } else {
+            var webViewInstance by remember { mutableStateOf<ObservableWebView?>(null) }
+            val webViewScrollState = rememberWebViewScrollState()
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -269,7 +267,13 @@ fun PdfViewerScreen(
             ) {
                 AndroidView(
                     factory = { ctx ->
-                        WebView(ctx).apply {
+                        ObservableWebView(ctx).apply {
+                            webViewInstance = this
+                            onScrollStateChanged = { offset, range, extent ->
+                                webViewScrollState.offset = offset
+                                webViewScrollState.range = range
+                                webViewScrollState.extent = extent
+                            }
                             layoutParams = ViewGroup.LayoutParams(
                                 ViewGroup.LayoutParams.MATCH_PARENT,
                                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -317,6 +321,7 @@ fun PdfViewerScreen(
                                 override fun onPageFinished(view: WebView?, url: String?) {
                                     super.onPageFinished(view, url)
                                     isLoading = false
+                                    (view as? ObservableWebView)?.notifyScroll()
                                 }
                             }
                             
@@ -351,6 +356,10 @@ fun PdfViewerScreen(
                         }
                     },
                     modifier = Modifier.fillMaxSize()
+                )
+
+                DraggableScrollbar(
+                    adapter = webViewScrollbarAdapter(webViewScrollState, webViewInstance)
                 )
             }
         }

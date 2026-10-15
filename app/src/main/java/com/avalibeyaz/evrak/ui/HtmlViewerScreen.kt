@@ -261,26 +261,35 @@ fun HtmlViewerScreen(
             }
         }
     ) { padding ->
+        var webViewInstance by remember { mutableStateOf<ObservableWebView?>(null) }
+        val webViewScrollState = rememberWebViewScrollState()
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
             if (readError != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
-                        Text(text = readError!!, color = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = onBackClick) {
-                            Text(text = stringResource(id = R.string.ok))
-                        }
-                    }
-                }
+                ErrorView(
+                    errorMessage = readError!!,
+                    onBackClick = onBackClick
+                )
             } else if (htmlContent != null) {
                 AndroidView(
                     factory = { ctx ->
-                        WebView(ctx).apply {
-                            webViewClient = WebViewClient()
+                        ObservableWebView(ctx).apply {
+                            webViewInstance = this
+                            onScrollStateChanged = { offset, range, extent ->
+                                webViewScrollState.offset = offset
+                                webViewScrollState.range = range
+                                webViewScrollState.extent = extent
+                            }
+                            webViewClient = object : WebViewClient() {
+                                override fun onPageFinished(view: WebView?, url: String?) {
+                                    super.onPageFinished(view, url)
+                                    (view as? ObservableWebView)?.notifyScroll()
+                                }
+                            }
                             settings.apply {
                                 javaScriptEnabled = true
                                 loadWithOverviewMode = true
@@ -298,6 +307,10 @@ fun HtmlViewerScreen(
                     update = { },
                     modifier = Modifier.fillMaxSize()
                 )
+
+                DraggableScrollbar(
+                    adapter = webViewScrollbarAdapter(webViewScrollState, webViewInstance)
+                )
             }
 
             WaitScreenOverlay(
@@ -307,15 +320,9 @@ fun HtmlViewerScreen(
         }
         
         loadError?.let { error ->
-            AlertDialog(
-                onDismissRequest = { loadError = null },
-                title = { Text(text = stringResource(id = R.string.error)) },
-                text = { Text(text = error) },
-                confirmButton = {
-                    TextButton(onClick = { loadError = null }) {
-                        Text(text = stringResource(id = R.string.ok))
-                    }
-                }
+            ErrorDialog(
+                errorMessage = error,
+                onDismiss = { loadError = null }
             )
         }
     }

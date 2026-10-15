@@ -283,13 +283,10 @@ fun ZipViewerScreen(
                         message = stringResource(id = R.string.loading)
                     )
                 } else if (errorMessage != null) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = errorMessage!!,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
+                    ErrorView(
+                        errorMessage = errorMessage!!,
+                        onBackClick = onBackClick
+                    )
                 } else {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Text(
