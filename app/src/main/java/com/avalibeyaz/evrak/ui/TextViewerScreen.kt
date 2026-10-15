@@ -46,6 +46,8 @@ fun TextViewerScreen(
     val context = LocalContext.current
     var isFullScreen by remember { mutableStateOf(false) }
 
+    val isEvrakLog = filePath.endsWith(".evraklog", ignoreCase = true)
+
     BackHandler(enabled = isFullScreen) {
         isFullScreen = false
     }
@@ -124,34 +126,36 @@ fun TextViewerScreen(
                         }
                     },
                     actions = {
-                        TooltipBox(
-                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                TooltipAnchorPosition.Above
-                            ),
-                            tooltip = {
-                                PlainTooltip {
-                                    Text(stringResource(id = R.string.full_screen))
+                        if (!isEvrakLog) {
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = R.string.full_screen))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = { isFullScreen = true }) {
+                                    Icon(Icons.Default.Fullscreen, contentDescription = stringResource(id = R.string.full_screen))
                                 }
-                            },
-                            state = rememberTooltipState()
-                        ) {
-                            IconButton(onClick = { isFullScreen = true }) {
-                                Icon(Icons.Default.Fullscreen, contentDescription = stringResource(id = R.string.full_screen))
                             }
-                        }
-                        TooltipBox(
-                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                TooltipAnchorPosition.Above
-                            ),
-                            tooltip = {
-                                PlainTooltip {
-                                    Text(stringResource(id = R.string.save))
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = R.string.save))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = { saveLauncher.launch(displayName) }) {
+                                    Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
                                 }
-                            },
-                            state = rememberTooltipState()
-                        ) {
-                            IconButton(onClick = { saveLauncher.launch(displayName) }) {
-                                Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
                             }
                         }
                         TooltipBox(
@@ -165,7 +169,13 @@ fun TextViewerScreen(
                             },
                             state = rememberTooltipState()
                         ) {
-                            IconButton(onClick = onShareClick) {
+                            IconButton(onClick = {
+                                if (isEvrakLog) {
+                                    shareEvrakLogEmail(context, filePath)
+                                } else {
+                                    onShareClick()
+                                }
+                            }) {
                                 Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
                             }
                         }

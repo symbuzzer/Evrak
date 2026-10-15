@@ -199,7 +199,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
             val isHtml = filePath.endsWith(".html", true) || 
                           filePath.endsWith(".htm", true)
             
-            val isText = filePath.endsWith(".txt", ignoreCase = true)
+            val isText = filePath.endsWith(".txt", ignoreCase = true) || filePath.endsWith(".evraklog", ignoreCase = true)
             
             val isZip = filePath.endsWith(".zip", ignoreCase = true)
             
@@ -464,6 +464,10 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
 }
 
 private fun shareFile(context: android.content.Context, filePath: String) {
+    if (filePath.endsWith(".evraklog", true)) {
+        shareEvrakLogEmail(context, filePath)
+        return
+    }
     val file = File(filePath)
     val uri = FileProvider.getUriForFile(
         context,

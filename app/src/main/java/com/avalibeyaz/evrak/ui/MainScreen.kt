@@ -233,7 +233,7 @@ fun MainScreen(
         if (historyList.any {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
-                path.endsWith(".txt") || path.endsWith(".zip")
+                path.endsWith(".txt") || path.endsWith(".evraklog") || path.endsWith(".zip")
             }) filters.add(EvrakFilter.OTHER)
         filters
     }
@@ -320,7 +320,7 @@ fun MainScreen(
             EvrakFilter.OTHER -> dateFiltered.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
-                path.endsWith(".txt") || path.endsWith(".zip")
+                path.endsWith(".txt") || path.endsWith(".evraklog") || path.endsWith(".zip")
             }
         }
     }
@@ -988,6 +988,10 @@ fun MainScreen(
 }
 
 private fun shareFile(context: android.content.Context, evrak: Evrak) {
+    if (evrak.path.endsWith(".evraklog", true)) {
+        shareEvrakLogEmail(context, evrak.path)
+        return
+    }
     val file = File(evrak.path)
     val uri = FileProvider.getUriForFile(
         context,

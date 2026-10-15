@@ -107,7 +107,6 @@
     <string name="experimental_steps_remaining">You are %1$d steps away from experimental features.</string>
     <string name="experimental_unlocked">Experimental features unlocked!</string>
     <string name="logcat_feature_title">Logcat</string>
-    <string name="logcat_feature_desc">Save and view logcat logs for the last 60 seconds</string>
     <string name="search_files">Search files</string>
     <string name="search_hint">Enter file name</string>
 </resources>

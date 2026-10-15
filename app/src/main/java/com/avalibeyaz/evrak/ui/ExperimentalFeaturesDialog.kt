@@ -103,7 +103,6 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
                 ExperimentalButtonItem(
                     icon = Icons.Default.BugReport,
                     title = stringResource(id = R.string.logcat_feature_title),
-                    description = stringResource(id = R.string.logcat_feature_desc),
                     isLoading = isCapturingLogcat,
                     onClick = {
                         if (!isCapturingLogcat) {
@@ -124,7 +123,6 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
 private fun ExperimentalButtonItem(
     icon: ImageVector,
     title: String,
-    description: String,
     isLoading: Boolean = false,
     onClick: () -> Unit
 ) {
@@ -152,11 +150,6 @@ private fun ExperimentalButtonItem(
                     text = title,
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             if (isLoading) {
@@ -228,7 +221,7 @@ private suspend fun exportLogcatAndOpen(
         val content = if (lines.isNotEmpty()) lines.joinToString("\n") else "Logcat kaydı bulunamadı."
 
         val dateFormat = SimpleDateFormat("yy-MM-dd-HH-mm-ss", Locale.US)
-        val fileName = "logcat-${dateFormat.format(Date(nowMs))}.txt"
+        val fileName = "logcat-${dateFormat.format(Date(nowMs))}.evraklog"
 
         val cacheDir = File(context.filesDir, "evrak_cache")
         if (!cacheDir.exists()) {

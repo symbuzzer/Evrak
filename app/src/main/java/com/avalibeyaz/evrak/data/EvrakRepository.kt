@@ -22,7 +22,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
 
     private val supportedExtensions = setOf(
         ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt", ".zip", ".eyp",
-        ".webp", ".bmp", ".heic", ".avif"
+        ".webp", ".bmp", ".heic", ".avif", ".evraklog"
     )
 
     suspend fun addEvrakFromUri(uri: Uri, resolver: ContentResolver? = null): Evrak? {
@@ -33,7 +33,9 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         
         val fileName = getFileName(uri, cr) ?: context.getString(R.string.unknown_document)
 
-        if (extension == null || extension == ".bin") {
+        if (fileName.endsWith(".evraklog", ignoreCase = true)) {
+            extension = ".evraklog"
+        } else if (extension == null || extension == ".bin") {
             val lastDot = fileName.lastIndexOf('.')
             if (lastDot != -1) {
                 val ext = fileName.substring(lastDot).lowercase()

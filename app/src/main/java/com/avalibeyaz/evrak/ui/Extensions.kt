@@ -38,6 +38,7 @@ fun getMimeType(path: String): String {
         path.endsWith(".udf", true) -> "application/x-udf"
         path.endsWith(".html", true) || path.endsWith(".htm", true) -> "text/html"
         path.endsWith(".txt", true) -> "text/plain"
+        path.endsWith(".evraklog", true) -> "text/plain"
         path.endsWith(".zip", true) -> "application/zip"
         path.endsWith(".eyp", true) -> "application/eyp"
         else -> "application/octet-stream"
@@ -84,5 +85,80 @@ fun openDocumentTask(context: Context, filePath: String, displayName: String) {
             addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
         }
         context.startActivity(intent)
+    }
+}
+
+fun shareEvrakLogEmail(context: Context, filePath: String) {
+    val file = File(filePath)
+    if (!file.exists()) return
+    val uri = androidx.core.content.FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    val emailIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "message/rfc822"
+        putExtra(Intent.EXTRA_EMAIL, arrayOf("alipolatbeyaz@gmail.com"))
+        putExtra(Intent.EXTRA_SUBJECT, "Evrak Logcat Raporu")
+        putExtra(Intent.EXTRA_TEXT, "Logcat raporu ekte yer almaktadır.")
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+
+    try {
+        val packageManager = context.packageManager
+        val resolveInfos = packageManager.queryIntentActivities(emailIntent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+
+        val targetedIntents = mutableListOf<Intent>()
+        for (resolveInfo in resolveInfos) {
+            val pkg = resolveInfo.activityInfo.packageName.lowercase()
+            val cls = resolveInfo.activityInfo.name.lowercase()
+
+            val isEmailApp = pkg.contains("mail") ||
+                    pkg.contains("outlook") ||
+                    pkg.contains("k9") ||
+                    pkg.contains("thunderbird") ||
+                    pkg.contains("spark") ||
+                    pkg.contains("bluemail") ||
+                    pkg.contains("aqua") ||
+                    cls.contains("mail") ||
+                    cls.contains("compose")
+
+            val isExcluded = pkg.contains("file") ||
+                    pkg.contains("manager") ||
+                    pkg.contains("pdf") ||
+                    pkg.contains("reader") ||
+                    pkg.contains("viewer") ||
+                    pkg.contains("office") ||
+                    pkg.contains("doc") ||
+                    pkg.contains("drive") ||
+                    pkg.contains("bluetooth") ||
+                    pkg.contains("whatsapp") ||
+                    pkg.contains("telegram") ||
+                    pkg.contains("messaging") ||
+                    pkg.contains("mms") ||
+                    pkg.contains("sms") ||
+                    pkg.contains("browser") ||
+                    pkg.contains("chrome")
+
+            if (isEmailApp && !isExcluded) {
+                val targetedIntent = Intent(emailIntent).setPackage(resolveInfo.activityInfo.packageName)
+                targetedIntents.add(targetedIntent)
+            }
+        }
+
+        if (targetedIntents.isNotEmpty()) {
+            val chooser = Intent.createChooser(targetedIntents.removeAt(0), context.getString(R.string.share)).apply {
+                if (targetedIntents.isNotEmpty()) {
+                    putExtra(Intent.EXTRA_INITIAL_INTENTS, targetedIntents.toTypedArray())
+                }
+            }
+            context.startActivity(chooser)
+        } else {
+            context.startActivity(Intent.createChooser(emailIntent, context.getString(R.string.share)))
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        context.startActivity(Intent.createChooser(emailIntent, context.getString(R.string.share)))
     }
 }

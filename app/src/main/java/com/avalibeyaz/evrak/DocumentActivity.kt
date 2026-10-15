@@ -56,15 +56,6 @@ class DocumentActivity : AppCompatActivity() {
                     intent.getParcelableExtra(Intent.EXTRA_STREAM)
                 }
             }
-            Intent.ACTION_SEND_MULTIPLE -> {
-                val uris = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM)
-                }
-                uris?.firstOrNull()
-            }
             else -> null
         }
 
@@ -192,6 +183,10 @@ class DocumentActivity : AppCompatActivity() {
     }
 
     private fun shareFile(filePath: String) {
+        if (filePath.endsWith(".evraklog", true)) {
+            shareEvrakLogEmail(this, filePath)
+            return
+        }
         val file = File(filePath)
         if (!file.exists()) return
         val uri = FileProvider.getUriForFile(
@@ -244,7 +239,7 @@ private fun DocumentViewerContent(
     val isHtml = filePath.endsWith(".html", true) ||
             filePath.endsWith(".htm", true)
 
-    val isText = filePath.endsWith(".txt", ignoreCase = true)
+    val isText = filePath.endsWith(".txt", ignoreCase = true) || filePath.endsWith(".evraklog", ignoreCase = true)
 
     when {
         forceText || isText -> {

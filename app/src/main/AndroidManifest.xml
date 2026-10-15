@@ -227,6 +227,33 @@
                 <data android:mimeType="*/*"/>
             </intent-filter>
 
+            <!-- EvrakLog Dosya Açma Filtreleri -->
+            <intent-filter android:priority="290">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="*/*" />
+                <data android:pathSuffix=".evraklog" />
+                <data android:pathSuffix=".EVRAKLOG" />
+                <data android:pathPattern=".*.evraklog" />
+                <data android:pathPattern=".*.EVRAKLOG" />
+            </intent-filter>
+            <intent-filter android:priority="285">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="content" />
+                <data android:host="*" />
+                <data android:mimeType="text/plain" />
+                <data android:pathSuffix=".evraklog" />
+                <data android:pathSuffix=".EVRAKLOG" />
+                <data android:pathPattern=".*.evraklog" />
+                <data android:pathPattern=".*.EVRAKLOG" />
+            </intent-filter>
+
             <!-- EYP Dosya Açma Filtreleri -->
             <intent-filter android:priority="280">
                 <action android:name="android.intent.action.VIEW"/>
@@ -261,7 +288,6 @@
 
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
-                <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="*/*" />
             </intent-filter>

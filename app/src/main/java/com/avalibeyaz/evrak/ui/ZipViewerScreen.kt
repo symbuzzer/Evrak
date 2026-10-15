@@ -39,7 +39,7 @@ import net.lingala.zip4j.ZipFile
 private val SUPPORTED_EXTENSIONS = setOf(
     ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".tiff", ".tif",
     ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt", ".zip", ".eyp",
-    ".webp", ".bmp", ".heic", ".avif"
+    ".webp", ".bmp", ".heic", ".avif", ".evraklog"
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
