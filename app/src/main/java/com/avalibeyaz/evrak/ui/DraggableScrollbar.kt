@@ -27,6 +27,10 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.background
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material3.Text
 
 /**
  * ObservableWebView is a WebView subclass that exposes vertical scroll offset, range, and extent.
@@ -350,6 +354,57 @@ fun BoxScope.DraggableScrollbar(
                     cornerRadius = CornerRadius(x = currentThumbWidth / 2f, y = currentThumbWidth / 2f)
                 )
             }
+        }
+    }
+}
+
+fun isPageNumberIndicatorEnabled(context: Context): Boolean {
+    val prefs = context.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE)
+    return prefs.getBoolean("page_number_indicator_enabled", false)
+}
+
+@Composable
+fun BoxScope.PageNumberIndicator(
+    currentPage: Int,
+    totalPages: Int,
+    enabled: Boolean = isPageNumberIndicatorEnabled(LocalContext.current)
+) {
+    if (!enabled || totalPages <= 1 || currentPage <= 0) return
+
+    var isVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(currentPage) {
+        isVisible = true
+        delay(2000)
+        isVisible = false
+    }
+
+    val alpha by animateFloatAsState(
+        targetValue = if (isVisible) 1f else 0f,
+        animationSpec = tween(durationMillis = 300),
+        label = "pageIndicatorAlpha"
+    )
+
+    if (alpha > 0f) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 32.dp)
+                .graphicsLayer(alpha = alpha)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+                    shape = MaterialTheme.shapes.small
+                )
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "$currentPage / $totalPages",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

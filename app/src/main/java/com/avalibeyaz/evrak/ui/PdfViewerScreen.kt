@@ -59,6 +59,15 @@ class SafeFileHandler(private val baseDir: File) : WebViewAssetLoader.PathHandle
     }
 }
 
+class PdfViewerBridge(
+    private val onPageChanged: (Int, Int) -> Unit
+) {
+    @android.webkit.JavascriptInterface
+    fun notifyPageChanged(current: Int, total: Int) {
+        onPageChanged(current, total)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PdfViewerScreen(
@@ -259,6 +268,8 @@ fun PdfViewerScreen(
         } else {
             var webViewInstance by remember { mutableStateOf<ObservableWebView?>(null) }
             val webViewScrollState = rememberWebViewScrollState()
+            var currentPage by remember { mutableIntStateOf(1) }
+            var totalPages by remember { mutableIntStateOf(0) }
 
             Box(
                 modifier = Modifier
@@ -269,6 +280,10 @@ fun PdfViewerScreen(
                     factory = { ctx ->
                         ObservableWebView(ctx).apply {
                             webViewInstance = this
+                            addJavascriptInterface(PdfViewerBridge { current, total ->
+                                currentPage = current
+                                totalPages = total
+                            }, "AndroidBridge")
                             onScrollStateChanged = { offset, range, extent ->
                                 webViewScrollState.offset = offset
                                 webViewScrollState.range = range
@@ -360,6 +375,11 @@ fun PdfViewerScreen(
 
                 DraggableScrollbar(
                     adapter = webViewScrollbarAdapter(webViewScrollState, webViewInstance)
+                )
+
+                PageNumberIndicator(
+                    currentPage = currentPage,
+                    totalPages = totalPages
                 )
             }
         }

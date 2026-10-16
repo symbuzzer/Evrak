@@ -68,6 +68,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         sharedPrefs.edit().putBoolean("scrollbar_enabled", enabled).apply()
     }
 
+    private val _pageNumberIndicatorEnabled = MutableStateFlow(
+        sharedPrefs.getBoolean("page_number_indicator_enabled", false)
+    )
+    val pageNumberIndicatorEnabled: StateFlow<Boolean> = _pageNumberIndicatorEnabled.asStateFlow()
+
+    fun setPageNumberIndicatorEnabled(enabled: Boolean) {
+        _pageNumberIndicatorEnabled.value = enabled
+        sharedPrefs.edit().putBoolean("page_number_indicator_enabled", enabled).apply()
+    }
+
 
 
     init {

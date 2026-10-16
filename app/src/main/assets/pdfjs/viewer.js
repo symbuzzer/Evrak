@@ -17,6 +17,29 @@ if (pdfUrl) {
         window.pdfDoc = pdf;
         loadingElement.style.display = 'none';
 
+        if (window.AndroidBridge && window.AndroidBridge.notifyPageChanged) {
+            window.AndroidBridge.notifyPageChanged(1, pdf.numPages);
+        }
+
+        const checkCurrentPage = () => {
+            let closestPage = 1;
+            let minDistance = Infinity;
+            for (let [pageNum, el] of window.pageElements) {
+                const rect = el.getBoundingClientRect();
+                const distance = Math.abs(rect.top);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestPage = pageNum;
+                }
+            }
+            if (window.AndroidBridge && window.AndroidBridge.notifyPageChanged) {
+                window.AndroidBridge.notifyPageChanged(closestPage, pdf.numPages);
+            }
+        };
+
+        window.addEventListener('scroll', checkCurrentPage, { passive: true });
+        window.addEventListener('resize', checkCurrentPage, { passive: true });
+
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const pageNum = parseInt(entry.target.dataset.pageNumber);

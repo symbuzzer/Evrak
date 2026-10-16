@@ -23,6 +23,7 @@ import com.avalibeyaz.evrak.MainViewModel
 import com.avalibeyaz.evrak.R
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.FormatListNumbered
 
 @Composable
 fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
@@ -30,6 +31,7 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
     val coroutineScope = rememberCoroutineScope()
     var isCapturingLogcat by remember { mutableStateOf(false) }
     val isScrollbarEnabled by viewModel.scrollbarEnabled.collectAsState()
+    val isPageNumberIndicatorEnabled by viewModel.pageNumberIndicatorEnabled.collectAsState()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -101,6 +103,16 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
                     checked = isScrollbarEnabled,
                     onCheckedChange = { newValue ->
                         viewModel.setScrollbarEnabled(newValue)
+                    }
+                )
+
+                ExperimentalToggleItem(
+                    icon = Icons.Default.FormatListNumbered,
+                    title = stringResource(id = R.string.page_number_feature_title),
+                    subtitle = null,
+                    checked = isPageNumberIndicatorEnabled,
+                    onCheckedChange = { newValue ->
+                        viewModel.setPageNumberIndicatorEnabled(newValue)
                     }
                 )
 

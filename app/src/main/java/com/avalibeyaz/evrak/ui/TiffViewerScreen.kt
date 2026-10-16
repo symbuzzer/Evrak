@@ -336,6 +336,12 @@ fun TiffViewerScreen(
                     DraggableScrollbar(
                         adapter = scrollbarAdapter
                     )
+
+                    val currentPage by remember { derivedStateOf { listState.firstVisibleItemIndex + 1 } }
+                    PageNumberIndicator(
+                        currentPage = currentPage,
+                        totalPages = pageCount
+                    )
                 }
             }
             
