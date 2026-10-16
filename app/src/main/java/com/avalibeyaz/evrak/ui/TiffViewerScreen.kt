@@ -337,7 +337,24 @@ fun TiffViewerScreen(
                         adapter = scrollbarAdapter
                     )
 
-                    val currentPage by remember { derivedStateOf { listState.firstVisibleItemIndex + 1 } }
+                    val currentPage by remember {
+                        derivedStateOf {
+                            val layoutInfo = listState.layoutInfo
+                            val visibleItems = layoutInfo.visibleItemsInfo
+                            if (visibleItems.isEmpty()) {
+                                1
+                            } else if (!listState.canScrollForward) {
+                                pageCount
+                            } else {
+                                val viewportCenter = (layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset) / 2
+                                val mostVisible = visibleItems.minByOrNull { item ->
+                                    val itemCenter = item.offset + item.size / 2
+                                    kotlin.math.abs(itemCenter - viewportCenter)
+                                }
+                                (mostVisible?.index ?: listState.firstVisibleItemIndex) + 1
+                            }
+                        }
+                    }
                     PageNumberIndicator(
                         currentPage = currentPage,
                         totalPages = pageCount
