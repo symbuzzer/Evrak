@@ -75,17 +75,18 @@ fun TiffViewerScreen(
             if (isFullScreen) {
                 windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
                 windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             } else {
                 windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+                window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
         }
         onDispose {
-            if (isFullScreen) {
-                val w = context.findActivity()?.window
-                if (w != null) {
-                    val controller = WindowCompat.getInsetsController(w, w.decorView)
-                    controller.show(WindowInsetsCompat.Type.systemBars())
-                }
+            val w = context.findActivity()?.window
+            if (w != null) {
+                val controller = WindowCompat.getInsetsController(w, w.decorView)
+                controller.show(WindowInsetsCompat.Type.systemBars())
+                w.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
         }
     }
