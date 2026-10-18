@@ -32,9 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Text
 
-/**
- * ObservableWebView is a WebView subclass that exposes vertical scroll offset, range, and extent.
- */
+
 class ObservableWebView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -65,9 +63,7 @@ class ObservableWebView @JvmOverloads constructor(
     fun getScrollExtent(): Int = computeVerticalScrollExtent()
 }
 
-/**
- * State holder for WebView vertical scroll position and bounds.
- */
+
 class WebViewScrollState {
     var offset by mutableIntStateOf(0)
     var range by mutableIntStateOf(0)
@@ -95,9 +91,7 @@ fun rememberWebViewScrollState(): WebViewScrollState {
     return remember { WebViewScrollState() }
 }
 
-/**
- * Adapter encapsulating scroll state and drag callback for any scrollable container.
- */
+
 data class ScrollbarStateAdapter(
     val scrollRatio: Float,
     val thumbSizeRatio: Float,
@@ -237,10 +231,7 @@ fun isScrollbarEnabled(context: Context): Boolean {
     return prefs.getBoolean("scrollbar_enabled", false)
 }
 
-/**
- * DraggableScrollbar UI Component.
- * Placed on the right edge of a container.
- */
+
 @Composable
 fun BoxScope.DraggableScrollbar(
     adapter: ScrollbarStateAdapter,
@@ -262,7 +253,7 @@ fun BoxScope.DraggableScrollbar(
     var isInteracting by remember { mutableStateOf(false) }
     val currentAdapter by rememberUpdatedState(adapter)
 
-    // Reset interaction fade-out timer when scroll ratio changes or user drags
+
     LaunchedEffect(adapter.scrollRatio, isDragging) {
         isInteracting = true
         if (!isDragging) {
@@ -332,7 +323,7 @@ fun BoxScope.DraggableScrollbar(
                 val currentThumbWidth = thumbWidth.toPx()
                 val xOffset = size.width - currentThumbWidth
 
-                // Draw track if dragging
+
                 if (isDragging) {
                     drawRoundRect(
                         color = trackColor.copy(alpha = trackColor.alpha * alpha),
@@ -342,7 +333,7 @@ fun BoxScope.DraggableScrollbar(
                     )
                 }
 
-                // Draw thumb
+
                 val thumbHeight = (totalHeight * currentAdapter.thumbSizeRatio).coerceIn(minThumbHeightPx, totalHeight)
                 val trackLength = totalHeight - thumbHeight
                 val thumbTop = trackLength * currentAdapter.scrollRatio

@@ -54,7 +54,7 @@ suspend fun exportLogcatAndOpen(
             e.printStackTrace()
         }
 
-        // Fallback if filtering resulted in empty list
+
         if (lines.isEmpty()) {
             try {
                 val fallbackProcess = Runtime.getRuntime().exec(arrayOf("logcat", "-d", "-v", "threadtime", "--pid", pid))

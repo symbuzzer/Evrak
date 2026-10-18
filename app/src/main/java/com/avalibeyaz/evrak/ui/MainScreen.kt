@@ -394,7 +394,7 @@ fun MainScreen(
 
     val filteredList = remember(baseFiltered, selectedIds, selectedFileContexts, historyList, isSelectionMode, selectedFilter, selectedDateFilter) {
         if (isSelectionMode && selectedIds.isNotEmpty()) {
-            // Selected evraks whose selection context DOES NOT match current active filter/date filter are pinned at top
+
             val topPinnedEvraks = historyList.filter { evrak ->
                 if (!selectedIds.contains(evrak.id)) return@filter false
                 val context = selectedFileContexts[evrak.id]

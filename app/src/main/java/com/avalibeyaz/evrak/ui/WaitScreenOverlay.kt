@@ -37,7 +37,7 @@ fun WaitScreenOverlay(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    // Consume clicks to prevent interacting with UI underneath
+
                 },
             contentAlignment = Alignment.Center
         ) {

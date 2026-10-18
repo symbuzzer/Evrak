@@ -299,24 +299,9 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         onShareClick = { shareFile(context, filePath) },
                         onRenameClick = onRenameSafe,
                         onEntryClick = { entryPath, entryName ->
-                            viewModel.openDocument(
-                                uri = Uri.fromFile(File(entryPath)),
-                                resolver = context.contentResolver,
-                                onError = {
-                                    if (isArchiveType(entryPath)) {
-                                        navController.navigate("viewer/${Uri.encode(entryPath)}/${Uri.encode(entryName)}")
-                                    } else {
-                                        openDocumentTask(context, entryPath, entryName)
-                                    }
-                                },
-                                onOpened = { evrak ->
-                                    if (isArchiveType(evrak.path)) {
-                                        navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
-                                    } else {
-                                        openDocumentTask(context, evrak.path, evrak.name)
-                                    }
-                                }
-                            )
+                            viewModel.ensureEvrak(entryPath, entryName) { evrak ->
+                                navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
+                            }
                         }
                     )
                 }
