@@ -11,7 +11,7 @@
             background-color: #525659;
             font-family: sans-serif;
             overflow: auto;
-            scroll-behavior: auto !important;
+            scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch;
         }
         ::-webkit-scrollbar {
@@ -26,13 +26,47 @@
             transform-origin: 0 0;
             will-change: transform;
         }
-        .page {
+        .page-wrapper {
+            position: relative;
             margin: 10px auto;
-            display: block;
+            width: 95%;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             background-color: white;
-            width: 95%;
+        }
+        .page {
+            display: block;
+            width: 100%;
             height: auto;
+        }
+        .textLayer {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            opacity: 1.0;
+            line-height: 1.0;
+            pointer-events: none;
+        }
+        .textLayer span, .textLayer br {
+            color: transparent;
+            position: absolute;
+            white-space: pre;
+            cursor: text;
+            transform-origin: 0% 0%;
+            pointer-events: auto;
+        }
+        mark.highlight {
+            color: transparent;
+            background-color: rgba(255, 235, 59, 0.65);
+            border-radius: 2px;
+            padding: 0;
+            margin: 0;
+        }
+        mark.highlight.active {
+            background-color: rgba(255, 152, 0, 0.85);
+            outline: 2px solid #e65100;
         }
         .page-placeholder {
             margin: 10px auto;

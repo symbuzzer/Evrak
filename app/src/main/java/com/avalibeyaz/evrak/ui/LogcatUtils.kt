@@ -13,10 +13,11 @@ import java.util.Locale
 suspend fun exportLogcatAndOpen(
     context: Context,
     viewModel: MainViewModel,
-    onDismiss: () -> Unit = {}
+    onDismiss: () -> Unit = {},
+    errorTimeMs: Long = System.currentTimeMillis()
 ) {
     withContext(Dispatchers.IO) {
-        val nowMs = System.currentTimeMillis()
+        val nowMs = errorTimeMs
         val cutoffMs = nowMs - 60_000L
 
         val pid = android.os.Process.myPid().toString()

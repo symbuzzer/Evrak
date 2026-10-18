@@ -58,6 +58,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val folderSelectionEnabled: StateFlow<Boolean> = _folderSelectionEnabled.asStateFlow()
 
+    private val _documentSearchEnabled = MutableStateFlow(
+        sharedPrefs.getBoolean("document_search_enabled", false)
+    )
+    val documentSearchEnabled: StateFlow<Boolean> = _documentSearchEnabled.asStateFlow()
+
+    fun setDocumentSearchEnabled(enabled: Boolean) {
+        _documentSearchEnabled.value = enabled
+        sharedPrefs.edit().putBoolean("document_search_enabled", enabled).apply()
+    }
+
     private val _scrollbarEnabled = MutableStateFlow(
         sharedPrefs.getBoolean("scrollbar_enabled", false)
     )

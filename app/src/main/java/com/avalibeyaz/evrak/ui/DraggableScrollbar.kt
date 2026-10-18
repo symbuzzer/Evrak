@@ -253,8 +253,8 @@ fun BoxScope.DraggableScrollbar(
     unpressedWidth: Dp = 6.dp,
     pressedWidth: Dp = 12.dp,
     minThumbHeight: Dp = 48.dp,
-    thumbColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-    trackColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+    thumbColor: Color = Color(0xFF424242),
+    trackColor: Color = Color.Black.copy(alpha = 0.15f)
 ) {
     if (!enabled || !adapter.isScrollable) return
 

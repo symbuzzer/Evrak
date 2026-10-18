@@ -23,6 +23,7 @@ fun ErrorDialog(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var isCapturing by remember { mutableStateOf(false) }
+    val errorTimeMs = remember { System.currentTimeMillis() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -56,10 +57,15 @@ fun ErrorDialog(
                     if (!isCapturing) {
                         isCapturing = true
                         coroutineScope.launch {
-                            exportLogcatAndOpen(context, viewModel) {
-                                isCapturing = false
-                                onDismiss()
-                            }
+                            exportLogcatAndOpen(
+                                context = context,
+                                viewModel = viewModel,
+                                onDismiss = {
+                                    isCapturing = false
+                                    onDismiss()
+                                },
+                                errorTimeMs = errorTimeMs
+                            )
                         }
                     }
                 },
@@ -80,6 +86,7 @@ fun ErrorView(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var isCapturing by remember { mutableStateOf(false) }
+    val errorTimeMs = remember { System.currentTimeMillis() }
 
     Box(
         modifier = Modifier
@@ -107,9 +114,14 @@ fun ErrorView(
                         if (!isCapturing) {
                             isCapturing = true
                             coroutineScope.launch {
-                                exportLogcatAndOpen(context, viewModel) {
-                                    isCapturing = false
-                                }
+                                exportLogcatAndOpen(
+                                    context = context,
+                                    viewModel = viewModel,
+                                    onDismiss = {
+                                        isCapturing = false
+                                    },
+                                    errorTimeMs = errorTimeMs
+                                )
                             }
                         }
                     },

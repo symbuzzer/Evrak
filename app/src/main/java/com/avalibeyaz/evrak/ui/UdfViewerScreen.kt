@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.material3.TooltipAnchorPosition
@@ -40,6 +41,7 @@ fun UdfViewerScreen(
     onRenameClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val isDocumentSearchEnabled = remember(context) { isDocumentSearchEnabled(context) }
     val scope = rememberCoroutineScope()
 
     var htmlContent by remember { mutableStateOf<String?>(null) }
@@ -48,6 +50,13 @@ fun UdfViewerScreen(
     var conversionMessage by remember { mutableStateOf("") }
     val defaultConvertingMessage = stringResource(id = R.string.converting)
     var isFullScreen by remember { mutableStateOf(false) }
+
+    var isSearchOpen by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var currentMatch by remember { mutableIntStateOf(0) }
+    var totalMatches by remember { mutableIntStateOf(0) }
+    var hasSearched by remember { mutableStateOf(false) }
+    var webViewInstance by remember { mutableStateOf<ObservableWebView?>(null) }
 
     BackHandler(enabled = isFullScreen) {
         isFullScreen = false
@@ -173,6 +182,36 @@ fun UdfViewerScreen(
                         }
                     },
                     actions = {
+                        if (isDocumentSearchEnabled) {
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = R.string.search_in_document))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = {
+                                    isSearchOpen = !isSearchOpen
+                                    if (!isSearchOpen) {
+                                        searchQuery = ""
+                                        hasSearched = false
+                                        currentMatch = 0
+                                        totalMatches = 0
+                                        webViewInstance?.clearMatches()
+                                    }
+                                }) {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = stringResource(id = R.string.search_in_document),
+                                        tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                    )
+                                }
+                            }
+                        }
                         TooltipBox(
                             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
@@ -223,62 +262,104 @@ fun UdfViewerScreen(
             }
         }
     ) { padding ->
-        var webViewInstance by remember { mutableStateOf<ObservableWebView?>(null) }
         val webViewScrollState = rememberWebViewScrollState()
 
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            if (isLoading) {
-                WaitScreenOverlay(
-                    show = true,
-                    message = stringResource(id = R.string.loading)
-                )
-            } else {
-                AndroidView(
-                    modifier = Modifier.fillMaxSize(),
-                    factory = { ctx ->
-                        ObservableWebView(ctx).apply {
-                            webViewInstance = this
-                            onScrollStateChanged = { offset, range, extent ->
-                                webViewScrollState.offset = offset
-                                webViewScrollState.range = range
-                                webViewScrollState.extent = extent
-                            }
-                            webViewClient = object : android.webkit.WebViewClient() {
-                                override fun onPageFinished(view: WebView?, url: String?) {
-                                    super.onPageFinished(view, url)
-                                    (view as? ObservableWebView)?.notifyScroll()
-                                }
-                            }
-                            settings.loadWithOverviewMode = true
-                            settings.useWideViewPort = true
-                            settings.builtInZoomControls = true
-                            settings.displayZoomControls = false
-                            settings.javaScriptEnabled = false
-                            setBackgroundColor(android.graphics.Color.WHITE)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            if (isDocumentSearchEnabled && isSearchOpen && !isFullScreen) {
+                DocumentSearchBar(
+                    searchQuery = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    onSearch = {
+                        if (searchQuery.isNotBlank()) {
+                            hasSearched = true
+                            webViewInstance?.findAllAsync(searchQuery)
                         }
                     },
-                    update = { webView ->
-                        htmlContent?.let {
-                            webView.loadDataWithBaseURL(null, it, "text/html", "UTF-8", null)
-                        }
-                    }
-                )
-
-                DraggableScrollbar(
-                    adapter = webViewScrollbarAdapter(webViewScrollState, webViewInstance)
+                    onNext = {
+                        webViewInstance?.findNext(true)
+                    },
+                    onPrevious = {
+                        webViewInstance?.findNext(false)
+                    },
+                    onClose = {
+                        isSearchOpen = false
+                        searchQuery = ""
+                        hasSearched = false
+                        currentMatch = 0
+                        totalMatches = 0
+                        webViewInstance?.clearMatches()
+                    },
+                    currentMatch = currentMatch,
+                    totalMatches = totalMatches,
+                    hasSearched = hasSearched
                 )
             }
 
-            WaitScreenOverlay(
-                show = isConverting,
-                message = conversionMessage
-            )
+            Box(modifier = Modifier.fillMaxSize().weight(1f)) {
+                if (isLoading) {
+                    WaitScreenOverlay(
+                        show = true,
+                        message = stringResource(id = R.string.loading)
+                    )
+                } else {
+                    AndroidView(
+                        modifier = Modifier.fillMaxSize(),
+                        factory = { ctx ->
+                            ObservableWebView(ctx).apply {
+                                webViewInstance = this
+                                setFindListener { activeMatchOrdinal, numberOfMatches, isDoneCounting ->
+                                    if (isDoneCounting) {
+                                        currentMatch = if (numberOfMatches > 0) activeMatchOrdinal + 1 else 0
+                                        totalMatches = numberOfMatches
+                                        hasSearched = true
+                                    }
+                                }
+                                onScrollStateChanged = { offset, range, extent ->
+                                    webViewScrollState.offset = offset
+                                    webViewScrollState.range = range
+                                    webViewScrollState.extent = extent
+                                }
+                                webViewClient = object : android.webkit.WebViewClient() {
+                                    override fun onPageFinished(view: WebView?, url: String?) {
+                                        super.onPageFinished(view, url)
+                                        (view as? ObservableWebView)?.notifyScroll()
+                                    }
+                                }
+                                settings.loadWithOverviewMode = true
+                                settings.useWideViewPort = true
+                                settings.builtInZoomControls = true
+                                settings.displayZoomControls = false
+                                settings.javaScriptEnabled = true
+                                setBackgroundColor(android.graphics.Color.WHITE)
+                            }
+                        },
+                        update = { webView ->
+                            htmlContent?.let {
+                                webView.loadDataWithBaseURL(null, it, "text/html", "UTF-8", null)
+                            }
+                        }
+                    )
 
-            loadError?.let { error ->
-                ErrorDialog(
-                    errorMessage = error,
-                    onDismiss = { loadError = null }
+                    DraggableScrollbar(
+                        adapter = webViewScrollbarAdapter(webViewScrollState, webViewInstance)
+                    )
+                }
+
+                WaitScreenOverlay(
+                    show = isConverting,
+                    message = conversionMessage
                 )
+
+                loadError?.let { error ->
+                    ErrorDialog(
+                        errorMessage = error,
+                        onDismiss = { loadError = null }
+                    )
+                }
             }
         }
     }

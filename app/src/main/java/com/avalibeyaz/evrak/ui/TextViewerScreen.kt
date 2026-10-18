@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.unit.dp
 import com.avalibeyaz.evrak.R
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +49,15 @@ fun TextViewerScreen(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val isDocumentSearchEnabled = remember(context) { isDocumentSearchEnabled(context) }
     var isFullScreen by remember { mutableStateOf(false) }
+
+    var isSearchOpen by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var searchMatches by remember { mutableStateOf<List<Int>>(emptyList()) }
+    var currentMatchIndex by remember { mutableIntStateOf(-1) }
+    var hasSearched by remember { mutableStateOf(false) }
+    var textLayoutResultState by remember { mutableStateOf<TextLayoutResult?>(null) }
 
     val isEvrakLog = filePath.endsWith(".evraklog", ignoreCase = true)
 
@@ -111,6 +124,45 @@ fun TextViewerScreen(
         }
     }
 
+    fun performTextSearch(query: String) {
+        if (query.isBlank() || textContent.isEmpty()) {
+            searchMatches = emptyList()
+            currentMatchIndex = -1
+            hasSearched = true
+            return
+        }
+        val matches = mutableListOf<Int>()
+        var idx = textContent.indexOf(query, ignoreCase = true)
+        while (idx != -1) {
+            matches.add(idx)
+            idx = textContent.indexOf(query, idx + query.length.coerceAtLeast(1), ignoreCase = true)
+        }
+        searchMatches = matches
+        currentMatchIndex = if (matches.isNotEmpty()) 0 else -1
+        hasSearched = true
+    }
+
+    val annotatedText = remember(textContent, searchQuery, searchMatches, currentMatchIndex, hasSearched) {
+        if (!hasSearched || searchQuery.isBlank() || searchMatches.isEmpty()) {
+            AnnotatedString(textContent)
+        } else {
+            buildAnnotatedString {
+                append(textContent)
+                searchMatches.forEachIndexed { idx, matchStart ->
+                    val matchEnd = (matchStart + searchQuery.length).coerceAtMost(textContent.length)
+                    val isCurrent = idx == currentMatchIndex
+                    val backgroundColor = if (isCurrent) Color(0xFFFF9800) else Color(0xFFFFFF00)
+                    val textColor = Color.Black
+                    addStyle(
+                        style = SpanStyle(background = backgroundColor, color = textColor),
+                        start = matchStart,
+                        end = matchEnd
+                    )
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             if (!isFullScreen) {
@@ -127,6 +179,35 @@ fun TextViewerScreen(
                         }
                     },
                     actions = {
+                        if (isDocumentSearchEnabled) {
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = R.string.search_in_document))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = {
+                                    isSearchOpen = !isSearchOpen
+                                    if (!isSearchOpen) {
+                                        searchQuery = ""
+                                        searchMatches = emptyList()
+                                        currentMatchIndex = -1
+                                        hasSearched = false
+                                    }
+                                }) {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = stringResource(id = R.string.search_in_document),
+                                        tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                    )
+                                }
+                            }
+                        }
                         if (!isEvrakLog) {
                             TooltipBox(
                                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
@@ -185,44 +266,94 @@ fun TextViewerScreen(
             }
         }
     ) { padding ->
-        Box(
+        val scrollState = rememberScrollState()
+
+        LaunchedEffect(currentMatchIndex, textLayoutResultState) {
+            val layoutResult = textLayoutResultState
+            if (currentMatchIndex >= 0 && currentMatchIndex < searchMatches.size && layoutResult != null) {
+                val matchStart = searchMatches[currentMatchIndex]
+                val line = layoutResult.getLineForOffset(matchStart)
+                val lineTop = layoutResult.getLineTop(line)
+                scrollState.animateScrollTo(lineTop.toInt())
+            }
+        }
+
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color.White)
         ) {
-            if (isLoading) {
-                WaitScreenOverlay(
-                    show = true,
-                    message = stringResource(id = R.string.loading)
+            if (isDocumentSearchEnabled && isSearchOpen && !isFullScreen) {
+                DocumentSearchBar(
+                    searchQuery = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    onSearch = {
+                        performTextSearch(searchQuery)
+                    },
+                    onNext = {
+                        if (searchMatches.isNotEmpty()) {
+                            currentMatchIndex = (currentMatchIndex + 1) % searchMatches.size
+                        }
+                    },
+                    onPrevious = {
+                        if (searchMatches.isNotEmpty()) {
+                            currentMatchIndex = (currentMatchIndex - 1 + searchMatches.size) % searchMatches.size
+                        }
+                    },
+                    onClose = {
+                        isSearchOpen = false
+                        searchQuery = ""
+                        searchMatches = emptyList()
+                        currentMatchIndex = -1
+                        hasSearched = false
+                    },
+                    currentMatch = if (currentMatchIndex >= 0) currentMatchIndex + 1 else 0,
+                    totalMatches = searchMatches.size,
+                    hasSearched = hasSearched
                 )
-            } else if (errorMessage != null) {
-                ErrorView(
-                    errorMessage = errorMessage!!,
-                    onBackClick = onBackClick
-                )
-            } else {
-                val scrollState = rememberScrollState()
-                val scrollbarAdapter = rememberScrollStateAdapter(scrollState = scrollState)
+            }
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(scrollState)
-                        .padding(16.dp)
-                ) {
-                    SelectionContainer {
-                        Text(
-                            text = textContent,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Black
-                        )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+                    .background(Color.White)
+            ) {
+                if (isLoading) {
+                    WaitScreenOverlay(
+                        show = true,
+                        message = stringResource(id = R.string.loading)
+                    )
+                } else if (errorMessage != null) {
+                    ErrorView(
+                        errorMessage = errorMessage!!,
+                        onBackClick = onBackClick
+                    )
+                } else {
+                    val scrollbarAdapter = rememberScrollStateAdapter(scrollState = scrollState)
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState)
+                            .padding(16.dp)
+                    ) {
+                        SelectionContainer {
+                            Text(
+                                text = annotatedText,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Black,
+                                onTextLayout = { layoutResult ->
+                                    textLayoutResultState = layoutResult
+                                }
+                            )
+                        }
                     }
-                }
 
-                DraggableScrollbar(
-                    adapter = scrollbarAdapter
-                )
+                    DraggableScrollbar(
+                        adapter = scrollbarAdapter
+                    )
+                }
             }
         }
     }

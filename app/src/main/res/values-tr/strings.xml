@@ -30,8 +30,8 @@
     <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS PPTX PPT EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
     <string name="about_celse_integration_desc">CELSE uygulaması entegrasyonunu gerçekleştirin</string>
-    <string name="about_share_app_desc">Evrak uygulamasını paylaş</string>
-    <string name="about_contact_developer_desc">Geliştiriciye hata bildirin veya merhaba diyin</string>
+    <string name="about_share_app_desc">Evrak uygulamasını paylaşın</string>
+    <string name="about_contact_developer_desc">Geliştiriciye hata bildirin veya merhaba deyin</string>
     <string name="about_view_on_play_store_desc">Uygulamayı Play Store üzerinden değerlendirin</string>
     <string name="about_privacy_policy">Gizlilik bildirimine göz atın</string>
     <string name="about_disclaimer">Uygulamayı kullanarak kabul etmiş olduğunuz sorumluluk reddine göz atın</string>
@@ -105,10 +105,19 @@
     <string name="experimental_features_desc">Burada yer alan özellikler henüz geliştirme aşamasındadır ve doğru çalışmayabilir.</string>
     <string name="experimental_steps_remaining">Deneysel özelliklerin açılmasına %1$d adım kaldı.</string>
     <string name="experimental_unlocked">Deneysel özellikler açıldı!</string>
+    <string name="document_search_feature_title">Belge içi arama</string>
     <string name="scrollbar_feature_title">Scrollbar</string>
     <string name="page_number_feature_title">Sayfa sayısı</string>
     <string name="logcat_feature_title">Logcat</string>
     <string name="search_files">Dosya ara</string>
     <string name="search_hint">Dosya adı girin</string>
+    <string name="search_in_document">Belgede ara</string>
+    <string name="search_in_document_hint">Metin ara&#8230;</string>
+    <string name="next_match">Sonraki eşleşme</string>
+    <string name="previous_match">Önceki eşleşme</string>
+    <string name="no_matches_found">Eşleşme bulunamadı</string>
     <string name="send_feedback_to_developer">Geliştiriciye hatayı raporla</string>
+    <string name="select_all">Tümünü seç</string>
+    <string name="deselect_all">Tümünü kaldır</string>
+    <string name="confirm_delete_selected">Seçili dosyaları silmek istediğinize emin misiniz?</string>
 </resources>

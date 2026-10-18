@@ -106,10 +106,19 @@
     <string name="experimental_features_desc">Features listed here are still under development and may not work correctly.</string>
     <string name="experimental_steps_remaining">You are %1$d steps away from experimental features.</string>
     <string name="experimental_unlocked">Experimental features unlocked!</string>
+    <string name="document_search_feature_title">Document search</string>
     <string name="scrollbar_feature_title">Scrollbar</string>
     <string name="page_number_feature_title">Page number</string>
     <string name="logcat_feature_title">Logcat</string>
     <string name="search_files">Search files</string>
     <string name="search_hint">Enter file name</string>
+    <string name="search_in_document">Search in document</string>
+    <string name="search_in_document_hint">Search text&#8230;</string>
+    <string name="next_match">Next match</string>
+    <string name="previous_match">Previous match</string>
+    <string name="no_matches_found">No matches found</string>
     <string name="send_feedback_to_developer">Report error to developer</string>
+    <string name="select_all">Select all</string>
+    <string name="deselect_all">Deselect all</string>
+    <string name="confirm_delete_selected">Are you sure you want to delete the selected files?</string>
 </resources>

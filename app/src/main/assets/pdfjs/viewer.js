@@ -6,6 +6,28 @@ window.pageStates = new Map();
 window.pageElements = new Map();
 window.pdfDoc = null;
 window.currentScale = 1.0;
+window.searchMatches = [];
+window.currentMatchIndex = -1;
+window.activeSearchQuery = "";
+
+function normalizeText(str) {
+    if (!str) return "";
+    return str
+        .replace(/İ/g, 'i')
+        .replace(/I/g, 'ı')
+        .toLowerCase()
+        .replace(/\u0307/g, '');
+}
+
+let measureCanvas = null;
+let measureCtx = null;
+function getMeasureContext() {
+    if (!measureCtx) {
+        measureCanvas = document.createElement('canvas');
+        measureCtx = measureCanvas.getContext('2d');
+    }
+    return measureCtx;
+}
 
 if (pdfUrl) {
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -83,9 +105,14 @@ if (pdfUrl) {
                     state.rendered = true;
                     state.rendering = false;
                     containerDiv.style.height = 'auto';
+
+                    if (window.activeSearchQuery) {
+                        window.renderSearchHighlights(window.currentMatchIndex);
+                    }
                 });
             });
         }
+        window.renderPageFunc = renderPage;
 
         const updateHeights = async () => {
             const containerWidth = container.offsetWidth || window.innerWidth || 360;
@@ -117,6 +144,273 @@ if (pdfUrl) {
         loadingElement.innerText = 'Hata: ' + error.message;
     });
 }
+
+window.searchPdf = async function(query) {
+    if (!window.pdfDoc || !query || !query.trim()) {
+        window.clearPdfSearch();
+        return;
+    }
+    const cleanQuery = normalizeText(query.trim());
+    if (cleanQuery.length === 0) {
+        window.clearPdfSearch();
+        return;
+    }
+
+    window.activeSearchQuery = cleanQuery;
+    window.searchMatches = [];
+    const ctx = getMeasureContext();
+
+    for (let pageNum = 1; pageNum <= window.pdfDoc.numPages; pageNum++) {
+        try {
+            const page = await window.pdfDoc.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            const viewport = page.getViewport({ scale: 2.0 });
+
+            let fullText = "";
+            const itemSpans = [];
+            let pos = 0;
+
+            for (let i = 0; i < textContent.items.length; i++) {
+                const item = textContent.items[i];
+                const str = item.str || "";
+                if (str.length === 0) continue;
+
+                itemSpans.push({
+                    item: item,
+                    start: pos,
+                    end: pos + str.length
+                });
+                fullText += str + " ";
+                pos += str.length + 1;
+            }
+
+            const lowerFullText = normalizeText(fullText);
+            let idx = lowerFullText.indexOf(cleanQuery);
+
+            while (idx !== -1) {
+                const matchEnd = idx + cleanQuery.length;
+                const matchBoxes = [];
+
+                itemSpans.forEach(span => {
+                    if (span.end > idx && span.start < matchEnd) {
+                        const overlapStart = Math.max(idx, span.start);
+                        const overlapEnd = Math.min(matchEnd, span.end);
+
+                        const localStart = overlapStart - span.start;
+                        const localEnd = overlapEnd - span.start;
+
+                        const item = span.item;
+                        const str = item.str || "";
+
+                        if (item.transform && item.transform.length >= 6) {
+                            const tx = item.transform[4];
+                            const ty = item.transform[5];
+                            const fontHeight = Math.abs(item.transform[3]) || item.height || 12;
+
+                            ctx.font = fontHeight + 'px sans-serif';
+                            const fullStrW = ctx.measureText(str).width || 1;
+                            const beforeStrW = ctx.measureText(str.substring(0, localStart)).width;
+                            const matchStrW = ctx.measureText(str.substring(localStart, localEnd)).width;
+
+                            const itemWidth = item.width || fullStrW;
+                            const ratioStart = beforeStrW / fullStrW;
+                            const ratioEnd = (beforeStrW + matchStrW) / fullStrW;
+
+                            const subX1 = tx + (itemWidth * ratioStart);
+                            const subX2 = tx + (itemWidth * ratioEnd);
+                            const subY1 = ty - fontHeight * 0.15;
+                            const subY2 = ty + fontHeight * 0.85;
+
+                            matchBoxes.push({
+                                pdfRect: [subX1, subY1, subX2, subY2]
+                            });
+                        }
+                    }
+                });
+
+                if (matchBoxes.length > 0) {
+                    window.searchMatches.push({
+                        pageNum: pageNum,
+                        boxes: matchBoxes,
+                        viewport: viewport
+                    });
+                }
+
+                idx = lowerFullText.indexOf(cleanQuery, idx + cleanQuery.length);
+            }
+        } catch (e) {
+            console.error("Error searching page " + pageNum, e);
+        }
+    }
+
+    if (window.searchMatches.length > 0) {
+        window.currentMatchIndex = 0;
+        window.showPdfMatch(0);
+    } else {
+        window.currentMatchIndex = -1;
+        window.clearSearchHighlights();
+        if (window.AndroidBridge && window.AndroidBridge.notifySearchResult) {
+            window.AndroidBridge.notifySearchResult(0, 0);
+        }
+    }
+};
+
+window.showPdfMatch = function(index) {
+    if (index < 0 || index >= window.searchMatches.length) return;
+    window.currentMatchIndex = index;
+    const match = window.searchMatches[index];
+
+    const pageEl = window.pageElements.get(match.pageNum);
+    if (!pageEl) return;
+
+    const state = window.pageStates.get(match.pageNum);
+    if (state && !state.rendered && !state.rendering) {
+        if (window.renderPageFunc) window.renderPageFunc(window.pdfDoc, match.pageNum, pageEl);
+    }
+
+    window.renderSearchHighlights(index);
+
+    const scrollToMatch = (attempts = 0) => {
+        const canvas = pageEl.querySelector('canvas');
+        const activeMarker = pageEl.querySelector('.search-marker-active');
+
+        if (!activeMarker && attempts < 10) {
+            setTimeout(() => scrollToMatch(attempts + 1), 50);
+            return;
+        }
+
+        const canvasLeft = canvas ? canvas.offsetLeft : 0;
+        const canvasTop = canvas ? canvas.offsetTop : 0;
+
+        const markerLeft = activeMarker ? activeMarker.offsetLeft : 0;
+        const markerTop = activeMarker ? activeMarker.offsetTop : 0;
+        const markerWidth = activeMarker ? activeMarker.offsetWidth : 20;
+        const markerHeight = activeMarker ? activeMarker.offsetHeight : 20;
+
+        const unscaledX = pageEl.offsetLeft + canvasLeft + markerLeft;
+        const unscaledY = pageEl.offsetTop + canvasTop + markerTop;
+
+        const scale = window.currentScale || 1.0;
+
+        const scaledX = unscaledX * scale;
+        const scaledY = unscaledY * scale;
+
+        const targetX = scaledX + (markerWidth * scale / 2) - (window.innerWidth / 2);
+        const targetY = scaledY + (markerHeight * scale / 2) - (window.innerHeight / 3);
+
+        window.scrollTo({
+            left: Math.max(0, targetX),
+            top: Math.max(0, targetY),
+            behavior: 'smooth'
+        });
+    };
+
+    setTimeout(() => scrollToMatch(0), 40);
+
+    if (window.AndroidBridge && window.AndroidBridge.notifySearchResult) {
+        window.AndroidBridge.notifySearchResult(index + 1, window.searchMatches.length);
+    }
+};
+
+window.nextPdfMatch = function() {
+    if (window.searchMatches.length === 0) return;
+    const nextIdx = (window.currentMatchIndex + 1) % window.searchMatches.length;
+    window.showPdfMatch(nextIdx);
+};
+
+window.prevPdfMatch = function() {
+    if (window.searchMatches.length === 0) return;
+    const prevIdx = (window.currentMatchIndex - 1 + window.searchMatches.length) % window.searchMatches.length;
+    window.showPdfMatch(prevIdx);
+};
+
+window.clearPdfSearch = function() {
+    window.activeSearchQuery = "";
+    window.searchMatches = [];
+    window.currentMatchIndex = -1;
+    window.clearSearchHighlights();
+    if (window.AndroidBridge && window.AndroidBridge.notifySearchResult) {
+        window.AndroidBridge.notifySearchResult(0, 0);
+    }
+};
+
+window.clearSearchHighlights = function() {
+    document.querySelectorAll('.search-highlight-container').forEach(el => el.remove());
+};
+
+window.renderSearchHighlights = function(activeIdx) {
+    window.clearSearchHighlights();
+    if (!window.activeSearchQuery || window.searchMatches.length === 0) return;
+
+    window.searchMatches.forEach((match, idx) => {
+        const pageEl = window.pageElements.get(match.pageNum);
+        if (!pageEl) return;
+
+        const canvas = pageEl.querySelector('canvas');
+        if (!canvas) return;
+
+        let highlightContainer = pageEl.querySelector('.search-highlight-container');
+        if (!highlightContainer) {
+            highlightContainer = document.createElement('div');
+            highlightContainer.className = 'search-highlight-container';
+            highlightContainer.style.position = 'absolute';
+            highlightContainer.style.pointerEvents = 'none';
+            highlightContainer.style.zIndex = '10';
+            if (pageEl.style.position !== 'relative' && pageEl.style.position !== 'absolute') {
+                pageEl.style.position = 'relative';
+            }
+            pageEl.appendChild(highlightContainer);
+        }
+
+        highlightContainer.style.left = canvas.offsetLeft + 'px';
+        highlightContainer.style.top = canvas.offsetTop + 'px';
+        highlightContainer.style.width = canvas.clientWidth + 'px';
+        highlightContainer.style.height = canvas.clientHeight + 'px';
+
+        const isActive = (idx === activeIdx);
+        const viewport = match.viewport;
+        const scaleX = viewport ? (canvas.clientWidth / viewport.width) : 1.0;
+        const scaleY = viewport ? (canvas.clientHeight / viewport.height) : 1.0;
+
+        match.boxes.forEach(box => {
+            if (!box.pdfRect || box.pdfRect.length < 4) return;
+
+            let displayLeft = 0;
+            let displayTop = 0;
+            let displayWidth = 0;
+            let displayHeight = 0;
+
+            if (viewport && viewport.convertToViewportRectangle) {
+                const vRect = viewport.convertToViewportRectangle(box.pdfRect);
+                displayLeft = Math.min(vRect[0], vRect[2]) * scaleX;
+                displayTop = Math.min(vRect[1], vRect[3]) * scaleY;
+                displayWidth = Math.abs(vRect[2] - vRect[0]) * scaleX;
+                displayHeight = Math.abs(vRect[3] - vRect[1]) * scaleY;
+            } else {
+                displayLeft = box.pdfRect[0] * scaleX;
+                displayTop = box.pdfRect[1] * scaleY;
+                displayWidth = (box.pdfRect[2] - box.pdfRect[0]) * scaleX;
+                displayHeight = (box.pdfRect[3] - box.pdfRect[1]) * scaleY;
+            }
+
+            const marker = document.createElement('div');
+            if (isActive) {
+                marker.className = 'search-marker-active';
+            } else {
+                marker.className = 'search-marker';
+            }
+            marker.style.position = 'absolute';
+            marker.style.background = isActive ? 'rgba(255, 152, 0, 0.55)' : 'rgba(255, 235, 59, 0.45)';
+            marker.style.border = isActive ? '2px solid #e65100' : '1px solid #fbc02d';
+            marker.style.borderRadius = '2px';
+            marker.style.left = Math.max(0, displayLeft) + 'px';
+            marker.style.top = Math.max(0, displayTop) + 'px';
+            marker.style.width = Math.max(4, displayWidth) + 'px';
+            marker.style.height = Math.max(4, displayHeight) + 'px';
+            highlightContainer.appendChild(marker);
+        });
+    });
+};
 
 let lastTapTime = 0;
 let initialPinchDistance = 0;

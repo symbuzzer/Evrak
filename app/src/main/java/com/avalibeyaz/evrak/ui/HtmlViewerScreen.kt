@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.material3.TooltipAnchorPosition
@@ -44,11 +45,19 @@ fun HtmlViewerScreen(
     onRenameClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val isDocumentSearchEnabled = remember(context) { isDocumentSearchEnabled(context) }
     val scope = rememberCoroutineScope()
     
     var isConverting by remember { mutableStateOf(false) }
     var conversionMessage by remember { mutableStateOf("") }
     var isFullScreen by remember { mutableStateOf(false) }
+
+    var isSearchOpen by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var currentMatch by remember { mutableIntStateOf(0) }
+    var totalMatches by remember { mutableIntStateOf(0) }
+    var hasSearched by remember { mutableStateOf(false) }
+    var webViewInstance by remember { mutableStateOf<ObservableWebView?>(null) }
 
     BackHandler(enabled = isFullScreen) {
         isFullScreen = false
@@ -208,6 +217,36 @@ fun HtmlViewerScreen(
                         }
                     },
                     actions = {
+                        if (isDocumentSearchEnabled) {
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = R.string.search_in_document))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = {
+                                    isSearchOpen = !isSearchOpen
+                                    if (!isSearchOpen) {
+                                        searchQuery = ""
+                                        hasSearched = false
+                                        currentMatch = 0
+                                        totalMatches = 0
+                                        webViewInstance?.clearMatches()
+                                    }
+                                }) {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = stringResource(id = R.string.search_in_document),
+                                        tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                    )
+                                }
+                            }
+                        }
                         TooltipBox(
                             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
@@ -262,62 +301,104 @@ fun HtmlViewerScreen(
             }
         }
     ) { padding ->
-        var webViewInstance by remember { mutableStateOf<ObservableWebView?>(null) }
         val webViewScrollState = rememberWebViewScrollState()
 
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (readError != null) {
-                ErrorView(
-                    errorMessage = readError!!,
-                    onBackClick = onBackClick
-                )
-            } else if (htmlContent != null) {
-                AndroidView(
-                    factory = { ctx ->
-                        ObservableWebView(ctx).apply {
-                            webViewInstance = this
-                            onScrollStateChanged = { offset, range, extent ->
-                                webViewScrollState.offset = offset
-                                webViewScrollState.range = range
-                                webViewScrollState.extent = extent
-                            }
-                            webViewClient = object : WebViewClient() {
-                                override fun onPageFinished(view: WebView?, url: String?) {
-                                    super.onPageFinished(view, url)
-                                    (view as? ObservableWebView)?.notifyScroll()
-                                }
-                            }
-                            settings.apply {
-                                javaScriptEnabled = true
-                                loadWithOverviewMode = true
-                                useWideViewPort = true
-                                builtInZoomControls = true
-                                displayZoomControls = false
-                                allowFileAccess = true
-                                allowContentAccess = true
-                                domStorageEnabled = true
-                                mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                            }
-                            loadDataWithBaseURL("https://evrak.app/", htmlContent, "text/html", "UTF-8", null)
+            if (isDocumentSearchEnabled && isSearchOpen && !isFullScreen) {
+                DocumentSearchBar(
+                    searchQuery = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    onSearch = {
+                        if (searchQuery.isNotBlank()) {
+                            hasSearched = true
+                            webViewInstance?.findAllAsync(searchQuery)
                         }
                     },
-                    update = { },
-                    modifier = Modifier.fillMaxSize()
-                )
-
-                DraggableScrollbar(
-                    adapter = webViewScrollbarAdapter(webViewScrollState, webViewInstance)
+                    onNext = {
+                        webViewInstance?.findNext(true)
+                    },
+                    onPrevious = {
+                        webViewInstance?.findNext(false)
+                    },
+                    onClose = {
+                        isSearchOpen = false
+                        searchQuery = ""
+                        hasSearched = false
+                        currentMatch = 0
+                        totalMatches = 0
+                        webViewInstance?.clearMatches()
+                    },
+                    currentMatch = currentMatch,
+                    totalMatches = totalMatches,
+                    hasSearched = hasSearched
                 )
             }
 
-            WaitScreenOverlay(
-                show = isConverting,
-                message = conversionMessage
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+            ) {
+                if (readError != null) {
+                    ErrorView(
+                        errorMessage = readError!!,
+                        onBackClick = onBackClick
+                    )
+                } else if (htmlContent != null) {
+                    AndroidView(
+                        factory = { ctx ->
+                            ObservableWebView(ctx).apply {
+                                webViewInstance = this
+                                setFindListener { activeMatchOrdinal, numberOfMatches, isDoneCounting ->
+                                    if (isDoneCounting) {
+                                        currentMatch = if (numberOfMatches > 0) activeMatchOrdinal + 1 else 0
+                                        totalMatches = numberOfMatches
+                                        hasSearched = true
+                                    }
+                                }
+                                onScrollStateChanged = { offset, range, extent ->
+                                    webViewScrollState.offset = offset
+                                    webViewScrollState.range = range
+                                    webViewScrollState.extent = extent
+                                }
+                                webViewClient = object : WebViewClient() {
+                                    override fun onPageFinished(view: WebView?, url: String?) {
+                                        super.onPageFinished(view, url)
+                                        (view as? ObservableWebView)?.notifyScroll()
+                                    }
+                                }
+                                settings.apply {
+                                    javaScriptEnabled = true
+                                    loadWithOverviewMode = true
+                                    useWideViewPort = true
+                                    builtInZoomControls = true
+                                    displayZoomControls = false
+                                    allowFileAccess = true
+                                    allowContentAccess = true
+                                    domStorageEnabled = true
+                                    mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                }
+                                loadDataWithBaseURL("https://evrak.app/", htmlContent, "text/html", "UTF-8", null)
+                            }
+                        },
+                        update = { },
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    DraggableScrollbar(
+                        adapter = webViewScrollbarAdapter(webViewScrollState, webViewInstance)
+                    )
+                }
+
+                WaitScreenOverlay(
+                    show = isConverting,
+                    message = conversionMessage
+                )
+            }
         }
         
         loadError?.let { error ->

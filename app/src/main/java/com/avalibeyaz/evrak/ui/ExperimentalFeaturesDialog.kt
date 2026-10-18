@@ -24,12 +24,14 @@ import com.avalibeyaz.evrak.R
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.Search
 
 @Composable
 fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var isCapturingLogcat by remember { mutableStateOf(false) }
+    val isDocumentSearchEnabled by viewModel.documentSearchEnabled.collectAsState()
     val isScrollbarEnabled by viewModel.scrollbarEnabled.collectAsState()
     val isPageNumberIndicatorEnabled by viewModel.pageNumberIndicatorEnabled.collectAsState()
 
@@ -97,6 +99,16 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                 
                 ExperimentalToggleItem(
+                    icon = Icons.Default.Search,
+                    title = stringResource(id = R.string.document_search_feature_title),
+                    subtitle = null,
+                    checked = isDocumentSearchEnabled,
+                    onCheckedChange = { newValue ->
+                        viewModel.setDocumentSearchEnabled(newValue)
+                    }
+                )
+
+                ExperimentalToggleItem(
                     icon = Icons.Default.SwapVert,
                     title = stringResource(id = R.string.scrollbar_feature_title),
                     subtitle = null,
@@ -147,7 +159,9 @@ private fun ExperimentalToggleItem(
         onClick = { onCheckedChange(!checked) },
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 56.dp)
     ) {
         Row(
             modifier = Modifier
@@ -195,7 +209,9 @@ private fun ExperimentalButtonItem(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 56.dp)
     ) {
         Row(
             modifier = Modifier

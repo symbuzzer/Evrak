@@ -75,23 +75,28 @@ fun MainScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    
+    var isSelectionMode by remember { mutableStateOf(false) }
+    val selectedIds = remember { mutableStateSetOf<Int>() }
+    val selectedFileContexts = remember { mutableStateMapOf<Int, Pair<EvrakFilter, com.avalibeyaz.evrak.EvrakDateFilter>>() }
+    var showDeleteSelectedConfirm by remember { mutableStateOf(false) }
+    var showDeleteAllConfirm by remember { mutableStateOf(false) }
+
     var selectedEvrak by remember { mutableStateOf<Evrak?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<Evrak?>(null) }
     var showRenameDialog by remember { mutableStateOf<Evrak?>(null) }
-    var showDeleteAllConfirm by remember { mutableStateOf(false) }
-    
     var isExtracting by remember { mutableStateOf(false) }
+    var isConverting by remember { mutableStateOf(false) }
+    var conversionMessage by remember { mutableStateOf("") }
+    val defaultConvertingMessage = stringResource(id = R.string.converting)
+    val preparingMessage = stringResource(id = R.string.preparing)
+    var showFormatDialog by remember { mutableStateOf<String?>(null) }
+    var conversionError by remember { mutableStateOf<String?>(null) }
+    var initialUri by remember { mutableStateOf<Uri?>(null) }
+    var showFolderMenu by remember { mutableStateOf(false) }
 
-    var isSearchOpen by rememberSaveable { mutableStateOf(false) }
-    var searchQuery by rememberSaveable { mutableStateOf("") }
-    var shouldFocusSearch by remember { mutableStateOf(false) }
-    val searchFocusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
-
-    if ((!fileSearchEnabled || historyList.isEmpty()) && isSearchOpen) {
-        isSearchOpen = false
-        searchQuery = ""
-    }
+    val sheetState = rememberModalBottomSheetState()
+    var showSheet by remember { mutableStateOf(false) }
 
     val folderPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
@@ -126,19 +131,140 @@ fun MainScreen(
         }
     }
 
-    val sheetState = rememberModalBottomSheetState()
-    var showSheet by remember { mutableStateOf(false) }
+    val savePdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        uri?.let { destUri ->
+            selectedEvrak?.let { evrak ->
+                scope.launch(Dispatchers.IO) {
+                    withContext(Dispatchers.Main) {
+                        conversionMessage = defaultConvertingMessage
+                        isConverting = true
+                    }
+                    try {
+                        val tempPdf = File(context.cacheDir, "temp_main_convert.pdf")
+                        val result = DocumentConverter.convert(File(evrak.path), tempPdf, context)
+                        if (result is DocumentConverter.ConversionResult.Success) {
+                            context.contentResolver.openOutputStream(destUri)?.use { output ->
+                                tempPdf.inputStream().use { input -> input.copyTo(output) }
+                            }
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, context.getString(R.string.save_success), Toast.LENGTH_SHORT).show()
+                            }
+                        } else if (result is DocumentConverter.ConversionResult.Error) {
+                            withContext(Dispatchers.Main) {
+                                conversionError = FileErrorUtils.getStandardizedErrorMessage(context, result.message)
+                                Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
+                        }
+                    } finally {
+                        isConverting = false
+                    }
+                }
+            }
+        }
+    }
+
+    val saveOriginalLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("*/*")
+    ) { uri ->
+        uri?.let { destUri ->
+            selectedEvrak?.let { evrak ->
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        context.contentResolver.openOutputStream(destUri)?.use { output ->
+                            File(evrak.path).inputStream().use { input ->
+                                input.copyTo(output)
+                            }
+                        }
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, context.getString(R.string.save_success), Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    var isSearchOpen by rememberSaveable { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var shouldFocusSearch by remember { mutableStateOf(false) }
+    val searchFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    if ((!fileSearchEnabled || historyList.isEmpty()) && isSearchOpen) {
+        isSearchOpen = false
+        searchQuery = ""
+    }
 
     var isRefreshing by remember { mutableStateOf(false) }
-    var isConverting by remember { mutableStateOf(false) }
-    var conversionMessage by remember { mutableStateOf("") }
-    val defaultConvertingMessage = stringResource(id = R.string.converting)
-    val preparingMessage = stringResource(id = R.string.preparing)
-    var showFormatDialog by remember { mutableStateOf<String?>(null) }
-    var conversionError by remember { mutableStateOf<String?>(null) }
 
-    var initialUri by remember { mutableStateOf<Uri?>(null) }
-    var showFolderMenu by remember { mutableStateOf(false) }
+    val openDocumentLauncher = rememberLauncherForActivityResult(
+        contract = object : ActivityResultContracts.OpenDocument() {
+            override fun createIntent(context: Context, input: Array<String>): Intent {
+                val intent = super.createIntent(context, input)
+                initialUri?.let {
+                    intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, it)
+                }
+                return intent
+            }
+        }
+    ) { uri ->
+        uri?.let { onFilePicked(it) }
+    }
+
+    fun launchFilePicker(folderUri: Uri? = null) {
+        val mimeTypes = arrayOf(
+            "application/pdf",
+            "image/tiff",
+            "image/x-tiff",
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+            "image/bmp",
+            "image/x-ms-bmp",
+            "image/x-bmp",
+            "image/heic",
+            "image/heic-sequence",
+            "image/avif",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "application/eyp",
+            "application/x-udf",
+            "application/udf",
+            "application/vnd.udf",
+            "text/html",
+            "text/plain",
+            "application/zip",
+            "application/x-zip-compressed",
+            "application/octet-stream"
+        )
+        initialUri = folderUri
+        try {
+            openDocumentLauncher.launch(mimeTypes)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, context.getString(R.string.error_folder_selection_not_supported), Toast.LENGTH_LONG).show()
+            onDisableFolderSelection()
+            initialUri = null
+            openDocumentLauncher.launch(mimeTypes)
+        }
+    }
 
     val startOfToday = remember(historyList) {
         val cal = Calendar.getInstance()
@@ -238,66 +364,7 @@ fun MainScreen(
         filters
     }
 
-    val openDocumentLauncher = rememberLauncherForActivityResult(
-        contract = object : ActivityResultContracts.OpenDocument() {
-            override fun createIntent(context: Context, input: Array<String>): Intent {
-                val intent = super.createIntent(context, input)
-                initialUri?.let {
-                    intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, it)
-                }
-                return intent
-            }
-        }
-    ) { uri ->
-        uri?.let { onFilePicked(it) }
-    }
-
-    fun launchFilePicker(folderUri: Uri? = null) {
-        val mimeTypes = arrayOf(
-            "application/pdf",
-            "image/tiff",
-            "image/x-tiff",
-            "image/jpeg",
-            "image/png",
-            "image/gif",
-            "image/webp",
-            "image/bmp",
-            "image/x-ms-bmp",
-            "image/x-bmp",
-            "image/heic",
-            "image/heic-sequence",
-            "image/avif",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.ms-excel",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.ms-powerpoint",
-            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            "application/eyp",
-            "application/x-udf",
-            "application/udf",
-            "application/vnd.udf",
-            "text/html",
-            "text/plain",
-            "application/zip",
-            "application/x-zip-compressed",
-            "application/octet-stream"
-        )
-        initialUri = folderUri
-        try {
-            openDocumentLauncher.launch(mimeTypes)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(context, context.getString(R.string.error_folder_selection_not_supported), Toast.LENGTH_LONG).show()
-            onDisableFolderSelection()
-            initialUri = null
-            openDocumentLauncher.launch(mimeTypes)
-        }
-    }
-
-
-
-    val filteredList = remember(dateFiltered, selectedFilter) {
+    val baseFiltered = remember(dateFiltered, selectedFilter) {
         when (selectedFilter) {
             EvrakFilter.ALL -> dateFiltered
             EvrakFilter.UDF -> dateFiltered.filter { it.path.endsWith(".udf", true) }
@@ -325,68 +392,18 @@ fun MainScreen(
         }
     }
 
-    val savePdfLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/pdf")
-    ) { uri ->
-        uri?.let { destUri ->
-            selectedEvrak?.let { evrak ->
-                scope.launch(Dispatchers.IO) {
-                    withContext(Dispatchers.Main) {
-                        conversionMessage = defaultConvertingMessage
-                        isConverting = true
-                    }
-                    try {
-                        val tempPdf = File(context.cacheDir, "temp_main_convert.pdf")
-                        val result = DocumentConverter.convert(File(evrak.path), tempPdf, context)
-                        if (result is DocumentConverter.ConversionResult.Success) {
-                            context.contentResolver.openOutputStream(destUri)?.use { output ->
-                                tempPdf.inputStream().use { input -> input.copyTo(output) }
-                            }
-                            withContext(Dispatchers.Main) {
-                                Toast.makeText(context, context.getString(R.string.save_success), Toast.LENGTH_SHORT).show()
-                            }
-                        } else if (result is DocumentConverter.ConversionResult.Error) {
-                            withContext(Dispatchers.Main) {
-                                conversionError = FileErrorUtils.getStandardizedErrorMessage(context, result.message)
-                                Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
-                        }
-                    } finally {
-                        isConverting = false
-                    }
-                }
+    val filteredList = remember(baseFiltered, selectedIds, selectedFileContexts, historyList, isSelectionMode, selectedFilter, selectedDateFilter) {
+        if (isSelectionMode && selectedIds.isNotEmpty()) {
+            // Selected evraks whose selection context DOES NOT match current active filter/date filter are pinned at top
+            val topPinnedEvraks = historyList.filter { evrak ->
+                if (!selectedIds.contains(evrak.id)) return@filter false
+                val context = selectedFileContexts[evrak.id]
+                context != null && (context.first != selectedFilter || context.second != selectedDateFilter)
             }
-        }
-    }
-
-    val saveOriginalLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("*/*")
-    ) { uri ->
-        uri?.let { destUri ->
-            selectedEvrak?.let { evrak ->
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        context.contentResolver.openOutputStream(destUri)?.use { output ->
-                            File(evrak.path).inputStream().use { input ->
-                                input.copyTo(output)
-                            }
-                        }
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, context.getString(R.string.save_success), Toast.LENGTH_SHORT).show()
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        withContext(Dispatchers.Main) {
-                            Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-            }
+            val remainingFiltered = baseFiltered.filter { !topPinnedEvraks.any { top -> top.id == it.id } }
+            topPinnedEvraks + remainingFiltered
+        } else {
+            baseFiltered
         }
     }
 
@@ -395,102 +412,68 @@ fun MainScreen(
             Column {
                 TopAppBar(
                     title = { 
-                        Text(text = stringResource(id = R.string.app_name)) 
-                    },
-                    actions = {
-                        TooltipBox(
-                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                TooltipAnchorPosition.Above
-                            ),
-                            tooltip = {
-                                PlainTooltip {
-                                    Text(stringResource(id = R.string.open_file))
-                                }
-                            },
-                            state = rememberTooltipState()
-                        ) {
-                            Box {
-                                IconButton(onClick = { 
-                                    if (folderSelectionEnabled) {
-                                        showFolderMenu = true
-                                    } else {
-                                        launchFilePicker()
-                                    }
-                                }) {
-                                    Icon(
-                                        Icons.Default.FileOpen,
-                                        contentDescription = stringResource(id = R.string.open_file),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                
-                                DropdownMenu(
-                                    expanded = showFolderMenu,
-                                    onDismissRequest = { showFolderMenu = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(id = R.string.downloads)) },
-                                        leadingIcon = { Icon(Icons.Default.Download, contentDescription = null) },
-                                        onClick = {
-                                            showFolderMenu = false
-                                            launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADownload"))
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(id = R.string.documents)) },
-                                        leadingIcon = { Icon(Icons.Default.Description, contentDescription = null) },
-                                        onClick = {
-                                            showFolderMenu = false
-                                            launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments"))
-                                        }
-                                    )
-                                    if (InstallUtils.isPackageInstalled(context, "com.adalet")) {
-                                        DropdownMenuItem(
-                                            text = { Text(stringResource(id = R.string.celse)) },
-                                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
-                                            onClick = {
-                                                showFolderMenu = false
-                                                val launchIntent = context.packageManager.getLaunchIntentForPackage("com.adalet")
-                                                if (launchIntent != null) {
-                                                    context.startActivity(launchIntent)
-                                                } else {
-                                                    Toast.makeText(context, "CELSE app launch failed", Toast.LENGTH_SHORT).show()
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                            }
+                        if (isSelectionMode) {
+                            Text(text = "${selectedIds.size}")
+                        } else {
+                            Text(text = stringResource(id = R.string.app_name)) 
                         }
-                        if (fileSearchEnabled && historyList.isNotEmpty()) {
+                    },
+                    navigationIcon = {
+                        if (isSelectionMode) {
                             TooltipBox(
                                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                     TooltipAnchorPosition.Above
                                 ),
                                 tooltip = {
                                     PlainTooltip {
-                                        Text(stringResource(id = R.string.search_files))
+                                        Text(stringResource(id = R.string.cancel))
                                     }
                                 },
                                 state = rememberTooltipState()
                             ) {
                                 IconButton(onClick = {
-                                    isSearchOpen = !isSearchOpen
-                                    if (!isSearchOpen) {
-                                        searchQuery = ""
-                                    } else {
-                                        shouldFocusSearch = true
-                                    }
+                                    isSelectionMode = false
+                                    selectedIds.clear()
+                                    selectedFileContexts.clear()
                                 }) {
-                                    Icon(
-                                        Icons.Default.Search,
-                                        contentDescription = stringResource(id = R.string.search_files),
-                                        tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(id = R.string.cancel))
                                 }
                             }
                         }
-                        if (historyList.isNotEmpty()) {
+                    },
+                    actions = {
+                        if (isSelectionMode) {
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = if (selectedIds.size == filteredList.size) R.string.deselect_all else R.string.select_all))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = {
+                                    if (selectedIds.size == filteredList.size) {
+                                        selectedIds.clear()
+                                        selectedFileContexts.clear()
+                                    } else {
+                                        selectedIds.clear()
+                                        selectedFileContexts.clear()
+                                        filteredList.forEach { evrak ->
+                                            selectedIds.add(evrak.id)
+                                            selectedFileContexts[evrak.id] = Pair(selectedFilter, selectedDateFilter)
+                                        }
+                                    }
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.SelectAll,
+                                        contentDescription = stringResource(id = if (selectedIds.size == filteredList.size) R.string.deselect_all else R.string.select_all)
+                                    )
+                                }
+                            }
+
                             TooltipBox(
                                 positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                     TooltipAnchorPosition.Above
@@ -502,45 +485,179 @@ fun MainScreen(
                                 },
                                 state = rememberTooltipState()
                             ) {
-                                IconButton(onClick = { showDeleteAllConfirm = true }) {
+                                IconButton(
+                                    onClick = {
+                                        if (selectedIds.isNotEmpty()) {
+                                            showDeleteSelectedConfirm = true
+                                        }
+                                    },
+                                    enabled = selectedIds.isNotEmpty()
+                                ) {
                                     Icon(
-                                        Icons.Default.Delete,
+                                        imageVector = Icons.Default.Delete,
                                         contentDescription = stringResource(id = R.string.delete),
-                                        tint = MaterialTheme.colorScheme.error
+                                        tint = if (selectedIds.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                                     )
                                 }
                             }
-                        }
-                        /*
-                        TooltipBox(
-                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                TooltipAnchorPosition.Above
-                            ),
-                            tooltip = {
-                                PlainTooltip {
-                                    Text(stringResource(id = R.string.experimental_features))
+
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = R.string.share))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        if (selectedIds.isNotEmpty()) {
+                                            val selectedEvraks = filteredList.filter { selectedIds.contains(it.id) }
+                                            shareFiles(context, selectedEvraks)
+                                            isSelectionMode = false
+                                            selectedIds.clear()
+                                            selectedFileContexts.clear()
+                                        }
+                                    },
+                                    enabled = selectedIds.isNotEmpty()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Share,
+                                        contentDescription = stringResource(id = R.string.share)
+                                    )
                                 }
-                            },
-                            state = rememberTooltipState()
-                        ) {
-                            IconButton(onClick = onExperimentalClick) {
-                                Icon(Icons.Default.Science, contentDescription = stringResource(id = R.string.experimental_features))
                             }
-                        }
-                        */
-                        TooltipBox(
-                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                TooltipAnchorPosition.Above
-                            ),
-                            tooltip = {
-                                PlainTooltip {
-                                    Text(stringResource(id = R.string.about))
+                        } else {
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = R.string.open_file))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                Box {
+                                    IconButton(onClick = { 
+                                        if (folderSelectionEnabled) {
+                                            showFolderMenu = true
+                                        } else {
+                                            launchFilePicker()
+                                        }
+                                    }) {
+                                        Icon(
+                                            Icons.Default.FileOpen,
+                                            contentDescription = stringResource(id = R.string.open_file),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    
+                                    DropdownMenu(
+                                        expanded = showFolderMenu,
+                                        onDismissRequest = { showFolderMenu = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(id = R.string.downloads)) },
+                                            leadingIcon = { Icon(Icons.Default.Download, contentDescription = null) },
+                                            onClick = {
+                                                showFolderMenu = false
+                                                launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADownload"))
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(id = R.string.documents)) },
+                                            leadingIcon = { Icon(Icons.Default.Description, contentDescription = null) },
+                                            onClick = {
+                                                showFolderMenu = false
+                                                launchFilePicker(Uri.parse("content://com.android.externalstorage.documents/document/primary%3ADocuments"))
+                                            }
+                                        )
+                                        if (InstallUtils.isPackageInstalled(context, "com.adalet")) {
+                                            DropdownMenuItem(
+                                                text = { Text(stringResource(id = R.string.celse)) },
+                                                leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
+                                                onClick = {
+                                                    showFolderMenu = false
+                                                    val launchIntent = context.packageManager.getLaunchIntentForPackage("com.adalet")
+                                                    if (launchIntent != null) {
+                                                        context.startActivity(launchIntent)
+                                                    } else {
+                                                        Toast.makeText(context, "CELSE app launch failed", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
                                 }
-                            },
-                            state = rememberTooltipState()
-                        ) {
-                            IconButton(onClick = onAboutClick) {
-                                Icon(Icons.Default.Info, contentDescription = stringResource(id = R.string.about))
+                            }
+                            if (fileSearchEnabled && historyList.isNotEmpty()) {
+                                TooltipBox(
+                                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                        TooltipAnchorPosition.Above
+                                    ),
+                                    tooltip = {
+                                        PlainTooltip {
+                                            Text(stringResource(id = R.string.search_files))
+                                        }
+                                    },
+                                    state = rememberTooltipState()
+                                ) {
+                                    IconButton(onClick = {
+                                        isSearchOpen = !isSearchOpen
+                                        if (!isSearchOpen) {
+                                            searchQuery = ""
+                                        } else {
+                                            shouldFocusSearch = true
+                                        }
+                                    }) {
+                                        Icon(
+                                            Icons.Default.Search,
+                                            contentDescription = stringResource(id = R.string.search_files),
+                                            tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                            if (historyList.isNotEmpty()) {
+                                TooltipBox(
+                                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                        TooltipAnchorPosition.Above
+                                    ),
+                                    tooltip = {
+                                        PlainTooltip {
+                                            Text(stringResource(id = R.string.delete))
+                                        }
+                                    },
+                                    state = rememberTooltipState()
+                                ) {
+                                    IconButton(onClick = { showDeleteAllConfirm = true }) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = stringResource(id = R.string.delete),
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
+                            }
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = R.string.about))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = onAboutClick) {
+                                    Icon(Icons.Default.Info, contentDescription = stringResource(id = R.string.about))
+                                }
                             }
                         }
                     }
@@ -683,8 +800,29 @@ fun MainScreen(
                     } else {
                         EvrakLazyContent(
                             filteredList = filteredList,
+                            isSelectionMode = isSelectionMode,
+                            selectedIds = selectedIds,
+                            onToggleSelect = { id ->
+                                if (selectedIds.contains(id)) {
+                                    selectedIds.remove(id)
+                                    selectedFileContexts.remove(id)
+                                    if (selectedIds.isEmpty()) {
+                                        isSelectionMode = false
+                                    }
+                                } else {
+                                    selectedIds.add(id)
+                                    selectedFileContexts[id] = Pair(selectedFilter, selectedDateFilter)
+                                }
+                            },
                             onItemClick = onItemClick,
                             onLongClick = { evrak ->
+                                if (!isSelectionMode) {
+                                    isSelectionMode = true
+                                    selectedIds.add(evrak.id)
+                                    selectedFileContexts[evrak.id] = Pair(selectedFilter, selectedDateFilter)
+                                }
+                            },
+                            onSwipe = { evrak ->
                                 selectedEvrak = evrak
                                 showSheet = true
                             }
@@ -788,7 +926,7 @@ fun MainScreen(
                     }
                 )
 
-                if (!selectedEvrak!!.path.endsWith(".zip", true) && !selectedEvrak!!.path.endsWith(".eyp", true)) {
+                if (!selectedEvrak!!.path.endsWith(".zip", true) && !selectedEvrak!!.path.endsWith(".eyp", true) && !selectedEvrak!!.path.endsWith(".evraklog", true)) {
                     OptionItem(
                         icon = Icons.Default.Print,
                         label = stringResource(id = R.string.print),
@@ -901,30 +1039,6 @@ fun MainScreen(
         )
     }
 
-    if (showDeleteAllConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteAllConfirm = false },
-            title = { Text(text = stringResource(id = R.string.delete)) },
-            text = { Text(text = stringResource(id = R.string.confirm_delete_all_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDeleteAllClick()
-                        showDeleteAllConfirm = false
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(text = stringResource(id = R.string.delete))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteAllConfirm = false }) {
-                    Text(text = stringResource(id = R.string.cancel))
-                }
-            }
-        )
-    }
-
     if (showFormatDialog != null && selectedEvrak != null) {
         val ext = selectedEvrak!!.path.substringAfterLast(".").uppercase()
         FormatSelectionDialog(
@@ -979,6 +1093,60 @@ fun MainScreen(
             onDismiss = { conversionError = null }
         )
     }
+
+    if (showDeleteSelectedConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteSelectedConfirm = false },
+            title = { Text(text = stringResource(id = R.string.delete)) },
+            text = { Text(text = stringResource(id = R.string.confirm_delete_selected)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val selectedEvraks = filteredList.filter { selectedIds.contains(it.id) }
+                        for (evrak in selectedEvraks) {
+                            onDeleteClick(evrak)
+                        }
+                        selectedIds.clear()
+                        selectedFileContexts.clear()
+                        isSelectionMode = false
+                        showDeleteSelectedConfirm = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(text = stringResource(id = R.string.delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteSelectedConfirm = false }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            }
+        )
+    }
+
+    if (showDeleteAllConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllConfirm = false },
+            title = { Text(text = stringResource(id = R.string.delete)) },
+            text = { Text(text = stringResource(id = R.string.confirm_delete_all_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteAllClick()
+                        showDeleteAllConfirm = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(text = stringResource(id = R.string.delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAllConfirm = false }) {
+                    Text(text = stringResource(id = R.string.cancel))
+                }
+            }
+        )
+    }
 }
 
 private fun shareFile(context: android.content.Context, evrak: Evrak) {
@@ -1026,11 +1194,16 @@ private fun openFileWith(context: android.content.Context, evrak: Evrak) {
     context.startActivity(Intent.createChooser(intent, context.getString(R.string.open_with)))
 }
 
-
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun EvrakItem(evrak: Evrak, onClick: () -> Unit, onLongClick: () -> Unit) {
+fun EvrakItem(
+    evrak: Evrak,
+    isSelectionMode: Boolean,
+    isSelected: Boolean,
+    onToggleSelect: () -> Unit,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
     val context = LocalContext.current
     val dateText = remember(evrak.dateOpened) {
         val date = Date(evrak.dateOpened)
@@ -1047,18 +1220,130 @@ fun EvrakItem(evrak: Evrak, onClick: () -> Unit, onLongClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
+                onClick = {
+                    if (isSelectionMode) {
+                        onToggleSelect()
+                    } else {
+                        onClick()
+                    }
+                },
+                onLongClick = {
+                    if (!isSelectionMode) {
+                        onLongClick()
+                    }
+                }
             ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = evrak.name, style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = dateText,
-                style = MaterialTheme.typography.bodySmall
-            )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = if (isSelectionMode) 4.dp else 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (isSelectionMode) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onToggleSelect() },
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.width(2.dp))
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = evrak.name, style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = dateText,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun EvrakLazyContent(
+    filteredList: List<Evrak>,
+    isSelectionMode: Boolean,
+    selectedIds: Set<Int>,
+    onToggleSelect: (Int) -> Unit,
+    onItemClick: (Evrak) -> Unit,
+    onLongClick: (Evrak) -> Unit,
+    onSwipe: (Evrak) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(filteredList, key = { it.id }) { evrak ->
+            val isSelected = selectedIds.contains(evrak.id)
+            if (isSelectionMode) {
+                EvrakItem(
+                    evrak = evrak,
+                    isSelectionMode = true,
+                    isSelected = isSelected,
+                    onToggleSelect = { onToggleSelect(evrak.id) },
+                    onClick = { onItemClick(evrak) },
+                    onLongClick = { onLongClick(evrak) }
+                )
+            } else {
+                val dismissState = rememberSwipeToDismissBoxState(
+                    confirmValueChange = { value ->
+                        if (value != SwipeToDismissBoxValue.Settled) {
+                            onSwipe(evrak)
+                            false
+                        } else {
+                            true
+                        }
+                    }
+                )
+
+                SwipeToDismissBox(
+                    state = dismissState,
+                    backgroundContent = {
+                        val direction = dismissState.dismissDirection
+                        val color = when (direction) {
+                            SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
+                            SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
+                            else -> androidx.compose.ui.graphics.Color.Transparent
+                        }
+                        val alignment = when (direction) {
+                            SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                            SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+                            else -> Alignment.Center
+                        }
+                        val icon = Icons.Default.Menu
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(color, MaterialTheme.shapes.medium)
+                                .padding(horizontal = 24.dp),
+                            contentAlignment = alignment
+                        ) {
+                            if (direction != SwipeToDismissBoxValue.Settled) {
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    },
+                    content = {
+                        EvrakItem(
+                            evrak = evrak,
+                            isSelectionMode = false,
+                            isSelected = false,
+                            onToggleSelect = {},
+                            onClick = { onItemClick(evrak) },
+                            onLongClick = { onLongClick(evrak) }
+                        )
+                    }
+                )
+            }
         }
     }
 }
@@ -1090,6 +1375,29 @@ fun OptionItem(
             style = MaterialTheme.typography.bodyLarge
         )
     }
+}
+
+private fun shareFiles(context: android.content.Context, evraks: List<Evrak>) {
+    val uris = ArrayList<Uri>()
+    for (evrak in evraks) {
+        val file = File(evrak.path)
+        if (file.exists()) {
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+            uris.add(uri)
+        }
+    }
+    if (uris.isEmpty()) return
+
+    val shareIntent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+        type = "*/*"
+        putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share)))
 }
 
 @Composable
@@ -1138,74 +1446,6 @@ fun FilterSection(
                     )
                 }
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun EvrakLazyContent(
-    filteredList: List<Evrak>,
-    onItemClick: (Evrak) -> Unit,
-    onLongClick: (Evrak) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(filteredList, key = { it.id }) { evrak ->
-            val dismissState = rememberSwipeToDismissBoxState(
-                confirmValueChange = { value ->
-                    if (value != SwipeToDismissBoxValue.Settled) {
-                        onLongClick(evrak)
-                        false
-                    } else {
-                        true
-                    }
-                }
-            )
-
-            SwipeToDismissBox(
-                state = dismissState,
-                backgroundContent = {
-                    val direction = dismissState.dismissDirection
-                    val color = when (direction) {
-                        SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
-                        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
-                        else -> androidx.compose.ui.graphics.Color.Transparent
-                    }
-                    val alignment = when (direction) {
-                        SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
-                        SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
-                        else -> Alignment.Center
-                    }
-                    val icon = Icons.Default.Menu
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(color, MaterialTheme.shapes.medium)
-                            .padding(horizontal = 24.dp),
-                        contentAlignment = alignment
-                    ) {
-                        if (direction != SwipeToDismissBoxValue.Settled) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                },
-                content = {
-                    EvrakItem(
-                        evrak = evrak,
-                        onClick = { onItemClick(evrak) },
-                        onLongClick = { onLongClick(evrak) }
-                    )
-                }
-            )
         }
     }
 }
