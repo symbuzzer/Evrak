@@ -1,6 +1,5 @@
 package com.avalibeyaz.evrak.ui
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
@@ -144,7 +143,4 @@ fun DocumentSearchBar(
     }
 }
 
-fun isDocumentSearchEnabled(context: Context): Boolean {
-    val prefs = context.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE)
-    return prefs.getBoolean("document_search_enabled", false)
-}
+

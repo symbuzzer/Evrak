@@ -21,7 +21,6 @@
     <string name="no_other_apps">Bu dosyayı açmak için başka uygulama yok</string>
 
     <string name="error">Hata</string>
-    <string name="error_file_not_found">Dosya bulunamadı</string>
     <string name="error_file_incomplete">Dosya henüz tamamen indirilmedi veya boş. Lütfen tekrar deneyin.</string>
     <string name="error_unknown">Bilinmeyen hata</string>
     <string name="about_developed_by">%1$s tarafından geliştirilmiştir</string>
@@ -43,7 +42,6 @@
     <string name="unsupported_format_message">Bu dosya formatı şu anda desteklenmiyor.</string>
     <string name="unsupported_format_hint">Ancak yine de bu dosyayı kaydedebilir ve paylaşabilirsiniz.</string>
     <string name="try_opening_as_text">Yine de açmayı dene</string>
-    <string name="error_udf_read">UDF içeriği okunamadı ya da dosya bozuk.</string>
 
     <string name="select_format">Format seçin:</string>
     <string name="format_original">Orijinal format (%1$s)</string>
@@ -72,11 +70,9 @@
     <string name="error_input_file_not_found">Girdi dosyası bulunamadı: %1$s</string>
     <string name="error_context_required">Dönüştürme için context gereklidir</string>
     <string name="error_unsupported_type">Desteklenmeyen dosya türü: %1$s</string>
-    <string name="error_file_read_failed">Dosya okuma hatası: %1$s</string>
     <string name="error_conversion_timeout">Dönüştürme zaman aşımına uğradı</string>
     <string name="error_udf_parse_failed">UDF içeriği ayrıştırılamadı</string>
     <string name="error_udf_conversion_failed">UDF dönüştürme hatası: %1$s</string>
-    <string name="error_libreoffice_failed">LibreOffice dönüşüm hatası</string>
     <string name="msg_copying_assets">Gerekli assetler kopyalanıyor...</string>
     <string name="msg_libreoffice_ready">LibreOfficeKit başarıyla başlatıldı</string>
     <string name="print_adapter_name">Evrak-Dönüşüm</string>
@@ -105,9 +101,6 @@
     <string name="experimental_features_desc">Burada yer alan özellikler henüz geliştirme aşamasındadır ve doğru çalışmayabilir.</string>
     <string name="experimental_steps_remaining">Deneysel özelliklerin açılmasına %1$d adım kaldı.</string>
     <string name="experimental_unlocked">Deneysel özellikler açıldı!</string>
-    <string name="document_search_feature_title">Belge içi arama</string>
-    <string name="scrollbar_feature_title">Scrollbar</string>
-    <string name="page_number_feature_title">Sayfa sayısı</string>
     <string name="logcat_feature_title">Logcat</string>
     <string name="search_files">Dosya ara</string>
     <string name="search_hint">Dosya adı girin</string>
@@ -115,7 +108,6 @@
     <string name="search_in_document_hint">Metin ara&#8230;</string>
     <string name="next_match">Sonraki eşleşme</string>
     <string name="previous_match">Önceki eşleşme</string>
-    <string name="no_matches_found">Eşleşme bulunamadı</string>
     <string name="send_feedback_to_developer">Geliştiriciye hatayı raporla</string>
     <string name="select_all">Tümünü seç</string>
     <string name="deselect_all">Tümünü kaldır</string>

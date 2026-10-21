@@ -89,7 +89,6 @@ fun PdfViewerScreen(
     onRenameClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
-    val isDocumentSearchEnabled = remember(context) { isDocumentSearchEnabled(context) }
     var isLoading by remember { mutableStateOf(true) }
     var isFullScreen by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf<String?>(null) }
@@ -162,34 +161,32 @@ fun PdfViewerScreen(
                         }
                     },
                     actions = {
-                        if (isDocumentSearchEnabled) {
-                            TooltipBox(
-                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                    TooltipAnchorPosition.Above
-                                ),
-                                tooltip = {
-                                    PlainTooltip {
-                                        Text(stringResource(id = R.string.search_in_document))
-                                    }
-                                },
-                                state = rememberTooltipState()
-                            ) {
-                                IconButton(onClick = {
-                                    isSearchOpen = !isSearchOpen
-                                    if (!isSearchOpen) {
-                                        searchQuery = ""
-                                        hasSearched = false
-                                        currentMatch = 0
-                                        totalMatches = 0
-                                        webViewInstance?.evaluateJavascript("clearPdfSearch()", null)
-                                    }
-                                }) {
-                                    Icon(
-                                        Icons.Default.Search,
-                                        contentDescription = stringResource(id = R.string.search_in_document),
-                                        tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                                    )
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.search_in_document))
                                 }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = {
+                                isSearchOpen = !isSearchOpen
+                                if (!isSearchOpen) {
+                                    searchQuery = ""
+                                    hasSearched = false
+                                    currentMatch = 0
+                                    totalMatches = 0
+                                    webViewInstance?.evaluateJavascript("clearPdfSearch()", null)
+                                }
+                            }) {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = stringResource(id = R.string.search_in_document),
+                                    tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                )
                             }
                         }
                         TooltipBox(
@@ -292,7 +289,7 @@ fun PdfViewerScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (isDocumentSearchEnabled && isSearchOpen && !isFullScreen) {
+            if (isSearchOpen && !isFullScreen) {
                 DocumentSearchBar(
                     searchQuery = searchQuery,
                     onQueryChange = { searchQuery = it },

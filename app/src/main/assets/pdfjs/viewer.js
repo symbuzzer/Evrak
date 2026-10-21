@@ -101,7 +101,7 @@ if (pdfUrl) {
                 page.render(renderContext).promise.then(() => {
                     containerDiv.innerHTML = '';
                     containerDiv.appendChild(canvas);
-                    containerDiv.className = '';
+                    containerDiv.className = 'page-wrapper';
                     state.rendered = true;
                     state.rendering = false;
                     containerDiv.style.height = 'auto';

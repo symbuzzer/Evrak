@@ -22,18 +22,11 @@ import coil.compose.rememberAsyncImagePainter
 import com.avalibeyaz.evrak.MainViewModel
 import com.avalibeyaz.evrak.R
 import kotlinx.coroutines.launch
-import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material.icons.filled.FormatListNumbered
-import androidx.compose.material.icons.filled.Search
-
 @Composable
 fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var isCapturingLogcat by remember { mutableStateOf(false) }
-    val isDocumentSearchEnabled by viewModel.documentSearchEnabled.collectAsState()
-    val isScrollbarEnabled by viewModel.scrollbarEnabled.collectAsState()
-    val isPageNumberIndicatorEnabled by viewModel.pageNumberIndicatorEnabled.collectAsState()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -96,38 +89,6 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                
-                ExperimentalToggleItem(
-                    icon = Icons.Default.Search,
-                    title = stringResource(id = R.string.document_search_feature_title),
-                    subtitle = null,
-                    checked = isDocumentSearchEnabled,
-                    onCheckedChange = { newValue ->
-                        viewModel.setDocumentSearchEnabled(newValue)
-                    }
-                )
-
-                ExperimentalToggleItem(
-                    icon = Icons.Default.SwapVert,
-                    title = stringResource(id = R.string.scrollbar_feature_title),
-                    subtitle = null,
-                    checked = isScrollbarEnabled,
-                    onCheckedChange = { newValue ->
-                        viewModel.setScrollbarEnabled(newValue)
-                    }
-                )
-
-                ExperimentalToggleItem(
-                    icon = Icons.Default.FormatListNumbered,
-                    title = stringResource(id = R.string.page_number_feature_title),
-                    subtitle = null,
-                    checked = isPageNumberIndicatorEnabled,
-                    onCheckedChange = { newValue ->
-                        viewModel.setPageNumberIndicatorEnabled(newValue)
-                    }
-                )
-
                 ExperimentalButtonItem(
                     icon = Icons.Default.BugReport,
                     title = stringResource(id = R.string.logcat_feature_title),
@@ -147,56 +108,7 @@ fun ExperimentalFeaturesDialog(viewModel: MainViewModel, onDismiss: () -> Unit) 
     )
 }
 
-@Composable
-private fun ExperimentalToggleItem(
-    icon: ImageVector,
-    title: String,
-    subtitle: String? = null,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Surface(
-        onClick = { onCheckedChange(!checked) },
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        modifier = Modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = 56.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange
-            )
-        }
-    }
-}
+
 
 @Composable
 private fun ExperimentalButtonItem(

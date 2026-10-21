@@ -21,7 +21,6 @@
     <string name="no_other_apps">No other apps available to open this file</string>
 
     <string name="error">Error</string>
-    <string name="error_file_not_found">File not found</string>
     <string name="error_file_incomplete">The file has not been completely downloaded yet or is empty. Please try again.</string>
     <string name="error_unknown">Unknown error</string>
     <string name="about_developed_by">Developed by %1$s</string>
@@ -43,7 +42,6 @@
     <string name="unsupported_format_message">This file format is not currently supported.</string>
     <string name="unsupported_format_hint">However, you can still save and share this file.</string>
     <string name="try_opening_as_text">Try opening anyway</string>
-    <string name="error_udf_read">The UDF content could not be read, or the file is corrupted.</string>
 
     <string name="select_format">Select a format:</string>
     <string name="format_original">Original format (%1$s)</string>
@@ -53,7 +51,6 @@
     <string name="converting">Converting&#8230;</string>
     <string name="error_conversion_failed">Conversion error: %1$s</string>
 
-    <string name="error_tiff_open_failed">Failed to open TIFF file: %1$s</string>
     <string name="error_heic_open_failed">Failed to open HEIC file: %1$s</string>
     <string name="error_heic_codec_missing">Your device does not have the required hardware or software decoder (HEVC) to open this HEIC image.</string>
     <string name="share_app_text">View UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, PPTX, PPT, EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF files for free and ad-free with the Evrak Android app: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
@@ -73,11 +70,9 @@
     <string name="error_input_file_not_found">Input file not found: %1$s</string>
     <string name="error_context_required">Context is required for conversion</string>
     <string name="error_unsupported_type">Unsupported file type: %1$s</string>
-    <string name="error_file_read_failed">File read error: %1$s</string>
     <string name="error_conversion_timeout">Conversion timed out</string>
     <string name="error_udf_parse_failed">Failed to parse UDF content</string>
     <string name="error_udf_conversion_failed">UDF conversion error: %1$s</string>
-    <string name="error_libreoffice_failed">LibreOffice conversion error</string>
     <string name="msg_copying_assets">Copying required assets...</string>
     <string name="msg_libreoffice_ready">LibreOfficeKit initialized successfully</string>
     <string name="print_adapter_name">Evrak-Conversion</string>
@@ -106,9 +101,6 @@
     <string name="experimental_features_desc">Features listed here are still under development and may not work correctly.</string>
     <string name="experimental_steps_remaining">You are %1$d steps away from experimental features.</string>
     <string name="experimental_unlocked">Experimental features unlocked!</string>
-    <string name="document_search_feature_title">Document search</string>
-    <string name="scrollbar_feature_title">Scrollbar</string>
-    <string name="page_number_feature_title">Page number</string>
     <string name="logcat_feature_title">Logcat</string>
     <string name="search_files">Search files</string>
     <string name="search_hint">Enter file name</string>
@@ -116,7 +108,6 @@
     <string name="search_in_document_hint">Search text&#8230;</string>
     <string name="next_match">Next match</string>
     <string name="previous_match">Previous match</string>
-    <string name="no_matches_found">No matches found</string>
     <string name="send_feedback_to_developer">Report error to developer</string>
     <string name="select_all">Select all</string>
     <string name="deselect_all">Deselect all</string>

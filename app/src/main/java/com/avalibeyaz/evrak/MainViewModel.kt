@@ -58,36 +58,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val folderSelectionEnabled: StateFlow<Boolean> = _folderSelectionEnabled.asStateFlow()
 
-    private val _documentSearchEnabled = MutableStateFlow(
-        sharedPrefs.getBoolean("document_search_enabled", false)
-    )
-    val documentSearchEnabled: StateFlow<Boolean> = _documentSearchEnabled.asStateFlow()
-
-    fun setDocumentSearchEnabled(enabled: Boolean) {
-        _documentSearchEnabled.value = enabled
-        sharedPrefs.edit().putBoolean("document_search_enabled", enabled).apply()
-    }
-
-    private val _scrollbarEnabled = MutableStateFlow(
-        sharedPrefs.getBoolean("scrollbar_enabled", false)
-    )
-    val scrollbarEnabled: StateFlow<Boolean> = _scrollbarEnabled.asStateFlow()
-
-    fun setScrollbarEnabled(enabled: Boolean) {
-        _scrollbarEnabled.value = enabled
-        sharedPrefs.edit().putBoolean("scrollbar_enabled", enabled).apply()
-    }
-
-    private val _pageNumberIndicatorEnabled = MutableStateFlow(
-        sharedPrefs.getBoolean("page_number_indicator_enabled", false)
-    )
-    val pageNumberIndicatorEnabled: StateFlow<Boolean> = _pageNumberIndicatorEnabled.asStateFlow()
-
-    fun setPageNumberIndicatorEnabled(enabled: Boolean) {
-        _pageNumberIndicatorEnabled.value = enabled
-        sharedPrefs.edit().putBoolean("page_number_indicator_enabled", enabled).apply()
-    }
-
 
 
     init {

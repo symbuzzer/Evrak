@@ -21,17 +21,19 @@
             width: 100vw;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            align-items: center;
+            padding-top: 12px;
             padding-bottom: 40px;
             transform-origin: 0 0;
             will-change: transform;
         }
         .page-wrapper {
             position: relative;
-            margin: 10px auto;
+            margin: 12px auto;
             width: 95%;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             background-color: white;
+            box-sizing: border-box;
         }
         .page {
             display: block;
@@ -69,16 +71,18 @@
             outline: 2px solid #e65100;
         }
         .page-placeholder {
-            margin: 10px auto;
+            position: relative;
+            margin: 12px auto;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             background-color: #e0e0e0;
             width: 95%;
             color: #666;
             font-size: 14px;
             min-height: 300px;
+            box-sizing: border-box;
         }
         @media print {
             html, body {

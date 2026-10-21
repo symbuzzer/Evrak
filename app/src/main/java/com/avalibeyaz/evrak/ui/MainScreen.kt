@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.text.format.DateFormat
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -208,6 +209,16 @@ fun MainScreen(
     }
 
     var isRefreshing by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = isSelectionMode) {
+        isSelectionMode = false
+        selectedIds.clear()
+    }
+
+    BackHandler(enabled = isSearchOpen && !isSelectionMode) {
+        isSearchOpen = false
+        searchQuery = ""
+    }
 
     val openDocumentLauncher = rememberLauncherForActivityResult(
         contract = object : ActivityResultContracts.OpenDocument() {

@@ -59,6 +59,16 @@ class DocumentActivity : AppCompatActivity() {
             else -> null
         }
 
+        if (uriExtra != null && isDirectoryUri(uriExtra)) {
+            finish()
+            return
+        }
+
+        if (filePathExtra.isNotEmpty() && File(filePathExtra).isDirectory) {
+            finish()
+            return
+        }
+
        if (filePathExtra.isEmpty() && uriExtra != null) {
             val name = queryDisplayName(uriExtra).orEmpty()
             val type = intent.type.orEmpty()
@@ -176,6 +186,26 @@ class DocumentActivity : AppCompatActivity() {
             null
         }
         return name ?: uri.lastPathSegment
+    }
+
+    private fun isDirectoryUri(uri: Uri): Boolean {
+        try {
+            if (uri.scheme == "file") {
+                val path = uri.path
+                if (path != null && File(path).isDirectory) {
+                    return true
+                }
+            }
+            val mimeType = try { contentResolver.getType(uri) } catch (_: Exception) { null }
+            if (mimeType == android.provider.DocumentsContract.Document.MIME_TYPE_DIR || mimeType?.startsWith("vnd.android.cursor.dir") == true) {
+                return true
+            }
+            val docFile = androidx.documentfile.provider.DocumentFile.fromSingleUri(this, uri)
+            if (docFile?.isDirectory == true) {
+                return true
+            }
+        } catch (_: Exception) {}
+        return false
     }
 
     private fun setDocumentTaskDescription(title: String) {

@@ -45,7 +45,6 @@ fun HtmlViewerScreen(
     onRenameClick: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
-    val isDocumentSearchEnabled = remember(context) { isDocumentSearchEnabled(context) }
     val scope = rememberCoroutineScope()
     
     var isConverting by remember { mutableStateOf(false) }
@@ -217,34 +216,32 @@ fun HtmlViewerScreen(
                         }
                     },
                     actions = {
-                        if (isDocumentSearchEnabled) {
-                            TooltipBox(
-                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                    TooltipAnchorPosition.Above
-                                ),
-                                tooltip = {
-                                    PlainTooltip {
-                                        Text(stringResource(id = R.string.search_in_document))
-                                    }
-                                },
-                                state = rememberTooltipState()
-                            ) {
-                                IconButton(onClick = {
-                                    isSearchOpen = !isSearchOpen
-                                    if (!isSearchOpen) {
-                                        searchQuery = ""
-                                        hasSearched = false
-                                        currentMatch = 0
-                                        totalMatches = 0
-                                        webViewInstance?.clearMatches()
-                                    }
-                                }) {
-                                    Icon(
-                                        Icons.Default.Search,
-                                        contentDescription = stringResource(id = R.string.search_in_document),
-                                        tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                                    )
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.search_in_document))
                                 }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = {
+                                isSearchOpen = !isSearchOpen
+                                if (!isSearchOpen) {
+                                    searchQuery = ""
+                                    hasSearched = false
+                                    currentMatch = 0
+                                    totalMatches = 0
+                                    webViewInstance?.clearMatches()
+                                }
+                            }) {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = stringResource(id = R.string.search_in_document),
+                                    tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                )
                             }
                         }
                         TooltipBox(
@@ -308,7 +305,7 @@ fun HtmlViewerScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (isDocumentSearchEnabled && isSearchOpen && !isFullScreen) {
+            if (isSearchOpen && !isFullScreen) {
                 DocumentSearchBar(
                     searchQuery = searchQuery,
                     onQueryChange = { searchQuery = it },

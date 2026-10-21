@@ -49,7 +49,6 @@ fun TextViewerScreen(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
-    val isDocumentSearchEnabled = remember(context) { isDocumentSearchEnabled(context) }
     var isFullScreen by remember { mutableStateOf(false) }
 
     var isSearchOpen by remember { mutableStateOf(false) }
@@ -179,33 +178,31 @@ fun TextViewerScreen(
                         }
                     },
                     actions = {
-                        if (isDocumentSearchEnabled) {
-                            TooltipBox(
-                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                    TooltipAnchorPosition.Above
-                                ),
-                                tooltip = {
-                                    PlainTooltip {
-                                        Text(stringResource(id = R.string.search_in_document))
-                                    }
-                                },
-                                state = rememberTooltipState()
-                            ) {
-                                IconButton(onClick = {
-                                    isSearchOpen = !isSearchOpen
-                                    if (!isSearchOpen) {
-                                        searchQuery = ""
-                                        searchMatches = emptyList()
-                                        currentMatchIndex = -1
-                                        hasSearched = false
-                                    }
-                                }) {
-                                    Icon(
-                                        Icons.Default.Search,
-                                        contentDescription = stringResource(id = R.string.search_in_document),
-                                        tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                                    )
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.search_in_document))
                                 }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = {
+                                isSearchOpen = !isSearchOpen
+                                if (!isSearchOpen) {
+                                    searchQuery = ""
+                                    searchMatches = emptyList()
+                                    currentMatchIndex = -1
+                                    hasSearched = false
+                                }
+                            }) {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = stringResource(id = R.string.search_in_document),
+                                    tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                )
                             }
                         }
                         if (!isEvrakLog) {
@@ -283,7 +280,7 @@ fun TextViewerScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (isDocumentSearchEnabled && isSearchOpen && !isFullScreen) {
+            if (isSearchOpen && !isFullScreen) {
                 DocumentSearchBar(
                     searchQuery = searchQuery,
                     onQueryChange = { searchQuery = it },

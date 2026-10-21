@@ -20,7 +20,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -226,17 +225,10 @@ fun rememberScrollStateAdapter(
     )
 }
 
-fun isScrollbarEnabled(context: Context): Boolean {
-    val prefs = context.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE)
-    return prefs.getBoolean("scrollbar_enabled", false)
-}
-
-
 @Composable
 fun BoxScope.DraggableScrollbar(
     adapter: ScrollbarStateAdapter,
     modifier: Modifier = Modifier,
-    enabled: Boolean = isScrollbarEnabled(LocalContext.current),
     topPadding: Dp = 8.dp,
     bottomPadding: Dp = 8.dp,
     rightPadding: Dp = 2.dp,
@@ -247,7 +239,7 @@ fun BoxScope.DraggableScrollbar(
     thumbColor: Color = Color(0xFF424242),
     trackColor: Color = Color.Black.copy(alpha = 0.15f)
 ) {
-    if (!enabled || !adapter.isScrollable) return
+    if (!adapter.isScrollable) return
 
     var isDragging by remember { mutableStateOf(false) }
     var isInteracting by remember { mutableStateOf(false) }
@@ -349,18 +341,12 @@ fun BoxScope.DraggableScrollbar(
     }
 }
 
-fun isPageNumberIndicatorEnabled(context: Context): Boolean {
-    val prefs = context.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE)
-    return prefs.getBoolean("page_number_indicator_enabled", false)
-}
-
 @Composable
 fun BoxScope.PageNumberIndicator(
     currentPage: Int,
-    totalPages: Int,
-    enabled: Boolean = isPageNumberIndicatorEnabled(LocalContext.current)
+    totalPages: Int
 ) {
-    if (!enabled || totalPages <= 1 || currentPage <= 0) return
+    if (totalPages <= 1 || currentPage <= 0) return
 
     var isVisible by remember { mutableStateOf(false) }
 
