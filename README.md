@@ -12,6 +12,7 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 
 - **Çoklu format desteği:** UDF, TIFF, PDF, Word (DOCX, DOC), Excel (XLSX, XLS), PowerPoint (PPTX, PPT), EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF
 - **Basit ve hızlı:** Dosyayı aç, görüntüle - başka hiçbir şeye gerek yok
+- **Belge içi arama:** Metin içeren belgelerde kelime araması yapılabilir
 - **Paylaşma ve kaydetme:** Görüntülenen dosyalar istenilen yere kaydedilebilir veya doğrudan başka uygulamalarla paylaşılabilir
 - **UDF, TIFF, Word (DOCX, DOC), Excel (XLSX, XLS), PowerPoint (PPTX, PPT) ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında istenirse bu dosyalar PDF'e çevrilebilir
 - **Sorunsuz Türkçe karakterler:** Özellikle UDF'den dönüştürülen PDF dosyalarındaki Türkçe karakterlerin görüntülenememe sorunu yok
@@ -21,7 +22,7 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 - **Dosya arama:** Geçmişteki dosyalar isimleri ile aranabilir
 - **Filtreleme:** Geçmişteki dosyaları dosya türüne ve görüntüleme tarihine göre filtrelenebilir
 - **Yeniden adlandırma ve silme:** Geçmişteki dosyalar daha kolay hatırlanabilmeleri için istenildiğinde yeniden adlandırılabilir veya silinebilir
-- **Tam ekran görüntüleme:** Bütün dosya formatları tam ekran görüntülenebilir
+- **Tam ekran görüntüleme:** Bütün dosya formatları tam ekran görüntülenebilir. Tam ekran görüntüleme esnasında ekran kendiliğinde kapanmaz
 - **Sistem entegrasyonu:** "Birlikte aç" ve "Paylaş" menülerinden herhangi bir uygulama üzerinden gelen desteklenen dosyalar doğrudan Evrak ile açılabilir
 - **Diğer uygulamalarla uyum içerisinde çalışma:** "Birlikte aç" seçeneği ile Evrak üzerinden görüntülenen dosyalar, destekleyen diğer uygulamalar ile açılabilir
 - **Desteklenmeyen dosya türlerini paylaşabilme ve kaydedebilme:** Bu sayede cihaza kaydedilmeden doğrudan açılan dosyalar, desteklenmese bile paylaşılabilir ve kaydedilebilir

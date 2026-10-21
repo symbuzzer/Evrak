@@ -415,50 +415,94 @@ window.renderSearchHighlights = function(activeIdx) {
 let lastTapTime = 0;
 let initialPinchDistance = 0;
 let initialPinchScale = 1.0;
+let initialScrollX = 0;
+let initialScrollY = 0;
+let anchorContentX = 0;
+let anchorContentY = 0;
+
+document.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 2) {
+        initialPinchDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        initialPinchScale = window.currentScale || 1.0;
+        initialScrollX = window.scrollX;
+        initialScrollY = window.scrollY;
+
+        const focalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const focalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+        anchorContentX = (initialScrollX + focalX) / initialPinchScale;
+        anchorContentY = (initialScrollY + focalY) / initialPinchScale;
+    }
+}, { passive: false });
+
+document.addEventListener('touchmove', function(e) {
+    if (e.touches.length === 2 && initialPinchDistance > 0) {
+        const currentDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        const delta = currentDistance / initialPinchDistance;
+        const newScale = Math.min(Math.max(initialPinchScale * delta, 1.0), 5.0);
+
+        const currentFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const currentFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+        zoomToPinch(newScale, currentFocalX, currentFocalY);
+        e.preventDefault();
+    }
+}, { passive: false });
 
 document.addEventListener('touchend', function(e) {
+    if (e.touches.length < 2) {
+        initialPinchDistance = 0;
+    }
     if (e.touches.length > 0) return;
+
     const currentTime = new Date().getTime();
     if (currentTime - lastTapTime < 350) {
         const touch = e.changedTouches[0];
-        if (window.currentScale > 1.2) zoomTo(1.0, touch.clientX, touch.clientY, true);
-        else zoomTo(2.5, touch.clientX, touch.clientY, true);
+        if (window.currentScale > 1.2) {
+            zoomToFocal(1.0, touch.clientX, touch.clientY, true);
+        } else {
+            zoomToFocal(2.5, touch.clientX, touch.clientY, true);
+        }
         e.preventDefault();
     }
     lastTapTime = currentTime;
 }, { passive: false });
 
-document.addEventListener('touchstart', function(e) {
-    if (e.touches.length === 2) {
-        initialPinchDistance = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-        initialPinchScale = window.currentScale;
-    }
-}, { passive: false });
+function zoomToPinch(targetScale, currentFocalX, currentFocalY) {
+    const container = document.getElementById('viewer-container');
+    if (!container) return;
 
-document.addEventListener('touchmove', function(e) {
-    if (e.touches.length === 2) {
-        const currentDistance = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
-        const delta = currentDistance / initialPinchDistance;
-        const newScale = Math.min(Math.max(initialPinchScale * delta, 1.0), 5.0);
-        if (newScale !== window.currentScale) {
-            zoomTo(newScale, (e.touches[0].clientX + e.touches[1].clientX) / 2, (e.touches[0].clientY + e.touches[1].clientY) / 2);
-        }
-        e.preventDefault();
-    }
-}, { passive: false });
+    window.currentScale = targetScale;
+    container.style.transform = `scale(${targetScale})`;
+
+    document.body.style.width = (container.offsetWidth * targetScale) + 'px';
+    document.body.style.height = (container.offsetHeight * targetScale) + 'px';
+
+    const targetScrollX = anchorContentX * targetScale - currentFocalX;
+    const targetScrollY = anchorContentY * targetScale - currentFocalY;
+
+    window.scrollTo(Math.max(0, targetScrollX), Math.max(0, targetScrollY));
+}
 
 let isAnimating = false;
-function zoomTo(newScale, viewportX, viewportY, animate = false) {
+function zoomToFocal(newScale, viewportX, viewportY, animate = true) {
     const container = document.getElementById('viewer-container');
     if (!container || isAnimating) return;
 
-    const startScale = window.currentScale;
+    const startScale = window.currentScale || 1.0;
     const endScale = newScale;
     const startScrollX = window.scrollX;
     const startScrollY = window.scrollY;
 
     const contentX = (startScrollX + viewportX) / startScale;
     const contentY = (startScrollY + viewportY) / startScale;
+
     const targetScrollX = contentX * endScale - viewportX;
     const targetScrollY = contentY * endScale - viewportY;
 
@@ -469,27 +513,36 @@ function zoomTo(newScale, viewportX, viewportY, animate = false) {
 
     if (!animate) {
         window.currentScale = endScale;
-        container.style.transform = `scale(${window.currentScale})`;
-        updateBodySize(window.currentScale);
-        window.scrollTo(targetScrollX, targetScrollY);
+        container.style.transform = `scale(${endScale})`;
+        updateBodySize(endScale);
+        window.scrollTo(Math.max(0, targetScrollX), Math.max(0, targetScrollY));
         return;
     }
 
     isAnimating = true;
-    const duration = 200;
+    const duration = 220;
     const startTime = performance.now();
+
+    const maxAnimScale = Math.max(startScale, endScale);
+    updateBodySize(maxAnimScale);
 
     function step(now) {
         const elapsed = now - startTime;
         const progress = Math.min(elapsed / duration, 1.0);
         const ease = 1 - Math.pow(1 - progress, 3);
+
         const tempScale = startScale + (endScale - startScale) * ease;
+        const tempScrollX = startScrollX + (targetScrollX - startScrollX) * ease;
+        const tempScrollY = startScrollY + (targetScrollY - startScrollY) * ease;
+
         container.style.transform = `scale(${tempScale})`;
-        updateBodySize(tempScale);
-        window.scrollTo(startScrollX + (targetScrollX - startScrollX) * ease, startScrollY + (targetScrollY - startScrollY) * ease);
-        if (progress < 1.0) requestAnimationFrame(step);
-        else {
+        window.scrollTo(Math.max(0, tempScrollX), Math.max(0, tempScrollY));
+
+        if (progress < 1.0) {
+            requestAnimationFrame(step);
+        } else {
             window.currentScale = endScale;
+            updateBodySize(endScale);
             isAnimating = false;
         }
     }

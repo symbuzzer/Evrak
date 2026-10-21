@@ -234,17 +234,16 @@ fun BoxScope.DraggableScrollbar(
     rightPadding: Dp = 2.dp,
     touchTargetWidth: Dp = 40.dp,
     unpressedWidth: Dp = 6.dp,
-    pressedWidth: Dp = 12.dp,
+    pressedWidth: Dp = 10.dp,
     minThumbHeight: Dp = 48.dp,
-    thumbColor: Color = Color(0xFF424242),
-    trackColor: Color = Color.Black.copy(alpha = 0.15f)
+    thumbColor: Color = MaterialTheme.colorScheme.primary,
+    trackColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
 ) {
     if (!adapter.isScrollable) return
 
     var isDragging by remember { mutableStateOf(false) }
     var isInteracting by remember { mutableStateOf(false) }
     val currentAdapter by rememberUpdatedState(adapter)
-
 
     LaunchedEffect(adapter.scrollRatio, isDragging) {
         isInteracting = true
@@ -254,9 +253,10 @@ fun BoxScope.DraggableScrollbar(
         }
     }
 
+    // Alpha for dimming: dimmed (0.4f) when idle/waiting, full (1.0f) when pressed/dragged/scrolling
     val alpha by animateFloatAsState(
-        targetValue = if (isInteracting || isDragging) 1f else 0f,
-        animationSpec = tween(durationMillis = 300),
+        targetValue = if (isDragging || isInteracting) 1f else 0.4f,
+        animationSpec = tween(durationMillis = 200),
         label = "scrollbarAlpha"
     )
 
@@ -265,6 +265,8 @@ fun BoxScope.DraggableScrollbar(
         animationSpec = tween(durationMillis = 150),
         label = "thumbWidth"
     )
+
+    val strokeColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
 
     val density = LocalDensity.current
     val minThumbHeightPx = with(density) { minThumbHeight.toPx() }
@@ -309,34 +311,39 @@ fun BoxScope.DraggableScrollbar(
                 )
             }
     ) {
-        if (alpha > 0f || isDragging) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val totalHeight = size.height
-                val currentThumbWidth = thumbWidth.toPx()
-                val xOffset = size.width - currentThumbWidth
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val totalHeight = size.height
+            val currentThumbWidth = thumbWidth.toPx()
+            val xOffset = size.width - currentThumbWidth
 
+            // Track channel
+            drawRoundRect(
+                color = trackColor.copy(alpha = if (isDragging) 0.4f else 0.15f),
+                topLeft = Offset(x = xOffset, y = 0f),
+                size = Size(width = currentThumbWidth, height = totalHeight),
+                cornerRadius = CornerRadius(x = currentThumbWidth / 2f, y = currentThumbWidth / 2f)
+            )
 
-                if (isDragging) {
-                    drawRoundRect(
-                        color = trackColor.copy(alpha = trackColor.alpha * alpha),
-                        topLeft = Offset(x = xOffset, y = 0f),
-                        size = Size(width = currentThumbWidth, height = totalHeight),
-                        cornerRadius = CornerRadius(x = currentThumbWidth / 2f, y = currentThumbWidth / 2f)
-                    )
-                }
+            // Thumb calculation
+            val thumbHeight = (totalHeight * currentAdapter.thumbSizeRatio).coerceIn(minThumbHeightPx, totalHeight)
+            val trackLength = totalHeight - thumbHeight
+            val thumbTop = trackLength * currentAdapter.scrollRatio
 
+            // Outline for contrast
+            drawRoundRect(
+                color = strokeColor.copy(alpha = alpha),
+                topLeft = Offset(x = xOffset - 1f, y = thumbTop - 1f),
+                size = Size(width = currentThumbWidth + 2f, height = thumbHeight + 2f),
+                cornerRadius = CornerRadius(x = (currentThumbWidth + 2f) / 2f, y = (currentThumbWidth + 2f) / 2f)
+            )
 
-                val thumbHeight = (totalHeight * currentAdapter.thumbSizeRatio).coerceIn(minThumbHeightPx, totalHeight)
-                val trackLength = totalHeight - thumbHeight
-                val thumbTop = trackLength * currentAdapter.scrollRatio
-
-                drawRoundRect(
-                    color = thumbColor.copy(alpha = thumbColor.alpha * alpha),
-                    topLeft = Offset(x = xOffset, y = thumbTop),
-                    size = Size(width = currentThumbWidth, height = thumbHeight),
-                    cornerRadius = CornerRadius(x = currentThumbWidth / 2f, y = currentThumbWidth / 2f)
-                )
-            }
+            // Primary App Logo Blue Thumb Fill (dimmed when idle, full when pressed/dragging)
+            drawRoundRect(
+                color = thumbColor.copy(alpha = alpha),
+                topLeft = Offset(x = xOffset, y = thumbTop),
+                size = Size(width = currentThumbWidth, height = thumbHeight),
+                cornerRadius = CornerRadius(x = currentThumbWidth / 2f, y = currentThumbWidth / 2f)
+            )
         }
     }
 }
