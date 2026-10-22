@@ -77,6 +77,19 @@ if (pdfUrl) {
             threshold: 0.01
         });
 
+        function updateTextLayerScales() {
+            for (let [pageNum, el] of window.pageElements) {
+                const state = window.pageStates.get(pageNum);
+                if (state && state.rendered && state.textLayerDiv && state.viewport) {
+                    const canvas = el.querySelector('canvas');
+                    if (canvas && canvas.clientWidth > 0) {
+                        const scale = canvas.clientWidth / state.viewport.width;
+                        state.textLayerDiv.style.transform = `scale(${scale})`;
+                    }
+                }
+            }
+        }
+
         function renderPage(pdf, pageNum, containerDiv) {
             const state = window.pageStates.get(pageNum);
             if (!state || state.rendering) return;
@@ -98,13 +111,68 @@ if (pdfUrl) {
                 canvas.style.height = "auto";
 
                 const renderContext = { canvasContext: context, viewport: viewport };
-                page.render(renderContext).promise.then(() => {
+                page.render(renderContext).promise.then(async () => {
                     containerDiv.innerHTML = '';
                     containerDiv.appendChild(canvas);
                     containerDiv.className = 'page-wrapper';
                     state.rendered = true;
                     state.rendering = false;
                     containerDiv.style.height = 'auto';
+
+                    try {
+                        const textContent = await page.getTextContent();
+                        const textLayerDiv = document.createElement('div');
+                        textLayerDiv.className = 'textLayer';
+                        textLayerDiv.style.width = viewport.width + 'px';
+                        textLayerDiv.style.height = viewport.height + 'px';
+
+                        const canvasWidth = canvas.clientWidth || (containerDiv.clientWidth * 0.95) || viewport.width;
+                        const scale = canvasWidth / viewport.width;
+                        textLayerDiv.style.transformOrigin = '0 0';
+                        textLayerDiv.style.transform = `scale(${scale})`;
+
+                        const ctx = getMeasureContext();
+                        for (let i = 0; i < textContent.items.length; i++) {
+                            const item = textContent.items[i];
+                            const str = item.str || "";
+                            if (str.length === 0) continue;
+
+                            const fontHeight = Math.abs(item.transform[3]) || item.height || 12;
+                            const tx = item.transform[4];
+                            const ty = item.transform[5];
+                            const itemWidth = item.width || 10;
+
+                            const pdfRect = [tx, ty - fontHeight * 0.15, tx + itemWidth, ty + fontHeight * 0.85];
+                            const vRect = viewport.convertToViewportRectangle(pdfRect);
+
+                            const left = Math.min(vRect[0], vRect[2]);
+                            const top = Math.min(vRect[1], vRect[3]);
+                            const width = Math.abs(vRect[2] - vRect[0]);
+                            const height = Math.abs(vRect[3] - vRect[1]);
+
+                            const span = document.createElement('span');
+                            span.textContent = str;
+                            span.style.left = left + 'px';
+                            span.style.top = top + 'px';
+                            span.style.fontSize = height + 'px';
+
+                            if (width > 0 && str.length > 1) {
+                                ctx.font = height + 'px sans-serif';
+                                const measured = ctx.measureText(str).width || 1;
+                                if (measured > 0) {
+                                    const scaleX = width / measured;
+                                    span.style.transform = `scaleX(${scaleX})`;
+                                }
+                            }
+                            textLayerDiv.appendChild(span);
+                        }
+
+                        containerDiv.appendChild(textLayerDiv);
+                        state.textLayerDiv = textLayerDiv;
+                        state.viewport = viewport;
+                    } catch (e) {
+                        console.error("Error building text layer for page " + pageNum, e);
+                    }
 
                     if (window.activeSearchQuery) {
                         window.renderSearchHighlights(window.currentMatchIndex);
@@ -138,7 +206,10 @@ if (pdfUrl) {
         }
 
         await updateHeights();
-        window.addEventListener('resize', updateHeights);
+        window.addEventListener('resize', () => {
+            updateHeights();
+            updateTextLayerScales();
+        });
 
     }).catch(error => {
         loadingElement.innerText = 'Hata: ' + error.message;
