@@ -478,11 +478,22 @@ function zoomToPinch(targetScale, currentFocalX, currentFocalY) {
     const container = document.getElementById('viewer-container');
     if (!container) return;
 
+    if (targetScale <= 1.001) {
+        window.currentScale = 1.0;
+        container.style.transform = '';
+        document.body.style.width = '';
+        document.body.style.height = '';
+        document.body.style.overflowX = 'hidden';
+        window.scrollTo(0, window.scrollY);
+        return;
+    }
+
     window.currentScale = targetScale;
     container.style.transform = `scale(${targetScale})`;
 
     document.body.style.width = (container.offsetWidth * targetScale) + 'px';
     document.body.style.height = (container.offsetHeight * targetScale) + 'px';
+    document.body.style.overflowX = 'auto';
 
     const targetScrollX = anchorContentX * targetScale - currentFocalX;
     const targetScrollY = anchorContentY * targetScale - currentFocalY;
@@ -506,16 +517,24 @@ function zoomToFocal(newScale, viewportX, viewportY, animate = true) {
     const targetScrollX = contentX * endScale - viewportX;
     const targetScrollY = contentY * endScale - viewportY;
 
-    const updateBodySize = (scale) => {
-        document.body.style.width = (container.offsetWidth * scale) + 'px';
-        document.body.style.height = (container.offsetHeight * scale) + 'px';
+    const updateScaleAndBounds = (scale) => {
+        if (scale <= 1.001) {
+            container.style.transform = '';
+            document.body.style.width = '';
+            document.body.style.height = '';
+            document.body.style.overflowX = 'hidden';
+        } else {
+            container.style.transform = `scale(${scale})`;
+            document.body.style.width = (container.offsetWidth * scale) + 'px';
+            document.body.style.height = (container.offsetHeight * scale) + 'px';
+            document.body.style.overflowX = 'auto';
+        }
     };
 
     if (!animate) {
-        window.currentScale = endScale;
-        container.style.transform = `scale(${endScale})`;
-        updateBodySize(endScale);
-        window.scrollTo(Math.max(0, targetScrollX), Math.max(0, targetScrollY));
+        window.currentScale = endScale <= 1.001 ? 1.0 : endScale;
+        updateScaleAndBounds(window.currentScale);
+        window.scrollTo(endScale <= 1.001 ? 0 : Math.max(0, targetScrollX), Math.max(0, targetScrollY));
         return;
     }
 
@@ -524,7 +543,7 @@ function zoomToFocal(newScale, viewportX, viewportY, animate = true) {
     const startTime = performance.now();
 
     const maxAnimScale = Math.max(startScale, endScale);
-    updateBodySize(maxAnimScale);
+    updateScaleAndBounds(maxAnimScale);
 
     function step(now) {
         const elapsed = now - startTime;
@@ -535,14 +554,22 @@ function zoomToFocal(newScale, viewportX, viewportY, animate = true) {
         const tempScrollX = startScrollX + (targetScrollX - startScrollX) * ease;
         const tempScrollY = startScrollY + (targetScrollY - startScrollY) * ease;
 
-        container.style.transform = `scale(${tempScale})`;
-        window.scrollTo(Math.max(0, tempScrollX), Math.max(0, tempScrollY));
+        if (tempScale <= 1.001 && endScale <= 1.001 && progress >= 0.95) {
+            container.style.transform = '';
+            window.scrollTo(0, Math.max(0, tempScrollY));
+        } else {
+            container.style.transform = `scale(${tempScale})`;
+            window.scrollTo(Math.max(0, tempScrollX), Math.max(0, tempScrollY));
+        }
 
         if (progress < 1.0) {
             requestAnimationFrame(step);
         } else {
-            window.currentScale = endScale;
-            updateBodySize(endScale);
+            window.currentScale = endScale <= 1.001 ? 1.0 : endScale;
+            updateScaleAndBounds(window.currentScale);
+            if (window.currentScale === 1.0) {
+                window.scrollTo(0, window.scrollY);
+            }
             isAnimating = false;
         }
     }

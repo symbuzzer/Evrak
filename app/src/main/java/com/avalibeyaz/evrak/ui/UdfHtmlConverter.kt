@@ -468,7 +468,7 @@ object UdfHtmlConverter {
             if (isNumbered || isBulleted || hangingAttr > 0 || (hasEarlyTab && p.attrOrNull("Alignment") != "1")) {
                 val marker: String
                 val markerWidth: Double
-                val body: String
+                var body: String
 
                 if (isNumbered || isBulleted) {
                     val listId = p.attrOrNull("ListId") ?: "default"
@@ -508,7 +508,7 @@ object UdfHtmlConverter {
 
                     val inner = StringBuilder()
                     forEachChildElement(p) { child -> inner.append(renderInlineElement(child, dataScope, tabState)) }
-                    body = inner.toString()
+                    body = if (inner.isEmpty()) "&nbsp;" else inner.toString()
                 } else {
                     val split = renderParagraphWithHangingSplit(p, dataScope, tabState)
                     if (split != null) {
@@ -519,17 +519,20 @@ object UdfHtmlConverter {
                         markerWidth = if (isIndentOnly) 28.0 
                                       else if (hangingAttr > 0) hangingAttr 
                                       else defaultHanging
-                        body = split.second
+                        body = if (split.second.isEmpty()) "&nbsp;" else split.second
                     } else {
                         val inner = StringBuilder()
                         forEachChildElement(p) { child -> inner.append(renderInlineElement(child, dataScope, tabState)) }
+                        var innerStr = inner.toString()
+                        if (innerStr.isEmpty()) innerStr = "&nbsp;"
                         if (hangingAttr > 0) {
-                            return "<div class=\"udf-paragraph\" style=\"$style padding-left:${hangingAttr}pt; text-indent:-${hangingAttr}pt;\">$inner</div>"
+                            return "<div class=\"udf-paragraph\" style=\"$style padding-left:${hangingAttr}pt; text-indent:-${hangingAttr}pt;\">$innerStr</div>"
                         }
-                        return "<div class=\"udf-paragraph\" style=\"$style\">$inner</div>"
+                        return "<div class=\"udf-paragraph\" style=\"$style\">$innerStr</div>"
                     }
                 }
 
+                if (body.isEmpty()) body = "&nbsp;"
                 val gridCols = "minmax(${markerWidth}pt, max-content) 1fr"
                 return "<div class=\"udf-paragraph\" style=\"$style\"><div class=\"udf-list-row\" style=\"grid-template-columns: $gridCols;\"><div class=\"udf-list-marker\">$marker&nbsp;</div><div class=\"udf-list-content\">$body</div></div></div>"
             }

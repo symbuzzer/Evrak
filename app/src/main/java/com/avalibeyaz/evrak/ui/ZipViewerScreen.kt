@@ -298,96 +298,86 @@ fun ZipViewerScreen(
 
                         HorizontalDivider()
 
-                        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
-                        val scrollbarAdapter = rememberLazyColumnScrollbarAdapter(listState = listState)
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(zipEntries, key = { it }) { name ->
+                                val isSupported = SUPPORTED_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) }
 
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            LazyColumn(
-                                state = listState,
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(zipEntries, key = { it }) { name ->
-                                    val isSupported = SUPPORTED_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) }
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { value ->
+                                        if (value != SwipeToDismissBoxValue.Settled) {
+                                            selectedEntry = name
+                                            showSheet = true
+                                            false
+                                        } else {
+                                            true
+                                        }
+                                    }
+                                )
 
-                                    val dismissState = rememberSwipeToDismissBoxState(
-                                        confirmValueChange = { value ->
-                                            if (value != SwipeToDismissBoxValue.Settled) {
-                                                selectedEntry = name
-                                                showSheet = true
-                                                false
-                                            } else {
-                                                true
+                                SwipeToDismissBox(
+                                    state = dismissState,
+                                    backgroundContent = {
+                                        val direction = dismissState.dismissDirection
+                                        val color = when (direction) {
+                                            SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
+                                            SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
+                                            else -> androidx.compose.ui.graphics.Color.Transparent
+                                        }
+                                        val alignment = when (direction) {
+                                            SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                                            SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+                                            else -> Alignment.Center
+                                        }
+                                        val icon = Icons.Default.Menu
+
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(color, MaterialTheme.shapes.medium)
+                                                .padding(horizontal = 24.dp),
+                                            contentAlignment = alignment
+                                        ) {
+                                            if (direction != SwipeToDismissBoxValue.Settled) {
+                                                Icon(
+                                                    imageVector = icon,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                                )
                                             }
                                         }
-                                    )
-
-                                    SwipeToDismissBox(
-                                        state = dismissState,
-                                        backgroundContent = {
-                                            val direction = dismissState.dismissDirection
-                                            val color = when (direction) {
-                                                SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
-                                                SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
-                                                else -> androidx.compose.ui.graphics.Color.Transparent
-                                            }
-                                            val alignment = when (direction) {
-                                                SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
-                                                SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
-                                                else -> Alignment.Center
-                                            }
-                                            val icon = Icons.Default.Menu
-
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .background(color, MaterialTheme.shapes.medium)
-                                                    .padding(horizontal = 24.dp),
-                                                contentAlignment = alignment
+                                    },
+                                    content = {
+                                        Card(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .alpha(if (isSupported) 1f else 0.5f)
+                                                .combinedClickable(
+                                                    onClick = { openZipEntry(name) },
+                                                    onLongClick = {
+                                                        selectedEntry = name
+                                                        showSheet = true
+                                                    }
+                                                ),
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(16.dp),
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                if (direction != SwipeToDismissBoxValue.Settled) {
-                                                    Icon(
-                                                        imageVector = icon,
-                                                        contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                                    )
-                                                }
-                                            }
-                                        },
-                                        content = {
-                                            Card(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .alpha(if (isSupported) 1f else 0.5f)
-                                                    .combinedClickable(
-                                                        onClick = { openZipEntry(name) },
-                                                        onLongClick = {
-                                                            selectedEntry = name
-                                                            showSheet = true
-                                                        }
-                                                    ),
-                                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                                            ) {
-                                                Row(
-                                                    modifier = Modifier.padding(16.dp),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Text(
-                                                        text = name,
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        textAlign = androidx.compose.ui.text.style.TextAlign.Start
-                                                    )
-                                                }
+                                                Text(
+                                                    text = name,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Start
+                                                )
                                             }
                                         }
-                                    )
-                                }
+                                    }
+                                )
                             }
-
-                            DraggableScrollbar(
-                                adapter = scrollbarAdapter
-                            )
                         }
                     }
                 }
