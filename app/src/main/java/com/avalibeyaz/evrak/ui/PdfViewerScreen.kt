@@ -363,16 +363,18 @@ fun PdfViewerScreen(
                                     webViewInstance = this
                                     addJavascriptInterface(PdfViewerBridge(
                                         onPageChanged = { current, total ->
-                                            currentPage = current
-                                            totalPages = total
-                                            webViewInstance?.post {
-                                                webViewInstance?.notifyScroll()
+                                            post {
+                                                currentPage = current
+                                                totalPages = total
+                                                notifyScroll()
                                             }
                                         },
                                         onSearchResult = { current, total ->
-                                            currentMatch = current
-                                            totalMatches = total
-                                            hasSearched = true
+                                            post {
+                                                currentMatch = current
+                                                totalMatches = total
+                                                hasSearched = true
+                                            }
                                         }
                                     ), "AndroidBridge")
                                     onScrollStateChanged = { offset, range, extent ->
@@ -394,7 +396,7 @@ fun PdfViewerScreen(
                                     settings.loadWithOverviewMode = true
                                     settings.useWideViewPort = true
                                     settings.setSupportZoom(true) 
-                                    settings.builtInZoomControls = true
+                                    settings.builtInZoomControls = false
                                     settings.displayZoomControls = false
                                     
                                     isVerticalScrollBarEnabled = true

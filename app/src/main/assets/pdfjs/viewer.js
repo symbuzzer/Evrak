@@ -44,18 +44,23 @@ if (pdfUrl) {
         }
 
         const checkCurrentPage = () => {
-            let closestPage = 1;
-            let minDistance = Infinity;
+            let bestPage = 1;
+            let maxVisibleHeight = -1;
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 600;
+
             for (let [pageNum, el] of window.pageElements) {
                 const rect = el.getBoundingClientRect();
-                const distance = Math.abs(rect.top);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closestPage = pageNum;
+                const visibleTop = Math.max(0, rect.top);
+                const visibleBottom = Math.min(viewportHeight, rect.bottom);
+                const visibleHeight = visibleBottom - visibleTop;
+
+                if (visibleHeight > maxVisibleHeight && visibleHeight > 0) {
+                    maxVisibleHeight = visibleHeight;
+                    bestPage = pageNum;
                 }
             }
             if (window.AndroidBridge && window.AndroidBridge.notifyPageChanged) {
-                window.AndroidBridge.notifyPageChanged(closestPage, pdf.numPages);
+                window.AndroidBridge.notifyPageChanged(bestPage, pdf.numPages);
             }
         };
 
@@ -491,8 +496,49 @@ let initialScrollY = 0;
 let anchorContentX = 0;
 let anchorContentY = 0;
 
+let isPanDragging = false;
+let panStartX = 0;
+let panStartY = 0;
+let panStartScrollX = 0;
+let panStartScrollY = 0;
+let rAFPending = false;
+let latestTargetX = 0;
+let latestTargetY = 0;
+
+let velocityX = 0;
+let velocityY = 0;
+let lastTouchX = 0;
+let lastTouchY = 0;
+let lastTouchTime = 0;
+let flingAnimId = null;
+
+function stopFling() {
+    if (flingAnimId !== null) {
+        cancelAnimationFrame(flingAnimId);
+        flingAnimId = null;
+    }
+}
+
 document.addEventListener('touchstart', function(e) {
-    if (e.touches.length === 2) {
+    stopFling();
+    if (e.touches.length === 1) {
+        if (window.currentScale > 1.05) {
+            isPanDragging = true;
+            panStartX = e.touches[0].clientX;
+            panStartY = e.touches[0].clientY;
+            panStartScrollX = window.scrollX;
+            panStartScrollY = window.scrollY;
+
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+            lastTouchTime = performance.now();
+            velocityX = 0;
+            velocityY = 0;
+        } else {
+            isPanDragging = false;
+        }
+    } else if (e.touches.length === 2) {
+        isPanDragging = false;
         initialPinchDistance = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX,
             e.touches[0].clientY - e.touches[1].clientY
@@ -507,10 +553,39 @@ document.addEventListener('touchstart', function(e) {
         anchorContentX = (initialScrollX + focalX) / initialPinchScale;
         anchorContentY = (initialScrollY + focalY) / initialPinchScale;
     }
-}, { passive: false });
+}, { passive: true });
 
 document.addEventListener('touchmove', function(e) {
-    if (e.touches.length === 2 && initialPinchDistance > 0) {
+    if (e.touches.length === 1 && isPanDragging && window.currentScale > 1.05) {
+        const now = performance.now();
+        const dt = Math.max(1, now - lastTouchTime);
+        const currX = e.touches[0].clientX;
+        const currY = e.touches[0].clientY;
+
+        const instVx = (currX - lastTouchX) / dt;
+        const instVy = (currY - lastTouchY) / dt;
+        velocityX = velocityX * 0.4 + instVx * 0.6;
+        velocityY = velocityY * 0.4 + instVy * 0.6;
+
+        lastTouchX = currX;
+        lastTouchY = currY;
+        lastTouchTime = now;
+
+        const deltaX = currX - panStartX;
+        const deltaY = currY - panStartY;
+
+        latestTargetX = Math.max(0, panStartScrollX - deltaX);
+        latestTargetY = Math.max(0, panStartScrollY - deltaY);
+
+        if (!rAFPending) {
+            rAFPending = true;
+            requestAnimationFrame(function() {
+                window.scrollTo(latestTargetX, latestTargetY);
+                rAFPending = false;
+            });
+        }
+        e.preventDefault();
+    } else if (e.touches.length === 2 && initialPinchDistance > 0) {
         const currentDistance = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX,
             e.touches[0].clientY - e.touches[1].clientY
@@ -529,6 +604,46 @@ document.addEventListener('touchmove', function(e) {
 document.addEventListener('touchend', function(e) {
     if (e.touches.length < 2) {
         initialPinchDistance = 0;
+    }
+    if (e.touches.length === 0) {
+        if (isPanDragging && window.currentScale > 1.05) {
+            isPanDragging = false;
+            const now = performance.now();
+            if (now - lastTouchTime <= 80) {
+                const speed = Math.hypot(velocityX, velocityY);
+                if (speed > 0.15) {
+                    let vx = velocityX * 14;
+                    let vy = velocityY * 14;
+                    const friction = 0.93;
+
+                    function stepFling() {
+                        if (Math.hypot(vx, vy) < 0.5) {
+                            flingAnimId = null;
+                            return;
+                        }
+                        window.scrollBy(-vx, -vy);
+                        vx *= friction;
+                        vy *= friction;
+                        flingAnimId = requestAnimationFrame(stepFling);
+                    }
+                    flingAnimId = requestAnimationFrame(stepFling);
+                }
+            }
+        } else {
+            isPanDragging = false;
+        }
+
+        if (window.currentScale > 1.001) {
+            const container = document.getElementById('viewer-container');
+            if (container) {
+                const scaledWidth = container.offsetWidth * window.currentScale;
+                const scaledHeight = container.offsetHeight * window.currentScale;
+                document.body.style.width = scaledWidth + 'px';
+                document.body.style.height = scaledHeight + 'px';
+                document.documentElement.style.width = scaledWidth + 'px';
+                document.documentElement.style.height = scaledHeight + 'px';
+            }
+        }
     }
     if (e.touches.length > 0) return;
 
@@ -554,8 +669,12 @@ function zoomToPinch(targetScale, currentFocalX, currentFocalY) {
         container.style.transform = '';
         document.body.style.width = '';
         document.body.style.height = '';
+        document.documentElement.style.width = '';
+        document.documentElement.style.height = '';
         document.body.style.overflowX = 'hidden';
         document.documentElement.style.overflowX = 'hidden';
+        document.body.style.overflowY = 'auto';
+        document.documentElement.style.overflowY = 'auto';
         window.scrollTo(0, window.scrollY);
         return;
     }
@@ -563,10 +682,18 @@ function zoomToPinch(targetScale, currentFocalX, currentFocalY) {
     window.currentScale = targetScale;
     container.style.transform = `scale(${targetScale})`;
 
-    document.body.style.width = (container.offsetWidth * targetScale) + 'px';
-    document.body.style.height = (container.offsetHeight * targetScale) + 'px';
+    const scaledWidth = container.offsetWidth * targetScale;
+    const scaledHeight = container.offsetHeight * targetScale;
+
+    document.body.style.width = scaledWidth + 'px';
+    document.body.style.height = scaledHeight + 'px';
+    document.documentElement.style.width = scaledWidth + 'px';
+    document.documentElement.style.height = scaledHeight + 'px';
+
     document.body.style.overflowX = 'auto';
     document.documentElement.style.overflowX = 'auto';
+    document.body.style.overflowY = 'auto';
+    document.documentElement.style.overflowY = 'auto';
 
     const targetScrollX = anchorContentX * targetScale - currentFocalX;
     const targetScrollY = anchorContentY * targetScale - currentFocalY;
@@ -595,14 +722,24 @@ function zoomToFocal(newScale, viewportX, viewportY, animate = true) {
             container.style.transform = '';
             document.body.style.width = '';
             document.body.style.height = '';
+            document.documentElement.style.width = '';
+            document.documentElement.style.height = '';
             document.body.style.overflowX = 'hidden';
             document.documentElement.style.overflowX = 'hidden';
+            document.body.style.overflowY = 'auto';
+            document.documentElement.style.overflowY = 'auto';
         } else {
             container.style.transform = `scale(${scale})`;
-            document.body.style.width = (container.offsetWidth * scale) + 'px';
-            document.body.style.height = (container.offsetHeight * scale) + 'px';
+            const scaledWidth = container.offsetWidth * scale;
+            const scaledHeight = container.offsetHeight * scale;
+            document.body.style.width = scaledWidth + 'px';
+            document.body.style.height = scaledHeight + 'px';
+            document.documentElement.style.width = scaledWidth + 'px';
+            document.documentElement.style.height = scaledHeight + 'px';
             document.body.style.overflowX = 'auto';
             document.documentElement.style.overflowX = 'auto';
+            document.body.style.overflowY = 'auto';
+            document.documentElement.style.overflowY = 'auto';
         }
     };
 
