@@ -555,6 +555,7 @@ function zoomToPinch(targetScale, currentFocalX, currentFocalY) {
         document.body.style.width = '';
         document.body.style.height = '';
         document.body.style.overflowX = 'hidden';
+        document.documentElement.style.overflowX = 'hidden';
         window.scrollTo(0, window.scrollY);
         return;
     }
@@ -565,6 +566,7 @@ function zoomToPinch(targetScale, currentFocalX, currentFocalY) {
     document.body.style.width = (container.offsetWidth * targetScale) + 'px';
     document.body.style.height = (container.offsetHeight * targetScale) + 'px';
     document.body.style.overflowX = 'auto';
+    document.documentElement.style.overflowX = 'auto';
 
     const targetScrollX = anchorContentX * targetScale - currentFocalX;
     const targetScrollY = anchorContentY * targetScale - currentFocalY;
@@ -594,11 +596,13 @@ function zoomToFocal(newScale, viewportX, viewportY, animate = true) {
             document.body.style.width = '';
             document.body.style.height = '';
             document.body.style.overflowX = 'hidden';
+            document.documentElement.style.overflowX = 'hidden';
         } else {
             container.style.transform = `scale(${scale})`;
             document.body.style.width = (container.offsetWidth * scale) + 'px';
             document.body.style.height = (container.offsetHeight * scale) + 'px';
             document.body.style.overflowX = 'auto';
+            document.documentElement.style.overflowX = 'auto';
         }
     };
 
