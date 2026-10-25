@@ -706,6 +706,8 @@ function zoomToFocal(newScale, viewportX, viewportY, animate = true) {
     const container = document.getElementById('viewer-container');
     if (!container || isAnimating) return;
 
+    stopFling();
+
     const startScale = window.currentScale || 1.0;
     const endScale = newScale;
     const startScrollX = window.scrollX;
@@ -720,6 +722,7 @@ function zoomToFocal(newScale, viewportX, viewportY, animate = true) {
     const updateScaleAndBounds = (scale) => {
         if (scale <= 1.001) {
             container.style.transform = '';
+            container.style.transformOrigin = '0 0';
             document.body.style.width = '';
             document.body.style.height = '';
             document.documentElement.style.width = '';
@@ -729,6 +732,7 @@ function zoomToFocal(newScale, viewportX, viewportY, animate = true) {
             document.body.style.overflowY = 'auto';
             document.documentElement.style.overflowY = 'auto';
         } else {
+            container.style.transformOrigin = '0 0';
             container.style.transform = `scale(${scale})`;
             const scaledWidth = container.offsetWidth * scale;
             const scaledHeight = container.offsetHeight * scale;
@@ -751,39 +755,42 @@ function zoomToFocal(newScale, viewportX, viewportY, animate = true) {
     }
 
     isAnimating = true;
-    const duration = 220;
-    const startTime = performance.now();
+    const animDuration = 240;
 
-    const maxAnimScale = Math.max(startScale, endScale);
-    updateScaleAndBounds(maxAnimScale);
+    if (endScale > 1.001) {
+        container.style.transformOrigin = `${contentX}px ${contentY}px`;
+        container.style.transition = `transform ${animDuration}ms cubic-bezier(0.2, 0, 0.2, 1)`;
+        container.style.transform = `scale(${endScale})`;
 
-    function step(now) {
-        const elapsed = now - startTime;
-        const progress = Math.min(elapsed / duration, 1.0);
-        const ease = 1 - Math.pow(1 - progress, 3);
-
-        const tempScale = startScale + (endScale - startScale) * ease;
-        const tempScrollX = startScrollX + (targetScrollX - startScrollX) * ease;
-        const tempScrollY = startScrollY + (targetScrollY - startScrollY) * ease;
-
-        if (tempScale <= 1.001 && endScale <= 1.001 && progress >= 0.95) {
-            container.style.transform = '';
-            window.scrollTo(0, Math.max(0, tempScrollY));
-        } else {
-            container.style.transform = `scale(${tempScale})`;
-            window.scrollTo(Math.max(0, tempScrollX), Math.max(0, tempScrollY));
-        }
-
-        if (progress < 1.0) {
-            requestAnimationFrame(step);
-        } else {
-            window.currentScale = endScale <= 1.001 ? 1.0 : endScale;
-            updateScaleAndBounds(window.currentScale);
-            if (window.currentScale === 1.0) {
-                window.scrollTo(0, window.scrollY);
-            }
+        setTimeout(() => {
+            window.currentScale = endScale;
+            container.style.transition = '';
+            updateScaleAndBounds(endScale);
+            window.scrollTo(Math.max(0, targetScrollX), Math.max(0, targetScrollY));
             isAnimating = false;
-        }
+        }, animDuration);
+    } else {
+        const endScrollX = 0;
+        const endScrollY = Math.max(0, contentY - viewportY);
+
+        const initTx = endScrollX - startScrollX;
+        const initTy = endScrollY - startScrollY;
+
+        container.style.transformOrigin = '0 0';
+        window.scrollTo(endScrollX, endScrollY);
+        container.style.transform = `translate3d(${initTx}px, ${initTy}px, 0px) scale(${startScale})`;
+
+        requestAnimationFrame(() => {
+            container.style.transition = `transform ${animDuration}ms cubic-bezier(0.2, 0, 0.2, 1)`;
+            container.style.transform = 'translate3d(0px, 0px, 0px) scale(1.0)';
+
+            setTimeout(() => {
+                window.currentScale = 1.0;
+                container.style.transition = '';
+                updateScaleAndBounds(1.0);
+                window.scrollTo(0, endScrollY);
+                isAnimating = false;
+            }, animDuration);
+        });
     }
-    requestAnimationFrame(step);
 }
