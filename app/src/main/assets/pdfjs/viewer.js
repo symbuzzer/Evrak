@@ -489,308 +489,143 @@ window.renderSearchHighlights = function(activeIdx) {
 };
 
 let lastTapTime = 0;
-let initialPinchDistance = 0;
-let initialPinchScale = 1.0;
-let initialScrollX = 0;
-let initialScrollY = 0;
-let anchorContentX = 0;
-let anchorContentY = 0;
-
-let isPanDragging = false;
-let panStartX = 0;
-let panStartY = 0;
-let panStartScrollX = 0;
-let panStartScrollY = 0;
-let rAFPending = false;
-let latestTargetX = 0;
-let latestTargetY = 0;
-
-let velocityX = 0;
-let velocityY = 0;
-let lastTouchX = 0;
-let lastTouchY = 0;
-let lastTouchTime = 0;
-let flingAnimId = null;
-
-function stopFling() {
-    if (flingAnimId !== null) {
-        cancelAnimationFrame(flingAnimId);
-        flingAnimId = null;
-    }
-}
+let lastTapX = 0;
+let lastTapY = 0;
+let touchStartTime = 0;
+let touchStartX = 0;
+let touchStartY = 0;
+let isDoubleZoomed = false;
 
 document.addEventListener('touchstart', function(e) {
-    stopFling();
     if (e.touches.length === 1) {
-        if (window.currentScale > 1.05) {
-            isPanDragging = true;
-            panStartX = e.touches[0].clientX;
-            panStartY = e.touches[0].clientY;
-            panStartScrollX = window.scrollX;
-            panStartScrollY = window.scrollY;
-
-            lastTouchX = e.touches[0].clientX;
-            lastTouchY = e.touches[0].clientY;
-            lastTouchTime = performance.now();
-            velocityX = 0;
-            velocityY = 0;
-        } else {
-            isPanDragging = false;
-        }
-    } else if (e.touches.length === 2) {
-        isPanDragging = false;
-        initialPinchDistance = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-        );
-        initialPinchScale = window.currentScale || 1.0;
-        initialScrollX = window.scrollX;
-        initialScrollY = window.scrollY;
-
-        const focalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-        const focalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-
-        anchorContentX = (initialScrollX + focalX) / initialPinchScale;
-        anchorContentY = (initialScrollY + focalY) / initialPinchScale;
+        touchStartTime = performance.now();
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    } else {
+        touchStartTime = 0;
     }
 }, { passive: true });
 
-document.addEventListener('touchmove', function(e) {
-    if (e.touches.length === 1 && isPanDragging && window.currentScale > 1.05) {
-        const now = performance.now();
-        const dt = Math.max(1, now - lastTouchTime);
-        const currX = e.touches[0].clientX;
-        const currY = e.touches[0].clientY;
-
-        const instVx = (currX - lastTouchX) / dt;
-        const instVy = (currY - lastTouchY) / dt;
-        velocityX = velocityX * 0.4 + instVx * 0.6;
-        velocityY = velocityY * 0.4 + instVy * 0.6;
-
-        lastTouchX = currX;
-        lastTouchY = currY;
-        lastTouchTime = now;
-
-        const deltaX = currX - panStartX;
-        const deltaY = currY - panStartY;
-
-        latestTargetX = Math.max(0, panStartScrollX - deltaX);
-        latestTargetY = Math.max(0, panStartScrollY - deltaY);
-
-        if (!rAFPending) {
-            rAFPending = true;
-            requestAnimationFrame(function() {
-                window.scrollTo(latestTargetX, latestTargetY);
-                rAFPending = false;
-            });
-        }
-        e.preventDefault();
-    } else if (e.touches.length === 2 && initialPinchDistance > 0) {
-        const currentDistance = Math.hypot(
-            e.touches[0].clientX - e.touches[1].clientX,
-            e.touches[0].clientY - e.touches[1].clientY
-        );
-        const delta = currentDistance / initialPinchDistance;
-        const newScale = Math.min(Math.max(initialPinchScale * delta, 1.0), 5.0);
-
-        const currentFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-        const currentFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-
-        zoomToPinch(newScale, currentFocalX, currentFocalY);
-        e.preventDefault();
-    }
-}, { passive: false });
-
 document.addEventListener('touchend', function(e) {
-    if (e.touches.length < 2) {
-        initialPinchDistance = 0;
-    }
-    if (e.touches.length === 0) {
-        if (isPanDragging && window.currentScale > 1.05) {
-            isPanDragging = false;
-            const now = performance.now();
-            if (now - lastTouchTime <= 80) {
-                const speed = Math.hypot(velocityX, velocityY);
-                if (speed > 0.15) {
-                    let vx = velocityX * 14;
-                    let vy = velocityY * 14;
-                    const friction = 0.93;
+    if (e.touches.length > 0 || touchStartTime === 0) return;
 
-                    function stepFling() {
-                        if (Math.hypot(vx, vy) < 0.5) {
-                            flingAnimId = null;
-                            return;
-                        }
-                        window.scrollBy(-vx, -vy);
-                        vx *= friction;
-                        vy *= friction;
-                        flingAnimId = requestAnimationFrame(stepFling);
-                    }
-                    flingAnimId = requestAnimationFrame(stepFling);
-                }
-            }
-        } else {
-            isPanDragging = false;
+    const now = performance.now();
+    const touchDuration = now - touchStartTime;
+    const touchEnd = e.changedTouches[0];
+    const moveDist = Math.hypot(touchEnd.clientX - touchStartX, touchEnd.clientY - touchStartY);
+
+    if (touchDuration < 250 && moveDist < 15) {
+        const timeSinceLastTap = now - lastTapTime;
+        const distFromLastTap = Math.hypot(touchEnd.clientX - lastTapX, touchEnd.clientY - lastTapY);
+
+        if (timeSinceLastTap > 40 && timeSinceLastTap < 350 && distFromLastTap < 30) {
+            toggleDoubleTapZoom(touchEnd.clientX, touchEnd.clientY);
+            lastTapTime = 0;
+            return;
         }
 
-        if (window.currentScale > 1.001) {
-            const container = document.getElementById('viewer-container');
-            if (container) {
-                const scaledWidth = container.offsetWidth * window.currentScale;
-                const scaledHeight = container.offsetHeight * window.currentScale;
-                document.body.style.width = scaledWidth + 'px';
-                document.body.style.height = scaledHeight + 'px';
-                document.documentElement.style.width = scaledWidth + 'px';
-                document.documentElement.style.height = scaledHeight + 'px';
-            }
-        }
+        lastTapTime = now;
+        lastTapX = touchEnd.clientX;
+        lastTapY = touchEnd.clientY;
+    } else {
+        lastTapTime = 0;
     }
-    if (e.touches.length > 0) return;
+}, { passive: true });
 
-    const currentTime = new Date().getTime();
-    if (currentTime - lastTapTime < 350) {
-        const touch = e.changedTouches[0];
-        if (window.currentScale > 1.2) {
-            zoomToFocal(1.0, touch.clientX, touch.clientY, true);
-        } else {
-            zoomToFocal(2.5, touch.clientX, touch.clientY, true);
-        }
-        e.preventDefault();
-    }
-    lastTapTime = currentTime;
-}, { passive: false });
+let isAnimatingZoom = false;
 
-function zoomToPinch(targetScale, currentFocalX, currentFocalY) {
+function toggleDoubleTapZoom(clientX, clientY) {
     const container = document.getElementById('viewer-container');
-    if (!container) return;
+    if (!container || isAnimatingZoom) return;
 
-    if (targetScale <= 1.001) {
-        window.currentScale = 1.0;
-        container.style.transform = '';
+    isAnimatingZoom = true;
+    const animDuration = 250;
+    const cubicBezier = 'cubic-bezier(0.25, 0.1, 0.25, 1)';
+
+    if (isDoubleZoomed) {
+        const scale = 2.2;
+        const currentScrollX = window.scrollX || window.pageXOffset || 0;
+        const currentScrollY = window.scrollY || window.pageYOffset || 0;
+
+        const contentX = (currentScrollX + clientX) / scale;
+        const contentY = (currentScrollY + clientY) / scale;
+
+        const targetScrollX = Math.max(0, contentX - clientX);
+        const targetScrollY = Math.max(0, contentY - clientY);
+
+        document.documentElement.style.minWidth = '';
+        document.documentElement.style.minHeight = '';
+        document.body.style.minWidth = '';
+        document.body.style.minHeight = '';
         document.body.style.width = '';
         document.body.style.height = '';
         document.documentElement.style.width = '';
         document.documentElement.style.height = '';
-        document.body.style.overflowX = 'hidden';
-        document.documentElement.style.overflowX = 'hidden';
-        document.body.style.overflowY = 'auto';
-        document.documentElement.style.overflowY = 'auto';
-        window.scrollTo(0, window.scrollY);
-        return;
-    }
 
-    window.currentScale = targetScale;
-    container.style.transform = `scale(${targetScale})`;
-
-    const scaledWidth = container.offsetWidth * targetScale;
-    const scaledHeight = container.offsetHeight * targetScale;
-
-    document.body.style.width = scaledWidth + 'px';
-    document.body.style.height = scaledHeight + 'px';
-    document.documentElement.style.width = scaledWidth + 'px';
-    document.documentElement.style.height = scaledHeight + 'px';
-
-    document.body.style.overflowX = 'auto';
-    document.documentElement.style.overflowX = 'auto';
-    document.body.style.overflowY = 'auto';
-    document.documentElement.style.overflowY = 'auto';
-
-    const targetScrollX = anchorContentX * targetScale - currentFocalX;
-    const targetScrollY = anchorContentY * targetScale - currentFocalY;
-
-    window.scrollTo(Math.max(0, targetScrollX), Math.max(0, targetScrollY));
-}
-
-let isAnimating = false;
-function zoomToFocal(newScale, viewportX, viewportY, animate = true) {
-    const container = document.getElementById('viewer-container');
-    if (!container || isAnimating) return;
-
-    stopFling();
-
-    const startScale = window.currentScale || 1.0;
-    const endScale = newScale;
-    const startScrollX = window.scrollX;
-    const startScrollY = window.scrollY;
-
-    const contentX = (startScrollX + viewportX) / startScale;
-    const contentY = (startScrollY + viewportY) / startScale;
-
-    const targetScrollX = contentX * endScale - viewportX;
-    const targetScrollY = contentY * endScale - viewportY;
-
-    const updateScaleAndBounds = (scale) => {
-        if (scale <= 1.001) {
-            container.style.transform = '';
-            container.style.transformOrigin = '0 0';
-            document.body.style.width = '';
-            document.body.style.height = '';
-            document.documentElement.style.width = '';
-            document.documentElement.style.height = '';
-            document.body.style.overflowX = 'hidden';
-            document.documentElement.style.overflowX = 'hidden';
-            document.body.style.overflowY = 'auto';
-            document.documentElement.style.overflowY = 'auto';
-        } else {
-            container.style.transformOrigin = '0 0';
-            container.style.transform = `scale(${scale})`;
-            const scaledWidth = container.offsetWidth * scale;
-            const scaledHeight = container.offsetHeight * scale;
-            document.body.style.width = scaledWidth + 'px';
-            document.body.style.height = scaledHeight + 'px';
-            document.documentElement.style.width = scaledWidth + 'px';
-            document.documentElement.style.height = scaledHeight + 'px';
-            document.body.style.overflowX = 'auto';
-            document.documentElement.style.overflowX = 'auto';
-            document.body.style.overflowY = 'auto';
-            document.documentElement.style.overflowY = 'auto';
-        }
-    };
-
-    if (!animate) {
-        window.currentScale = endScale <= 1.001 ? 1.0 : endScale;
-        updateScaleAndBounds(window.currentScale);
-        window.scrollTo(endScale <= 1.001 ? 0 : Math.max(0, targetScrollX), Math.max(0, targetScrollY));
-        return;
-    }
-
-    isAnimating = true;
-    const animDuration = 240;
-
-    if (endScale > 1.001) {
+        container.style.transition = 'none';
         container.style.transformOrigin = `${contentX}px ${contentY}px`;
-        container.style.transition = `transform ${animDuration}ms cubic-bezier(0.2, 0, 0.2, 1)`;
-        container.style.transform = `scale(${endScale})`;
-
-        setTimeout(() => {
-            window.currentScale = endScale;
-            container.style.transition = '';
-            updateScaleAndBounds(endScale);
-            window.scrollTo(Math.max(0, targetScrollX), Math.max(0, targetScrollY));
-            isAnimating = false;
-        }, animDuration);
-    } else {
-        const endScrollX = 0;
-        const endScrollY = Math.max(0, contentY - viewportY);
-
-        const initTx = endScrollX - startScrollX;
-        const initTy = endScrollY - startScrollY;
-
-        container.style.transformOrigin = '0 0';
-        window.scrollTo(endScrollX, endScrollY);
-        container.style.transform = `translate3d(${initTx}px, ${initTy}px, 0px) scale(${startScale})`;
+        container.style.transform = `scale(${scale})`;
+        window.scrollTo(targetScrollX, targetScrollY);
 
         requestAnimationFrame(() => {
-            container.style.transition = `transform ${animDuration}ms cubic-bezier(0.2, 0, 0.2, 1)`;
-            container.style.transform = 'translate3d(0px, 0px, 0px) scale(1.0)';
+            requestAnimationFrame(() => {
+                container.style.transition = `transform ${animDuration}ms ${cubicBezier}`;
+                container.style.transform = 'scale(1.0)';
 
-            setTimeout(() => {
-                window.currentScale = 1.0;
-                container.style.transition = '';
-                updateScaleAndBounds(1.0);
-                window.scrollTo(0, endScrollY);
-                isAnimating = false;
-            }, animDuration);
+                setTimeout(() => {
+                    container.style.transition = 'none';
+                    container.style.transformOrigin = '0 0';
+                    container.style.transform = '';
+                    isDoubleZoomed = false;
+                    isAnimatingZoom = false;
+                }, animDuration + 10);
+            });
+        });
+    } else {
+        const scale = 2.2;
+        const currentScrollX = window.scrollX || window.pageXOffset || 0;
+        const currentScrollY = window.scrollY || window.pageYOffset || 0;
+
+        const contentX = currentScrollX + clientX;
+        const contentY = currentScrollY + clientY;
+
+        container.style.transition = 'none';
+        container.style.transformOrigin = `${contentX}px ${contentY}px`;
+        container.style.transform = 'scale(1.0)';
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                container.style.transition = `transform ${animDuration}ms ${cubicBezier}`;
+                container.style.transform = `scale(${scale})`;
+
+                setTimeout(() => {
+                    const scaledWidth = container.offsetWidth * scale;
+                    const scaledHeight = container.offsetHeight * scale;
+                    document.documentElement.style.minWidth = scaledWidth + 'px';
+                    document.documentElement.style.minHeight = scaledHeight + 'px';
+                    document.body.style.minWidth = scaledWidth + 'px';
+                    document.body.style.minHeight = scaledHeight + 'px';
+                    document.body.style.width = scaledWidth + 'px';
+                    document.body.style.height = scaledHeight + 'px';
+                    document.documentElement.style.width = scaledWidth + 'px';
+                    document.documentElement.style.height = scaledHeight + 'px';
+
+                    const targetScrollX = Math.max(0, contentX * scale - clientX);
+                    const targetScrollY = Math.max(0, contentY * scale - clientY);
+
+                    container.style.transition = 'none';
+                    container.style.transformOrigin = '0 0';
+                    container.style.transform = `scale(${scale})`;
+                    window.scrollTo(targetScrollX, targetScrollY);
+
+                    isDoubleZoomed = true;
+                    isAnimatingZoom = false;
+                }, animDuration + 10);
+            });
         });
     }
 }
+
+
+
+

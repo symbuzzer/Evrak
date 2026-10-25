@@ -2,16 +2,22 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>PDF.js Viewer</title>
     <style>
-        html, body {
+        html {
             margin: 0;
             padding: 0;
             background-color: #525659;
             font-family: sans-serif;
-            overflow-x: hidden;
-            overflow-y: auto;
+            overflow: auto;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #525659;
+            font-family: sans-serif;
+            overflow: visible !important;
         }
         ::-webkit-scrollbar {
             display: none;
