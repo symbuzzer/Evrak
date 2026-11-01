@@ -1,5 +1,8 @@
 package com.avalibeyaz.evrak.ui
 
+import android.content.Intent
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -30,6 +33,7 @@ import com.avalibeyaz.evrak.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayInputStream
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,7 +50,7 @@ fun HtmlViewerScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
+
     var isConverting by remember { mutableStateOf(false) }
     var conversionMessage by remember { mutableStateOf("") }
     var isFullScreen by remember { mutableStateOf(false) }
@@ -155,13 +159,13 @@ fun HtmlViewerScreen(
                 var content = file.readText(Charsets.UTF_8)
                 val isExcel = originalExtension?.contains("XLS", true) == true
                 val isPresentation = originalExtension?.contains("PPT", true) == true
-                
+
                 val tableStyle = if (isExcel) {
                     "table { border-collapse: collapse; width: auto; min-width: 100%; margin-bottom: 20px; table-layout: auto; }"
                 } else {
                     "table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }"
                 }
-                
+
                 val cellStyle = if (isExcel) {
                     "th, td { border: 1px solid #ccc; padding: 8px; text-align: left; white-space: nowrap; }"
                 } else {
@@ -186,11 +190,13 @@ fun HtmlViewerScreen(
                         img { max-width: 100%; height: auto; }
                     </style>
                 """.trimIndent()
-                
+
+                val csp = "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:\">"
+
                 if (content.contains("<head>", ignoreCase = true)) {
-                    content = content.replace("<head>", "<head>$css", ignoreCase = true)
+                    content = content.replaceFirst("<head>", "<head>$csp$css", ignoreCase = true)
                 } else {
-                    content = "<html><head>$css</head><body>$content</body></html>"
+                    content = "<html><head>$csp$css</head><body>$content</body></html>"
                 }
                 content
             } catch (e: Exception) {
@@ -367,17 +373,55 @@ fun HtmlViewerScreen(
                                         super.onPageFinished(view, url)
                                         (view as? ObservableWebView)?.notifyScroll()
                                     }
+
+                                    override fun shouldOverrideUrlLoading(
+                                        view: WebView?,
+                                        request: WebResourceRequest?
+                                    ): Boolean {
+                                        val uri = request?.url
+                                        if (uri != null && request.hasGesture()) {
+                                            val scheme = uri.scheme?.lowercase()
+                                            if (scheme == "http" || scheme == "https" || scheme == "mailto" || scheme == "tel") {
+                                                try {
+                                                    ctx.startActivity(
+                                                        Intent(Intent.ACTION_VIEW, uri)
+                                                            .addCategory(Intent.CATEGORY_BROWSABLE)
+                                                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                    )
+                                                } catch (_: Exception) {}
+                                            }
+                                        }
+                                        return true
+                                    }
+
+                                    override fun shouldInterceptRequest(
+                                        view: WebView?,
+                                        request: WebResourceRequest?
+                                    ): WebResourceResponse? {
+                                        if (request == null || request.isForMainFrame) return null
+                                        val scheme = request.url?.scheme?.lowercase()
+                                        if (scheme == "data" || scheme == "about" || scheme == "blob") return null
+                                        return WebResourceResponse(
+                                            "text/plain",
+                                            "UTF-8",
+                                            403,
+                                            "Blocked",
+                                            emptyMap(),
+                                            ByteArrayInputStream(ByteArray(0))
+                                        )
+                                    }
                                 }
                                 settings.apply {
-                                    javaScriptEnabled = true
+                                    javaScriptEnabled = false
                                     loadWithOverviewMode = true
                                     useWideViewPort = true
                                     builtInZoomControls = true
                                     displayZoomControls = false
-                                    allowFileAccess = true
-                                    allowContentAccess = true
-                                    domStorageEnabled = true
-                                    mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+                                    allowFileAccess = false
+                                    allowContentAccess = false
+                                    domStorageEnabled = false
+                                    blockNetworkLoads = true
+                                    mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
                                 }
                                 loadDataWithBaseURL("https://evrak.app/", htmlContent, "text/html", "UTF-8", null)
                             }
@@ -397,7 +441,7 @@ fun HtmlViewerScreen(
                 )
             }
         }
-        
+
         loadError?.let { error ->
             ErrorDialog(
                 errorMessage = error,

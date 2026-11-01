@@ -29,25 +29,25 @@ object UdfHtmlConverter {
                 val contentEntry = zip.entries().asSequence().firstOrNull {
                     !it.isDirectory && it.name.substringAfterLast('/').equals("content.xml", ignoreCase = true)
                 } ?: return null
-                
+
                 val xml = zip.getInputStream(contentEntry).use { it.readBytes().toString(Charsets.UTF_8) }
-                
+
                 val bgEntry = zip.entries().asSequence().firstOrNull {
-                    !it.isDirectory && 
-                    (it.name.endsWith(".jpg", ignoreCase = true) || 
-                     it.name.endsWith(".png", ignoreCase = true) ||
-                     it.name.contains("arkaplan", ignoreCase = true) ||
-                     it.name.contains("zemin", ignoreCase = true) ||
-                     it.name.contains("watermark", ignoreCase = true) ||
-                     it.name.contains("filigran", ignoreCase = true))
+                    !it.isDirectory &&
+                            (it.name.endsWith(".jpg", ignoreCase = true) ||
+                                    it.name.endsWith(".png", ignoreCase = true) ||
+                                    it.name.contains("arkaplan", ignoreCase = true) ||
+                                    it.name.contains("zemin", ignoreCase = true) ||
+                                    it.name.contains("watermark", ignoreCase = true) ||
+                                    it.name.contains("filigran", ignoreCase = true))
                 }
-                
+
                 val bgBase64 = bgEntry?.let { entry ->
                     zip.getInputStream(entry).use { stream ->
                         android.util.Base64.encodeToString(stream.readBytes(), android.util.Base64.NO_WRAP)
                     }
                 }
-                
+
                 UdfFileData(xml, bgBase64)
             }
         } catch (e: Exception) {
@@ -80,8 +80,12 @@ object UdfHtmlConverter {
         rightMargin: Double = 56.7,
         backgroundImageBase64: String? = null
     ): String {
-        val bgStyle = if (backgroundImageBase64 != null) {
-            "background-image: url('data:image/*;base64,$backgroundImageBase64'); background-repeat: repeat; background-size: auto;"
+        val safeBackground = backgroundImageBase64
+            ?.let { sanitizeBase64(it) }
+            ?.takeIf { it.isNotEmpty() }
+
+        val bgStyle = if (safeBackground != null) {
+            "background-image: url('data:image/*;base64,$safeBackground'); background-repeat: repeat; background-size: auto;"
         } else ""
 
         return """
@@ -89,6 +93,7 @@ object UdfHtmlConverter {
             <html lang="tr">
             <head>
                 <meta charset="UTF-8">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">
                 <meta name="viewport" content="width=${pageWidthPt.toInt()}, user-scalable=yes">
                 <style>
                     html { height: 100%; }
@@ -243,8 +248,8 @@ object UdfHtmlConverter {
             elementsEl?.let { elements ->
                 forEachChildElement(elements) { child ->
                     if (child.tagName == "paragraph") {
-                        child.attrOrNull("Hanging")?.toDoubleOrNull()?.let { 
-                            if (it > 0) hangingValues.add(it) 
+                        child.attrOrNull("Hanging")?.toDoubleOrNull()?.let {
+                            if (it > 0) hangingValues.add(it)
                         }
                     }
                 }
@@ -274,7 +279,7 @@ object UdfHtmlConverter {
                         child.attrOrNull("bottomMargin")?.toDoubleOrNull()?.let { bottomMargin = it }
                         child.attrOrNull("leftMargin")?.toDoubleOrNull()?.let { leftMargin = it }
                         child.attrOrNull("rightMargin")?.toDoubleOrNull()?.let { rightMargin = it }
-                        
+
                         if (backgroundImageBase64 == null) {
                             backgroundImageBase64 = child.attrOrNull("backgroundImageData") ?: child.attrOrNull("arkaplanResmi")
                         }
@@ -300,7 +305,7 @@ object UdfHtmlConverter {
 
             webId?.let {
                 elementsSb.append("<div class='udf-verification-bar'>")
-                elementsSb.append(context.getString(R.string.udf_verification_bar, it))
+                elementsSb.append(context.getString(R.string.udf_verification_bar, htmlEscape(it)))
                 elementsSb.append("</div>")
             }
 
@@ -434,9 +439,9 @@ object UdfHtmlConverter {
             p.attrOrNull("FirstLineIndent")?.toDoubleOrNull()?.let { style.append("text-indent:${it}pt;") }
             p.attrOrNull("SpaceAbove")?.toDoubleOrNull()?.let { if (it > 0) style.append("margin-top:${it}pt;") }
             p.attrOrNull("SpaceBelow")?.toDoubleOrNull()?.let { if (it > 0) style.append("margin-bottom:${it}pt;") }
-            p.attrOrNull("LineSpacing")?.toDoubleOrNull()?.let { 
+            p.attrOrNull("LineSpacing")?.toDoubleOrNull()?.let {
                 val ls = if (it <= 0.0) 1.15 else 1.0 + it
-                style.append("line-height:$ls;") 
+                style.append("line-height:$ls;")
             }
 
             val listLevel = p.attrOrNull("ListLevel")?.toIntOrNull() ?: 1
@@ -479,7 +484,7 @@ object UdfHtmlConverter {
                     } else {
                         val n = (levelCounters[listLevel] ?: 0) + 1
                         levelCounters[listLevel] = n
-                        
+
                         val levelsToRemove = levelCounters.keys.filter { it > listLevel }
                         levelsToRemove.forEach { levelCounters.remove(it) }
 
@@ -501,9 +506,9 @@ object UdfHtmlConverter {
                     p.attrOrNull("FirstLineIndent")?.toDoubleOrNull()?.let { style.append("text-indent:${it}pt;") }
                     p.attrOrNull("SpaceAbove")?.toDoubleOrNull()?.let { if (it > 0) style.append("margin-top:${it}pt;") }
                     p.attrOrNull("SpaceBelow")?.toDoubleOrNull()?.let { if (it > 0) style.append("margin-bottom:${it}pt;") }
-                    p.attrOrNull("LineSpacing")?.toDoubleOrNull()?.let { 
+                    p.attrOrNull("LineSpacing")?.toDoubleOrNull()?.let {
                         val ls = if (it <= 0.0) 1.15 else 1.0 + it
-                        style.append("line-height:$ls;") 
+                        style.append("line-height:$ls;")
                     }
 
                     val inner = StringBuilder()
@@ -515,10 +520,10 @@ object UdfHtmlConverter {
                         marker = split.first
                         val plainMarker = marker.replace(Regex("<[^>]*>"), "").replace("&nbsp;", "").trim()
                         val isIndentOnly = plainMarker.isEmpty()
-                        
-                        markerWidth = if (isIndentOnly) 28.0 
-                                      else if (hangingAttr > 0) hangingAttr 
-                                      else defaultHanging
+
+                        markerWidth = if (isIndentOnly) 28.0
+                        else if (hangingAttr > 0) hangingAttr
+                        else defaultHanging
                         body = if (split.second.isEmpty()) "&nbsp;" else split.second
                     } else {
                         val inner = StringBuilder()
@@ -541,7 +546,7 @@ object UdfHtmlConverter {
             forEachChildElement(p) { child ->
                 innerSb.append(renderInlineElement(child, dataScope, tabState))
             }
-            
+
             var inner = innerSb.toString()
             if (inner.isEmpty()) inner = "&nbsp;"
 
@@ -593,7 +598,7 @@ object UdfHtmlConverter {
                         if (tabIndex >= 0) {
                             val styleStr = contentRunStyle(child)
                             val preText = text.substring(0, tabIndex).trimEnd('\t', ' ')
-                            
+
                             var postStart = tabIndex
                             while (postStart < text.length && (text[postStart] == '\t' || text[postStart] == ' ')) postStart++
                             val postText = text.substring(postStart)
@@ -630,7 +635,7 @@ object UdfHtmlConverter {
             "NUMBER_TYPE_ROMAN_SMALL_PARENTHESIS" -> "${toRoman(n).lowercase()})"
             "NUMBER_TYPE_ROMAN_BIG_DOT" -> "${toRoman(n).uppercase()}."
             "NUMBER_TYPE_ROMAN_BIG_PARENTHESIS" -> "${toRoman(n).uppercase()})"
-            else -> "$n." 
+            else -> "$n."
         }
 
         private fun bulletMarker(type: String?): String = when (type) {
@@ -640,7 +645,7 @@ object UdfHtmlConverter {
             "BULLET_TYPE_DIAMOND_2" -> "\u25CA"
             "BULLET_TYPE_TRIANGLE" -> "\u25B2"
             "BULLET_TYPE_RECTANGLE_D" -> "\u25A1"
-            else -> "\u2022" 
+            else -> "\u2022"
         }
 
         private fun toAlpha(n: Int, upper: Boolean): String {
@@ -695,14 +700,17 @@ object UdfHtmlConverter {
             val runStyle = StringBuilder()
             val family = el.attrOrNull("family") ?: defaultStyle().family
             val size = el.attrOrNull("size") ?: defaultStyle().size
-            
-            family?.let { 
-                val fontStack = when {
-                    it.equals("Arial", true) -> "Arial, 'Liberation Sans', Helvetica, sans-serif"
-                    it.equals("Times New Roman", true) -> "'Times New Roman', 'Liberation Serif', serif"
-                    else -> "'$it', 'Liberation Serif', serif"
+
+            family?.let { rawFamily ->
+                val safeFamily = sanitizeFontFamily(rawFamily)
+                if (safeFamily.isNotEmpty()) {
+                    val fontStack = when {
+                        safeFamily.equals("Arial", true) -> "Arial, 'Liberation Sans', Helvetica, sans-serif"
+                        safeFamily.equals("Times New Roman", true) -> "'Times New Roman', 'Liberation Serif', serif"
+                        else -> "'$safeFamily', 'Liberation Serif', serif"
+                    }
+                    runStyle.append("font-family:$fontStack;")
                 }
-                runStyle.append("font-family:$fontStack;") 
             }
             size?.toDoubleOrNull()?.let { runStyle.append("font-size:${it}pt;") }
             if (el.attrOrNull("bold")?.toBoolean() == true) runStyle.append("font-weight:bold;")
@@ -783,7 +791,9 @@ object UdfHtmlConverter {
         }
 
         private fun renderImage(el: Element): String {
-            val data = el.attrOrNull("imageData") ?: return ""
+            val rawData = el.attrOrNull("imageData") ?: return ""
+            val data = sanitizeBase64(rawData)
+            if (data.isEmpty()) return ""
             val width = el.attrOrNull("width")?.toDoubleOrNull()
             val height = el.attrOrNull("height")?.toDoubleOrNull()
             val style = StringBuilder()
@@ -1000,5 +1010,26 @@ object UdfHtmlConverter {
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace("\"", "&quot;")
+            .replace("'", "&#39;")
+    }
+
+    private fun sanitizeBase64(value: String): String {
+        val sb = StringBuilder(value.length)
+        for (c in value) {
+            if ((c in 'A'..'Z') || (c in 'a'..'z') || (c in '0'..'9') || c == '+' || c == '/' || c == '=' || c == '-' || c == '_') {
+                sb.append(c)
+            }
+        }
+        return sb.toString()
+    }
+
+    private fun sanitizeFontFamily(value: String): String {
+        val sb = StringBuilder(value.length)
+        for (c in value) {
+            if (c.isLetterOrDigit() || c == ' ' || c == '-' || c == '_' || c == '.') {
+                sb.append(c)
+            }
+        }
+        return sb.toString().trim()
     }
 }
