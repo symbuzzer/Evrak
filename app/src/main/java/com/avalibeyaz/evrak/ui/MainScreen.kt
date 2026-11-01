@@ -528,9 +528,6 @@ fun MainScreen(
                                         if (selectedIds.isNotEmpty()) {
                                             val selectedEvraks = filteredList.filter { selectedIds.contains(it.id) }
                                             shareFiles(context, selectedEvraks)
-                                            isSelectionMode = false
-                                            selectedIds.clear()
-                                            selectedFileContexts.clear()
                                         }
                                     },
                                     enabled = selectedIds.isNotEmpty()
