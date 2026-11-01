@@ -33,6 +33,7 @@ object CleanupManager {
                 }
 
                 cleanupOrphanFiles(context, repository)
+                repository.cleanupUnsupportedEvrak()
 
                 Log.d(TAG, "Cleanup process finished.")
             } catch (e: Exception) {

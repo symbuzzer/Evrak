@@ -69,6 +69,23 @@ class MainActivity : AppCompatActivity() {
 
 @Composable
 fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Boolean, onFinish: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var isDisclaimerAccepted by remember {
+        mutableStateOf(com.avalibeyaz.evrak.data.DisclaimerManager.isDisclaimerAccepted(context))
+    }
+
+    if (!isDisclaimerAccepted) {
+        DisclaimerDialog(
+            onAccept = {
+                isDisclaimerAccepted = true
+            },
+            onDecline = {
+                onFinish()
+            }
+        )
+        return
+    }
+
     val navController = rememberNavController()
     val historyList by viewModel.historyList.collectAsState()
     val folderSelectionEnabled by viewModel.folderSelectionEnabled.collectAsState()
@@ -349,8 +366,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
         )
     }
 
-    val activityContentResolver = androidx.compose.ui.platform.LocalContext.current.contentResolver
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val activityContentResolver = context.contentResolver
     val appContext = context.applicationContext
     LaunchedEffect(intent) {
         intent?.let {

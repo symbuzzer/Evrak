@@ -33,7 +33,12 @@
     <string name="about_contact_developer_desc">Geliştiriciye hata bildirin veya merhaba deyin</string>
     <string name="about_view_on_play_store_desc">Uygulamayı Play Store üzerinden değerlendirin</string>
     <string name="about_privacy_policy">Gizlilik bildirimine göz atın</string>
-    <string name="about_disclaimer">Uygulamayı kullanarak kabul etmiş olduğunuz sorumluluk reddine göz atın</string>
+    <string name="about_disclaimer">Sorumluluk reddi kabulü</string>
+    <string name="disclaimer_accepted_at">\n(Kabul tarihi: %1$s)</string>
+    <string name="disclaimer_dialog_title">Sorumluluk Reddi</string>
+    <string name="disclaimer_dialog_message">Uygulamayı kullanabilmek için lütfen sorumluluk reddi beyanını inceleyip kabul edin</string>
+    <string name="disclaimer_accept">Kabul Et</string>
+    <string name="disclaimer_decline">Kabul Etmiyorum</string>
     <string name="about_view_libraries_desc">Uygulamada kullanılan açık kaynak kütüphaneleri görüntüleyin</string>
     <string name="about_source_code_desc">Uygulamanın kaynak kodunu GitHub üzerinden inceleyin</string>
 

@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.avalibeyaz.evrak.BuildConfig
 import com.avalibeyaz.evrak.R
+import com.avalibeyaz.evrak.data.DisclaimerManager
 import com.google.android.play.core.review.ReviewManagerFactory
 
 @Composable
@@ -264,9 +265,18 @@ fun AboutDialog(
                     onClick = { uriHandler.openUri("https://github.com/symbuzzer/Evrak#gizlilik") }
                 )
 
+                val disclaimerAcceptedDate = remember(context) {
+                    DisclaimerManager.getDisclaimerAcceptedDateFormatted(context)
+                }
+                val disclaimerText = if (disclaimerAcceptedDate != null) {
+                    stringResource(id = R.string.about_disclaimer) + stringResource(id = R.string.disclaimer_accepted_at, disclaimerAcceptedDate)
+                } else {
+                    stringResource(id = R.string.about_disclaimer)
+                }
+
                 AboutLinkItem(
                     icon = Icons.Default.Gavel,
-                    description = stringResource(id = R.string.about_disclaimer),
+                    description = disclaimerText,
                     onClick = { uriHandler.openUri("https://github.com/symbuzzer/Evrak#sorumluluk-reddi") }
                 )
 

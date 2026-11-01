@@ -33,7 +33,12 @@
     <string name="about_contact_developer_desc">Report a bug to the developer or say hello</string>
     <string name="about_view_on_play_store_desc">Rate the app on the Play Store</string>
     <string name="about_privacy_policy">View the privacy policy</string>
-    <string name="about_disclaimer">View the disclaimer you accept by using this app</string>
+    <string name="about_disclaimer">Disclaimer acceptance</string>
+    <string name="disclaimer_accepted_at">\n(Acceptance date: %1$s)</string>
+    <string name="disclaimer_dialog_title">Disclaimer</string>
+    <string name="disclaimer_dialog_message">Please review and accept the disclaimer to use the app</string>
+    <string name="disclaimer_accept">Accept</string>
+    <string name="disclaimer_decline">Decline</string>
     <string name="about_view_libraries_desc">View the open source libraries used in the app</string>
     <string name="about_source_code_desc">View the app\'s source code on GitHub</string>
 

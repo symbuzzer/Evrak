@@ -93,86 +93,102 @@ class DocumentActivity : AppCompatActivity() {
         }
 
         setContent {
-            var currentFilePath by remember { mutableStateOf(filePathExtra) }
-            var currentDisplayName by remember { mutableStateOf(displayNameExtra) }
-            var forceTextState by remember { mutableStateOf(false) }
-            var isLoading by remember { mutableStateOf(currentFilePath.isEmpty() && uriExtra != null) }
-            var documentError by remember { mutableStateOf<String?>(null) }
-
-            LaunchedEffect(intent) {
-                val isExternal = intent.isExternalOpenIntent()
-                if (currentFilePath.isEmpty() && uriExtra != null) {
-                    try {
-                        contentResolver.takePersistableUriPermission(
-                            uriExtra,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
-                    } catch (_: Exception) {}
-
-                    viewModel.openDocument(
-                        uri = uriExtra,
-                        resolver = contentResolver,
-                        onError = { error ->
-                            documentError = error
-                            isLoading = false
-                        },
-                        onOpened = { evrak ->
-                            if (isExternal) {
-                                showOpenedWithEvrakToast()
-                            }
-                            currentFilePath = evrak.path
-                            currentDisplayName = evrak.name
-                            setDocumentTaskDescription(evrak.name)
-                            isLoading = false
-                        }
-                    )
-                } else if (currentFilePath.isNotEmpty()) {
-                    if (isExternal) {
-                        showOpenedWithEvrakToast()
-                    }
-                    setDocumentTaskDescription(currentDisplayName)
-                    isLoading = false
-                    viewModel.ensureEvrak(currentFilePath, currentDisplayName) { evrak ->
-                        currentFilePath = evrak.path
-                        currentDisplayName = evrak.name
-                    }
-                }
+            val context = androidx.compose.ui.platform.LocalContext.current
+            var isDisclaimerAccepted by remember {
+                mutableStateOf(com.avalibeyaz.evrak.data.DisclaimerManager.isDisclaimerAccepted(context))
             }
 
             EvrakTheme {
-                if (documentError != null) {
-                    ErrorDialog(
-                        errorMessage = documentError!!,
-                        viewModel = viewModel,
-                        onDismiss = {
-                            documentError = null
-                            if (currentFilePath.isEmpty()) {
-                                finish()
-                            }
+                if (!isDisclaimerAccepted) {
+                    DisclaimerDialog(
+                        onAccept = {
+                            isDisclaimerAccepted = true
+                        },
+                        onDecline = {
+                            finish()
                         }
                     )
-                }
-                if (isLoading || currentFilePath.isEmpty()) {
-                    WaitScreenOverlay(
-                        show = isLoading,
-                        message = stringResource(id = R.string.loading)
-                    )
                 } else {
-                    DocumentViewerContent(
-                        filePath = currentFilePath,
-                        displayName = currentDisplayName,
-                        forceText = forceTextState,
-                        onBack = { finish() },
-                        onShare = { shareFile(currentFilePath) },
-                        onRename = { newName ->
-                            viewModel.renameDocument(currentFilePath, currentDisplayName, newName) { updated ->
-                                currentFilePath = updated.path
-                                currentDisplayName = updated.name
-                                setDocumentTaskDescription(updated.name)
+                    var currentFilePath by remember { mutableStateOf(filePathExtra) }
+                    var currentDisplayName by remember { mutableStateOf(displayNameExtra) }
+                    var forceTextState by remember { mutableStateOf(false) }
+                    var isLoading by remember { mutableStateOf(currentFilePath.isEmpty() && uriExtra != null) }
+                    var documentError by remember { mutableStateOf<String?>(null) }
+
+                    LaunchedEffect(intent) {
+                        val isExternal = intent.isExternalOpenIntent()
+                        if (currentFilePath.isEmpty() && uriExtra != null) {
+                            try {
+                                contentResolver.takePersistableUriPermission(
+                                    uriExtra,
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                )
+                            } catch (_: Exception) {}
+
+                            viewModel.openDocument(
+                                uri = uriExtra,
+                                resolver = contentResolver,
+                                onError = { error ->
+                                    documentError = error
+                                    isLoading = false
+                                },
+                                onOpened = { evrak ->
+                                    if (isExternal) {
+                                        showOpenedWithEvrakToast()
+                                    }
+                                    currentFilePath = evrak.path
+                                    currentDisplayName = evrak.name
+                                    setDocumentTaskDescription(evrak.name)
+                                    isLoading = false
+                                }
+                            )
+                        } else if (currentFilePath.isNotEmpty()) {
+                            if (isExternal) {
+                                showOpenedWithEvrakToast()
                             }
-                        },
-                        onTryAsText = { forceTextState = true }
-                    )
+                            setDocumentTaskDescription(currentDisplayName)
+                            isLoading = false
+                            viewModel.ensureEvrak(currentFilePath, currentDisplayName) { evrak ->
+                                currentFilePath = evrak.path
+                                currentDisplayName = evrak.name
+                            }
+                        }
+                    }
+
+                    if (documentError != null) {
+                        ErrorDialog(
+                            errorMessage = documentError!!,
+                            viewModel = viewModel,
+                            onDismiss = {
+                                documentError = null
+                                if (currentFilePath.isEmpty()) {
+                                    finish()
+                                }
+                            }
+                        )
+                    }
+                    if (isLoading || currentFilePath.isEmpty()) {
+                        WaitScreenOverlay(
+                            show = isLoading,
+                            message = stringResource(id = R.string.loading)
+                        )
+                    } else {
+                        DocumentViewerContent(
+                            filePath = currentFilePath,
+                            displayName = currentDisplayName,
+                            forceText = forceTextState,
+                            onBack = { finish() },
+                            onShare = { shareFile(currentFilePath) },
+                            onRename = { newName ->
+                                viewModel.renameDocument(currentFilePath, currentDisplayName, newName) { updated ->
+                                    currentFilePath = updated.path
+                                    currentDisplayName = updated.name
+                                    setDocumentTaskDescription(updated.name)
+                                }
+                            },
+                            onTryAsText = { forceTextState = true }
+                        )
+                    }
                 }
             }
         }

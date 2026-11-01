@@ -36,11 +36,7 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import net.lingala.zip4j.ZipFile
 
-private val SUPPORTED_EXTENSIONS = setOf(
-    ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".tiff", ".tif",
-    ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt", ".zip", ".eyp",
-    ".webp", ".bmp", ".heic", ".avif", ".evraklog"
-)
+
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -129,7 +125,7 @@ fun ZipViewerScreen(
                     
                     if (filePath.endsWith(".eyp", ignoreCase = true)) {
                         zipEntries = entriesList.sortedWith(compareByDescending { entryName ->
-                            SUPPORTED_EXTENSIONS.any { entryName.endsWith(it, ignoreCase = true) }
+                            isEvrakSupportedFormat(entryName)
                         })
                     } else {
                         zipEntries = entriesList
@@ -158,6 +154,11 @@ fun ZipViewerScreen(
             try {
                 try {
                     context.cacheDir.listFiles()?.forEach { f ->
+                        if (f.isDirectory && f.name.startsWith("zip_temp_")) {
+                            f.deleteRecursively()
+                        }
+                    }
+                    context.externalCacheDir?.listFiles()?.forEach { f ->
                         if (f.isDirectory && f.name.startsWith("zip_temp_")) {
                             f.deleteRecursively()
                         }
@@ -304,7 +305,7 @@ fun ZipViewerScreen(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(zipEntries, key = { it }) { name ->
-                                val isSupported = SUPPORTED_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) }
+                                val isSupported = isEvrakSupportedFormat(name)
 
                                 val dismissState = rememberSwipeToDismissBoxState(
                                     confirmValueChange = { value ->

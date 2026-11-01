@@ -107,7 +107,13 @@ Uygulama içindeki tüm dönüştürme ve görüntüleme işlemleri tamamen ciha
 
 ## Sorumluluk reddi
 
-Bu uygulama, belgelerin doğru ve eksiksiz görüntülenmesini garanti etmez. Evrak uygulamasını indirmek ve kullanmak tamamen kullanıcının sorumluluğundadır. Uygulamanın kullanılmasından kaynaklı zararlardan geliştirici hiç bir şekilde sorumlu tutulamaz.
+Bu uygulama, belgelerin doğru ve eksiksiz görüntülenmesini garanti etmez.
+
+Bu uygulama ile görüntülemiş olduğunuz belgeler, daha sonra kolayca erişebilmeniz için uygulamanın önbelleğinde tutulur. Root ve Jailbreak yapılmış cihazlar haricinde bu belgelere başka bir uygulama yardımıyla veya doğrudan dışarıdan erişilemez. Root veya Jailbreak yapılmış cihazlarda bu uygulamayı güvenli bir şekilde kullanmak istiyorsanız, önbelleğe kayıt özelliğini kapatmanız önerilir. Yine de Root ve Jailbreak yapılmış cihazlarda bu uygulamanın kullanılması önerilmez. Root ve Jailbreak yapılmış cihazlarda kullanıma ilişkin bütün sorumluluk size aittir.
+
+Önbellekte tutulan dosyalar, uygulamada gerçekleşebilecek bir hata sonucu veya herhangi bir sebeple geri getirilememek üzere silinebilirler. Bu sebeple bu dosyaların mutlaka bir yedeğinin olduğundan emin olun.
+
+Evrak uygulamasını indirmek ve kullanmak tamamen kullanıcının sorumluluğundadır. Uygulamanın kullanılmasından kaynaklı zararlardan geliştirici hiç bir şekilde sorumlu tutulamaz.
 
 Evrak uygulamasını indirerek ve kullanarak bu şartları kabul etmiş sayılırsınız. Şartları kabul etmiyorsanız uygulamayı kaldırmanız ve kullanmamanız gerekmektedir.
 

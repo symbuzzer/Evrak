@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import com.avalibeyaz.evrak.R
+import com.avalibeyaz.evrak.ui.isEvrakSupportedFormat
 import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.flow.Flow
 import java.io.File
@@ -140,12 +141,23 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             size = fileSize,
             dateOpened = System.currentTimeMillis()
         )
-        evrakDao.insertEvrak(newEvrak)
+        if (isEvrakSupportedFormat(finalName) || isEvrakSupportedFormat(actualCacheFile.absolutePath)) {
+            evrakDao.insertEvrak(newEvrak)
+        }
         
         return newEvrak
     }
 
     suspend fun ensureEvrak(path: String, name: String): Evrak {
+        val isSupported = isEvrakSupportedFormat(name) || isEvrakSupportedFormat(path)
+        if (!isSupported) {
+            return Evrak(
+                name = name,
+                path = path,
+                size = File(path).length(),
+                dateOpened = System.currentTimeMillis()
+            )
+        }
         val existing = evrakDao.getEvrakByPath(path) ?: evrakDao.getEvrakByNameAndSize(name, File(path).length())
         if (existing != null) {
             val updated = existing.copy(dateOpened = System.currentTimeMillis(), path = path, name = name)
@@ -265,11 +277,20 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
 
         if (updatedEvrak.id != 0) {
             evrakDao.updateEvrak(updatedEvrak)
-        } else {
+        } else if (isEvrakSupportedFormat(finalName) || isEvrakSupportedFormat(newPath)) {
             evrakDao.insertEvrak(updatedEvrak)
         }
 
         return evrakDao.getEvrakByPath(newPath) ?: updatedEvrak
+    }
+
+    suspend fun cleanupUnsupportedEvrak() {
+        val paths = evrakDao.getAllPaths()
+        for (path in paths) {
+            if (!isEvrakSupportedFormat(path)) {
+                evrakDao.deleteByPath(path)
+            }
+        }
     }
 
     suspend fun deleteAllEvrak() {

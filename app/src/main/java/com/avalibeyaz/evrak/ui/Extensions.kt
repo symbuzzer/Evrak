@@ -19,6 +19,15 @@ fun Context.findActivity(): Activity? {
 }
 
 fun getMimeType(path: String): String {
+    val ext = path.substringAfterLast('.', "").lowercase()
+    if (ext == "apk") return "application/vnd.android.package-archive"
+
+    val mimeFromMap = if (ext.isNotEmpty()) {
+        android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
+    } else null
+
+    if (mimeFromMap != null) return mimeFromMap
+
     return when {
         path.endsWith(".pdf", ignoreCase = true) -> "application/pdf"
         path.endsWith(".docx", ignoreCase = true) -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -43,6 +52,80 @@ fun getMimeType(path: String): String {
         path.endsWith(".eyp", true) -> "application/eyp"
         else -> "application/octet-stream"
     }
+}
+
+fun isEvrakSupportedFormat(path: String): Boolean {
+    val lower = path.lowercase()
+    return lower.endsWith(".pdf") ||
+            lower.endsWith(".docx") || lower.endsWith(".doc") ||
+            lower.endsWith(".xlsx") || lower.endsWith(".xls") ||
+            lower.endsWith(".pptx") || lower.endsWith(".ppt") ||
+            lower.endsWith(".tif") || lower.endsWith(".tiff") ||
+            lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg") ||
+            lower.endsWith(".gif") || lower.endsWith(".webp") || lower.endsWith(".bmp") ||
+            lower.endsWith(".heic") || lower.endsWith(".avif") ||
+            lower.endsWith(".udf") ||
+            lower.endsWith(".html") || lower.endsWith(".htm") ||
+            lower.endsWith(".txt") || lower.endsWith(".evraklog") ||
+            lower.endsWith(".zip") || lower.endsWith(".eyp")
+}
+
+fun openFileWithSystemChooser(context: Context, filePath: String): Boolean {
+    val file = File(filePath)
+    if (!file.exists()) return false
+
+    val uri = androidx.core.content.FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    val mimeType = getMimeType(filePath)
+    val ext = filePath.substringAfterLast('.', "").lowercase()
+
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, mimeType)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        if (context !is Activity) {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    }
+
+    val activities = context.packageManager.queryIntentActivities(intent, 0)
+    if (activities.isNotEmpty()) {
+        for (resolveInfo in activities) {
+            val pkg = resolveInfo.activityInfo.packageName
+            try {
+                context.grantUriPermission(
+                    pkg,
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (_: Exception) {}
+        }
+
+        if (ext == "apk" || mimeType == "application/vnd.android.package-archive") {
+            try {
+                context.startActivity(intent)
+                return true
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        val chooserIntent = Intent.createChooser(intent, context.getString(R.string.open_with)).apply {
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            if (context !is Activity) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
+        try {
+            context.startActivity(chooserIntent)
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+    return false
 }
 
 fun isArchiveType(path: String): Boolean {
