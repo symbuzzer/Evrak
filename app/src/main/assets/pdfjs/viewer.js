@@ -367,18 +367,13 @@ window.showPdfMatch = function(index) {
         const unscaledY = pageEl.offsetTop + canvasTop + markerTop;
 
         const scale = window.currentScale || 1.0;
-
         const scaledX = unscaledX * scale;
         const scaledY = unscaledY * scale;
 
         const targetX = scaledX + (markerWidth * scale / 2) - (window.innerWidth / 2);
         const targetY = scaledY + (markerHeight * scale / 2) - (window.innerHeight / 3);
 
-        window.scrollTo({
-            left: Math.max(0, targetX),
-            top: Math.max(0, targetY),
-            behavior: 'smooth'
-        });
+        window.scrollTo(Math.max(0, targetX), Math.max(0, targetY));
     };
 
     setTimeout(() => scrollToMatch(0), 40);
@@ -495,18 +490,49 @@ let touchStartTime = 0;
 let touchStartX = 0;
 let touchStartY = 0;
 let isDoubleZoomed = false;
+let initialPinchDistance = 0;
+let initialPinchScale = 1.0;
+let pinchCenterX = 0;
+let pinchCenterY = 0;
 
 document.addEventListener('touchstart', function(e) {
-    if (e.touches.length === 1) {
+    if (e.touches.length === 2) {
+        initialPinchDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        initialPinchScale = window.currentScale || 1.0;
+        pinchCenterX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        pinchCenterY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        touchStartTime = 0;
+    } else if (e.touches.length === 1) {
         touchStartTime = performance.now();
         touchStartX = e.touches[0].clientX;
         touchStartY = e.touches[0].clientY;
+        initialPinchDistance = 0;
     } else {
         touchStartTime = 0;
+        initialPinchDistance = 0;
+    }
+}, { passive: true });
+
+document.addEventListener('touchmove', function(e) {
+    if (e.touches.length === 2 && initialPinchDistance > 0) {
+        const currentDistance = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+        );
+        const factor = currentDistance / initialPinchDistance;
+        let newScale = Math.min(5.0, Math.max(1.0, initialPinchScale * factor));
+
+        applyPinchZoom(newScale, pinchCenterX, pinchCenterY);
     }
 }, { passive: true });
 
 document.addEventListener('touchend', function(e) {
+    if (e.touches.length < 2) {
+        initialPinchDistance = 0;
+    }
     if (e.touches.length > 0 || touchStartTime === 0) return;
 
     const now = performance.now();
@@ -531,6 +557,56 @@ document.addEventListener('touchend', function(e) {
         lastTapTime = 0;
     }
 }, { passive: true });
+
+function applyPinchZoom(scale, clientX, clientY) {
+    const container = document.getElementById('viewer-container');
+    if (!container) return;
+
+    const currentScrollX = window.scrollX || window.pageXOffset || 0;
+    const currentScrollY = window.scrollY || window.pageYOffset || 0;
+    const oldScale = window.currentScale || 1.0;
+
+    const contentX = (currentScrollX + clientX) / oldScale;
+    const contentY = (currentScrollY + clientY) / oldScale;
+
+    window.currentScale = scale;
+    if (scale <= 1.05) {
+        window.currentScale = 1.0;
+        isDoubleZoomed = false;
+        document.documentElement.style.minWidth = '';
+        document.documentElement.style.minHeight = '';
+        document.body.style.minWidth = '';
+        document.body.style.minHeight = '';
+        document.body.style.width = '';
+        document.body.style.height = '';
+        document.documentElement.style.width = '';
+        document.documentElement.style.height = '';
+
+        container.style.transition = 'none';
+        container.style.transformOrigin = '0 0';
+        container.style.transform = '';
+    } else {
+        isDoubleZoomed = true;
+        const scaledWidth = container.offsetWidth * scale;
+        const scaledHeight = container.offsetHeight * scale;
+        document.documentElement.style.minWidth = scaledWidth + 'px';
+        document.documentElement.style.minHeight = scaledHeight + 'px';
+        document.body.style.minWidth = scaledWidth + 'px';
+        document.body.style.minHeight = scaledHeight + 'px';
+        document.body.style.width = scaledWidth + 'px';
+        document.body.style.height = scaledHeight + 'px';
+        document.documentElement.style.width = scaledWidth + 'px';
+        document.documentElement.style.height = scaledHeight + 'px';
+
+        container.style.transition = 'none';
+        container.style.transformOrigin = '0 0';
+        container.style.transform = `scale(${scale})`;
+
+        const targetScrollX = Math.max(0, contentX * scale - clientX);
+        const targetScrollY = Math.max(0, contentY * scale - clientY);
+        window.scrollTo(targetScrollX, targetScrollY);
+    }
+}
 
 let isAnimatingZoom = false;
 

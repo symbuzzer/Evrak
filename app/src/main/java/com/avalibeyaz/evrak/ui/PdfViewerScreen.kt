@@ -395,8 +395,8 @@ fun PdfViewerScreen(
                                     settings.allowContentAccess = true
                                     settings.loadWithOverviewMode = true
                                     settings.useWideViewPort = true
-                                    settings.setSupportZoom(true) 
-                                    settings.builtInZoomControls = true
+                                    settings.setSupportZoom(false) 
+                                    settings.builtInZoomControls = false
                                     settings.displayZoomControls = false
                                     
                                     isVerticalScrollBarEnabled = true
