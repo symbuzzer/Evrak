@@ -577,6 +577,7 @@ function toggleDoubleTapZoom(clientX, clientY) {
                     container.style.transformOrigin = '0 0';
                     container.style.transform = '';
                     isDoubleZoomed = false;
+                    window.currentScale = 1.0;
                     isAnimatingZoom = false;
                 }, animDuration + 10);
             });
@@ -619,6 +620,7 @@ function toggleDoubleTapZoom(clientX, clientY) {
                     window.scrollTo(targetScrollX, targetScrollY);
 
                     isDoubleZoomed = true;
+                    window.currentScale = scale;
                     isAnimatingZoom = false;
                 }, animDuration + 10);
             });

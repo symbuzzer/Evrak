@@ -30,8 +30,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
@@ -269,9 +271,24 @@ fun AboutDialog(
                     DisclaimerManager.getDisclaimerAcceptedDateFormatted(context)
                 }
                 val disclaimerText = if (disclaimerAcceptedDate != null) {
-                    stringResource(id = R.string.about_disclaimer) + stringResource(id = R.string.disclaimer_accepted_at, disclaimerAcceptedDate)
+                    val baseText = stringResource(id = R.string.about_disclaimer)
+                    val dateText = stringResource(id = R.string.disclaimer_accepted_at, disclaimerAcceptedDate)
+                    buildAnnotatedString {
+                        append(baseText)
+                        withStyle(
+                            SpanStyle(
+                                fontStyle = FontStyle.Italic,
+                                fontSize = MaterialTheme.typography.labelSmall.fontSize,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        ) {
+                            append(dateText)
+                        }
+                    }
                 } else {
-                    stringResource(id = R.string.about_disclaimer)
+                    buildAnnotatedString {
+                        append(stringResource(id = R.string.about_disclaimer))
+                    }
                 }
 
                 AboutLinkItem(
@@ -301,6 +318,15 @@ fun AboutDialog(
 private fun AboutLinkItem(
     icon: ImageVector,
     description: String,
+    onClick: () -> Unit
+) {
+    AboutLinkItem(icon = icon, description = AnnotatedString(description), onClick = onClick)
+}
+
+@Composable
+private fun AboutLinkItem(
+    icon: ImageVector,
+    description: AnnotatedString,
     onClick: () -> Unit
 ) {
     Row(
