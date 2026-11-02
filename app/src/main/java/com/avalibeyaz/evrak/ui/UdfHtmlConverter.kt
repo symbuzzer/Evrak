@@ -93,7 +93,7 @@ object UdfHtmlConverter {
             <html lang="tr">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:">
                 <meta name="viewport" content="width=${pageWidthPt.toInt()}, user-scalable=yes">
                 <style>
                     html { height: 100%; }
