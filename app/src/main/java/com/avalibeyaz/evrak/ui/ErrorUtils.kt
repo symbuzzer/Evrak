@@ -1,5 +1,6 @@
 package com.avalibeyaz.evrak.ui
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,7 +13,24 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.avalibeyaz.evrak.MainViewModel
 import com.avalibeyaz.evrak.R
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+
+private fun CoroutineScope.launchFeedbackExport(
+    context: Context,
+    viewModel: MainViewModel,
+    errorTimeMs: Long,
+    onFinished: () -> Unit
+) {
+    launch {
+        exportLogcatAndOpen(
+            context = context,
+            viewModel = viewModel,
+            onDismiss = onFinished,
+            errorTimeMs = errorTimeMs
+        )
+    }
+}
 
 @Composable
 fun ErrorDialog(
@@ -56,16 +74,9 @@ fun ErrorDialog(
                 onClick = {
                     if (!isCapturing) {
                         isCapturing = true
-                        coroutineScope.launch {
-                            exportLogcatAndOpen(
-                                context = context,
-                                viewModel = viewModel,
-                                onDismiss = {
-                                    isCapturing = false
-                                    onDismiss()
-                                },
-                                errorTimeMs = errorTimeMs
-                            )
+                        coroutineScope.launchFeedbackExport(context, viewModel, errorTimeMs) {
+                            isCapturing = false
+                            onDismiss()
                         }
                     }
                 },
@@ -113,15 +124,8 @@ fun ErrorView(
                     onClick = {
                         if (!isCapturing) {
                             isCapturing = true
-                            coroutineScope.launch {
-                                exportLogcatAndOpen(
-                                    context = context,
-                                    viewModel = viewModel,
-                                    onDismiss = {
-                                        isCapturing = false
-                                    },
-                                    errorTimeMs = errorTimeMs
-                                )
+                            coroutineScope.launchFeedbackExport(context, viewModel, errorTimeMs) {
+                                isCapturing = false
                             }
                         }
                     },

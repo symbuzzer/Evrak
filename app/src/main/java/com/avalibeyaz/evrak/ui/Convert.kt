@@ -30,7 +30,7 @@ object DocumentConverter {
 
     suspend fun convert(inputFile: File, outputFile: File, context: Context? = null): ConversionResult {
         if (!inputFile.exists()) {
-            val errorMsg = context?.getString(R.string.error_input_file_not_found, inputFile.absolutePath) 
+            val errorMsg = context?.getString(R.string.error_input_file_not_found, inputFile.absolutePath)
                 ?: "Input file not found: ${inputFile.absolutePath}"
             return ConversionResult.Error(errorMsg)
         }
@@ -38,7 +38,7 @@ object DocumentConverter {
         val ext = inputFile.extension.lowercase()
         if (ext in listOf("doc", "docx", "xls", "xlsx", "ppt", "pptx")) {
             if (!validateOfficeFile(inputFile)) {
-                val errorMsg = context?.let { FileErrorUtils.getStandardizedErrorMessage(it, "Invalid or corrupted office file") } 
+                val errorMsg = context?.let { FileErrorUtils.getStandardizedErrorMessage(it, "Invalid or corrupted office file") }
                     ?: "Invalid or corrupted office file"
                 return ConversionResult.Error(errorMsg)
             }
@@ -85,7 +85,7 @@ object DocumentConverter {
                 }
             }
             else -> {
-                val errorMsg = context?.getString(R.string.error_unsupported_type, inputFile.extension) 
+                val errorMsg = context?.getString(R.string.error_unsupported_type, inputFile.extension)
                     ?: "Unsupported file type: .${inputFile.extension}"
                 ConversionResult.Error(errorMsg)
             }
@@ -124,14 +124,16 @@ object DocumentConverter {
         var activePfd: ParcelFileDescriptor? = null
 
         webView.settings.apply {
-            javaScriptEnabled = true
-            domStorageEnabled = true
+            javaScriptEnabled = false
+            domStorageEnabled = false
             loadWithOverviewMode = false
             useWideViewPort = true
             @Suppress("DEPRECATION")
             textZoom = 100
-            allowFileAccess = true
-            allowContentAccess = true
+            allowFileAccess = false
+            allowContentAccess = false
+            blockNetworkLoads = true
+            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
         }
 
         webView.webViewClient = object : WebViewClient() {
@@ -192,13 +194,16 @@ object DocumentConverter {
             }
         } catch (e: Exception) { null }
 
-        if (fontBase64 != null) {
-            val fontStyle = "<style>@font-face { font-family: 'EmbeddedLiberation'; src: url(data:font/ttf;base64,$fontBase64) format('truetype'); } * { font-family: 'EmbeddedLiberation', serif !important; }</style>"
-            if (finalHtml.contains("<head>", ignoreCase = true)) {
-                finalHtml = finalHtml.replace("<head>", "<head>$fontStyle", ignoreCase = true)
-            } else {
-                finalHtml = "$fontStyle$finalHtml"
-            }
+        val csp = "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:\">"
+        val fontStyle = if (fontBase64 != null) {
+            "<style>@font-face { font-family: 'EmbeddedLiberation'; src: url(data:font/ttf;base64,$fontBase64) format('truetype'); } * { font-family: 'EmbeddedLiberation', serif !important; }</style>"
+        } else ""
+        val injected = "$csp$fontStyle"
+
+        finalHtml = if (finalHtml.contains("<head>", ignoreCase = true)) {
+            finalHtml.replaceFirst("<head>", "<head>$injected", ignoreCase = true)
+        } else {
+            "$injected$finalHtml"
         }
 
         webView.loadDataWithBaseURL("https://evrak.app/", finalHtml, "text/html", "UTF-8", null)
@@ -256,7 +261,7 @@ object DocumentConverter {
                 val htmlResult = convertToHtml(inputFile, tempHtml, context)
                 if (htmlResult is ConversionResult.Success) {
                     var htmlContent = tempHtml.readText(Charsets.UTF_8)
-                    
+
                     val css = """
                         <style>
                             table { border-collapse: collapse; width: auto; min-width: 100%; margin-bottom: 20px; table-layout: auto; }
@@ -266,13 +271,13 @@ object DocumentConverter {
                             img { max-width: 100%; height: auto; }
                         </style>
                     """.trimIndent()
-                    
+
                     if (htmlContent.contains("<head>", ignoreCase = true)) {
                         htmlContent = htmlContent.replace("<head>", "<head>$css", ignoreCase = true)
                     } else {
                         htmlContent = "<html><head>$css</head><body>$htmlContent</body></html>"
                     }
-                    
+
                     convertHtmlToPdfWithWebView(htmlContent, outputFile, context)
                 } else {
                     htmlResult
@@ -305,7 +310,7 @@ object DocumentConverter {
                     val bytes = file.readBytes()
                     if (bytes.size >= 4) {
                         bytes[0] == 0xD0.toByte() && bytes[1] == 0xCF.toByte() &&
-                        bytes[2] == 0x11.toByte() && bytes[3] == 0xE0.toByte()
+                                bytes[2] == 0x11.toByte() && bytes[3] == 0xE0.toByte()
                     } else {
                         false
                     }

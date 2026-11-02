@@ -17,19 +17,11 @@ object CleanupManager {
 
                 cleanupDirectory(context.cacheDir)
 
-                val lokCacheDir = File(context.filesDir, "lok_cache")
-                if (lokCacheDir.exists()) {
-                    cleanupDirectory(lokCacheDir)
-                }
-
-                val loInputDir = File(context.filesDir, "in")
-                if (loInputDir.exists()) {
-                    cleanupDirectory(loInputDir)
-                }
-
-                val tempVDir = File(context.filesDir, "temp_v")
-                if (tempVDir.exists()) {
-                    cleanupDirectory(tempVDir)
+                listOf("lok_cache", "in", "temp_v", "temp_h").forEach { dirName ->
+                    val dir = File(context.filesDir, dirName)
+                    if (dir.exists()) {
+                        cleanupDirectory(dir)
+                    }
                 }
 
                 cleanupOrphanFiles(context, repository)

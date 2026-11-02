@@ -46,18 +46,7 @@ class DocumentActivity : AppCompatActivity() {
     private fun handleIntent(intent: Intent) {
         val filePathExtra = intent.getStringExtra("file_path") ?: ""
         val displayNameExtra = intent.getStringExtra("display_name") ?: ""
-        val uriExtra: Uri? = when (intent.action) {
-            Intent.ACTION_VIEW -> intent.data
-            Intent.ACTION_SEND -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
-                }
-            }
-            else -> null
-        }
+        val uriExtra: Uri? = intent.documentUri()
 
         if (uriExtra != null && isDirectoryUri(uriExtra)) {
             finish()
@@ -69,7 +58,7 @@ class DocumentActivity : AppCompatActivity() {
             return
         }
 
-       if (filePathExtra.isEmpty() && uriExtra != null) {
+        if (filePathExtra.isEmpty() && uriExtra != null) {
             val name = queryDisplayName(uriExtra).orEmpty()
             val type = intent.type.orEmpty()
             val forwardToMain = when {

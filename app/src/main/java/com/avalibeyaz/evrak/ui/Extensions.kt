@@ -5,9 +5,12 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import com.avalibeyaz.evrak.R
 import java.io.File
+
+private const val FEEDBACK_EMAIL = "alipolatbeyaz@gmail.com"
 
 fun Context.findActivity(): Activity? {
     var context = this
@@ -16,6 +19,19 @@ fun Context.findActivity(): Activity? {
         context = context.baseContext
     }
     return null
+}
+
+fun Intent.documentUri(): Uri? = when (action) {
+    Intent.ACTION_VIEW -> data
+    Intent.ACTION_SEND -> {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            getParcelableExtra(Intent.EXTRA_STREAM)
+        }
+    }
+    else -> null
 }
 
 fun getMimeType(path: String): String {
@@ -184,7 +200,7 @@ fun shareEvrakLogEmail(context: Context, filePath: String, displayName: String? 
     )
     val emailIntent = Intent(Intent.ACTION_SEND).apply {
         type = "message/rfc822"
-        putExtra(Intent.EXTRA_EMAIL, arrayOf("alipolatbeyaz@gmail.com"))
+        putExtra(Intent.EXTRA_EMAIL, arrayOf(FEEDBACK_EMAIL))
         putExtra(Intent.EXTRA_SUBJECT, subject)
         putExtra(Intent.EXTRA_TEXT, "")
         putExtra(Intent.EXTRA_STREAM, uri)

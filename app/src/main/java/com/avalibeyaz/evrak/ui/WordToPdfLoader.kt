@@ -3,7 +3,6 @@ package com.avalibeyaz.evrak.ui
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -31,7 +30,7 @@ fun WordToPdfLoader(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
+
     var tempPdfPath by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isConverting by remember { mutableStateOf(false) }
@@ -54,7 +53,7 @@ fun WordToPdfLoader(
 
                 val tempDir = File(context.filesDir, "temp_v").apply { if (!exists()) mkdirs() }
                 val tempPdf = File(tempDir, "view_temp_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}.pdf")
-                
+
                 val success = try {
                     kotlinx.coroutines.withTimeout(60000) {
                         val result = DocumentConverter.convert(file, tempPdf, context)
@@ -74,7 +73,7 @@ fun WordToPdfLoader(
                     }
                     false
                 }
-                
+
                 if (success && tempPdf.exists()) {
                     tempPdfPath = tempPdf.absolutePath
                 }

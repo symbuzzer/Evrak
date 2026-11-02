@@ -2,7 +2,6 @@ package com.avalibeyaz.evrak
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.ComponentActivity
@@ -33,7 +32,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         android.webkit.WebView.enableSlowWholeDocumentDraw()
-        
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         currentIntent = intent
@@ -96,13 +95,13 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
     var showAboutDialog by remember { mutableStateOf(false) }
     var showExperimentalDialog by remember { mutableStateOf(false) }
     var openDocumentError by remember { mutableStateOf<String?>(null) }
-    
+
     val isExternalIntent = remember(intent) {
         intent?.action == Intent.ACTION_VIEW || intent?.action == Intent.ACTION_SEND
     }
 
     NavHost(
-        navController = navController, 
+        navController = navController,
         startDestination = if (isExternalIntent) "intent_processor" else "history"
     ) {
         composable("history") {
@@ -136,7 +135,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                 onExperimentalClick = { showExperimentalDialog = true },
                 onFilePicked = { uri ->
                     viewModel.openDocument(
-                        uri = uri, 
+                        uri = uri,
                         resolver = context.contentResolver,
                         onError = { error ->
                             openDocumentError = error
@@ -171,9 +170,9 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
             arguments = listOf(
                 navArgument("filePath") { type = NavType.StringType },
                 navArgument("displayName") { type = NavType.StringType },
-                navArgument("forceText") { 
+                navArgument("forceText") {
                     type = NavType.BoolType
-                    defaultValue = false 
+                    defaultValue = false
                 }
             )
         ) { backStackEntry ->
@@ -181,7 +180,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
             val displayName = backStackEntry.arguments?.getString("displayName") ?: ""
             val forceText = backStackEntry.arguments?.getBoolean("forceText") ?: false
             val context = androidx.compose.ui.platform.LocalContext.current
-            
+
             val onBackSafe = {
                 if (backStackEntry.lifecycle.currentState == androidx.lifecycle.Lifecycle.State.RESUMED) {
                     if (!navController.popBackStack()) {
@@ -189,40 +188,40 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                     }
                 }
             }
-            
+
             val isPdf = filePath.endsWith(".pdf", ignoreCase = true)
-            val isTiff = filePath.endsWith(".tif", ignoreCase = true) || 
-                           filePath.endsWith(".tiff", ignoreCase = true)
-            val isImage = filePath.endsWith(".png", true) || 
-                          filePath.endsWith(".jpg", true) || 
-                          filePath.endsWith(".jpeg", true) || 
-                          filePath.endsWith(".gif", true) ||
-                          filePath.endsWith(".webp", true) ||
-                          filePath.endsWith(".bmp", true) ||
-                          filePath.endsWith(".heic", true) ||
-                          filePath.endsWith(".avif", true)
-            
-            val isOffice = filePath.endsWith(".docx", true) || 
-                          filePath.endsWith(".doc", true)
-            
+            val isTiff = filePath.endsWith(".tif", ignoreCase = true) ||
+                    filePath.endsWith(".tiff", ignoreCase = true)
+            val isImage = filePath.endsWith(".png", true) ||
+                    filePath.endsWith(".jpg", true) ||
+                    filePath.endsWith(".jpeg", true) ||
+                    filePath.endsWith(".gif", true) ||
+                    filePath.endsWith(".webp", true) ||
+                    filePath.endsWith(".bmp", true) ||
+                    filePath.endsWith(".heic", true) ||
+                    filePath.endsWith(".avif", true)
+
+            val isOffice = filePath.endsWith(".docx", true) ||
+                    filePath.endsWith(".doc", true)
+
             val isExcel = filePath.endsWith(".xlsx", true) ||
-                          filePath.endsWith(".xls", true)
+                    filePath.endsWith(".xls", true)
 
             val isPowerPoint = filePath.endsWith(".pptx", true) ||
-                              filePath.endsWith(".ppt", true)
+                    filePath.endsWith(".ppt", true)
 
-            
+
             val isUdf = filePath.endsWith(".udf", true)
-            
-            val isHtml = filePath.endsWith(".html", true) || 
-                          filePath.endsWith(".htm", true)
-            
+
+            val isHtml = filePath.endsWith(".html", true) ||
+                    filePath.endsWith(".htm", true)
+
             val isText = filePath.endsWith(".txt", ignoreCase = true) || filePath.endsWith(".evraklog", ignoreCase = true)
-            
+
             val isZip = filePath.endsWith(".zip", ignoreCase = true)
-            
+
             val isEyp = filePath.endsWith(".eyp", ignoreCase = true)
-            
+
             val onRenameSafe: (String) -> Unit = { newName ->
                 viewModel.renameDocument(filePath, displayName, newName) { updated ->
                     navController.navigate("viewer/${Uri.encode(updated.path)}/${Uri.encode(updated.name)}?forceText=$forceText") {
@@ -409,18 +408,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                 return@LaunchedEffect
             }
 
-            val uri: Uri? = when (it.action) {
-                Intent.ACTION_VIEW -> it.data
-                Intent.ACTION_SEND -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        it.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-                    } else {
-                        @Suppress("DEPRECATION")
-                        it.getParcelableExtra(Intent.EXTRA_STREAM)
-                    }
-                }
-                else -> null
-            }
+            val uri: Uri? = it.documentUri()
 
             uri?.let { fileUri ->
                 try {
@@ -430,9 +418,9 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                     )
                 } catch (_: Exception) {
                 }
-                
+
                 viewModel.openDocument(
-                    uri = fileUri, 
+                    uri = fileUri,
                     resolver = activityContentResolver,
                     onError = { error ->
                         openDocumentError = error
@@ -493,8 +481,8 @@ private fun shareFile(context: android.content.Context, filePath: String) {
 }
 
 private fun printFile(
-    context: android.content.Context, 
-    filePath: String, 
+    context: android.content.Context,
+    filePath: String,
     displayName: String,
     onConvertingChange: (Boolean) -> Unit = {}
 ) {
@@ -552,7 +540,7 @@ private fun doPrint(context: android.content.Context, file: File, displayName: S
     val jobName = "${context.getString(R.string.app_name)} - $displayName"
 
     printManager.print(
-        jobName, 
+        jobName,
         object : android.print.PrintDocumentAdapter() {
             override fun onLayout(
                 oldAttributes: android.print.PrintAttributes?,
@@ -592,7 +580,7 @@ private fun doPrint(context: android.content.Context, file: File, displayName: S
                     try { input?.close() } catch (_: Exception) {}
                 }
             }
-        }, 
+        },
         null
     )
 }
