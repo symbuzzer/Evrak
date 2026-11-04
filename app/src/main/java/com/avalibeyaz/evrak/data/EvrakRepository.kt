@@ -244,21 +244,24 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         var newPath = evrak.path
 
         if (parentDir != null && oldFile.exists()) {
-            val newFile = File(parentDir, "${System.currentTimeMillis()}_$finalName")
-            try {
-                oldFile.copyTo(newFile, overwrite = true)
-                if (newFile.exists() && newFile.length() > 0) {
-                    newPath = newFile.absolutePath
+            val targetFile = File(parentDir, finalName)
+            if (oldFile.absolutePath != targetFile.absolutePath) {
+                if (oldFile.renameTo(targetFile)) {
+                    newPath = targetFile.absolutePath
+                } else {
                     try {
-                        if (oldFile.absolutePath != newPath) {
-                            oldFile.delete()
+                        oldFile.copyTo(targetFile, overwrite = true)
+                        if (targetFile.exists() && targetFile.length() > 0) {
+                            newPath = targetFile.absolutePath
+                            try {
+                                if (oldFile.absolutePath != newPath) {
+                                    oldFile.delete()
+                                }
+                            } catch (_: Exception) {}
                         }
-                    } catch (_: Exception) {}
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                if (oldFile.renameTo(newFile)) {
-                    newPath = newFile.absolutePath
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
         }

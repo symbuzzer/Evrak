@@ -115,6 +115,7 @@ fun TextViewerScreen(
                     errorMessage = FileErrorUtils.getStandardizedErrorMessage(context, "not_found")
                 }
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 e.printStackTrace()
                 errorMessage = FileErrorUtils.getStandardizedErrorMessage(context, e)
             } finally {

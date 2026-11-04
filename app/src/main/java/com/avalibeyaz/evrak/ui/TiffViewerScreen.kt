@@ -101,20 +101,7 @@ fun TiffViewerScreen(
 
     var renderer by remember { mutableStateOf<TiffRenderer?>(null) }
     val mutex = remember { Mutex() }
-    val bitmapCache = remember { 
-        object : LruCache<Int, Bitmap>(10) {
-            override fun entryRemoved(
-                evicted: Boolean,
-                key: Int,
-                oldValue: Bitmap,
-                newValue: Bitmap?
-            ) {
-                if (evicted && !oldValue.isRecycled) {
-                    oldValue.recycle()
-                }
-            }
-        }
-    }
+    val bitmapCache = remember { LruCache<Int, Bitmap>(10) }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -123,8 +110,16 @@ fun TiffViewerScreen(
     }
 
     LaunchedEffect(filePath) {
+        isLoading = true
+        bitmapCache.evictAll()
+        renderer = null
+        pageCount = 0
+
         val file = File(filePath)
-        if (!file.exists()) return@LaunchedEffect
+        if (!file.exists()) {
+            isLoading = false
+            return@LaunchedEffect
+        }
 
         withContext(Dispatchers.IO) {
             var pfd: ParcelFileDescriptor? = null
@@ -139,14 +134,17 @@ fun TiffViewerScreen(
                 
                 awaitCancellation()
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 e.printStackTrace()
                 loadError = FileErrorUtils.getStandardizedErrorMessage(context, e)
                 withContext(Dispatchers.Main) { isLoading = false }
             } finally {
                 withContext(NonCancellable) {
                     renderer = null
-                    try { tiffRenderer?.close() } catch (_: Exception) {}
-                    try { pfd?.close() } catch (_: Exception) {}
+                    mutex.withLock {
+                        try { tiffRenderer?.close() } catch (_: Exception) {}
+                        try { pfd?.close() } catch (_: Exception) {}
+                    }
                 }
             }
         }
@@ -418,34 +416,37 @@ fun TiffViewerScreen(
 @Composable
 fun TiffPageItem(renderer: TiffRenderer?, index: Int, mutex: Mutex, cache: LruCache<Int, Bitmap>) {
     val cached = cache.get(index)
-    val initialBitmap = if (cached != null && !cached.isRecycled) cached else null
-    val bitmapState = produceState<Bitmap?>(initialValue = initialBitmap, renderer, index) {
-        val current = value
-        if (renderer == null || (current != null && !current.isRecycled)) return@produceState
-        value = withContext(Dispatchers.IO) {
-            mutex.withLock {
-                try {
-                    val page = renderer.openPage(index)
+    val bitmapState = produceState<Bitmap?>(initialValue = cached, renderer, index) {
+        if (renderer == null || value != null) return@produceState
+        try {
+            value = withContext(Dispatchers.IO) {
+                mutex.withLock {
                     try {
-                        val maxDimension = 2048f
-                        val scale = (maxDimension / maxOf(page.width, page.height)).coerceAtMost(1f)
-                        val targetWidth = (page.width * scale).toInt().coerceAtLeast(1)
-                        val targetHeight = (page.height * scale).toInt().coerceAtLeast(1)
-                        
-                        val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
-                        val tiffBitmap = TiffBitmap(bitmap)
-                        page.render(tiffBitmap, null, null, TiffRenderMode.FOR_DISPLAY)
-                        
-                        cache.put(index, bitmap)
-                        bitmap
-                    } finally {
-                        try { page.close() } catch (_: Exception) {}
+                        val page = renderer.openPage(index)
+                        try {
+                            val maxDimension = 2048f
+                            val scale = (maxDimension / maxOf(page.width, page.height)).coerceAtMost(1f)
+                            val targetWidth = (page.width * scale).toInt().coerceAtLeast(1)
+                            val targetHeight = (page.height * scale).toInt().coerceAtLeast(1)
+                            
+                            val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+                            val tiffBitmap = TiffBitmap(bitmap)
+                            page.render(tiffBitmap, null, null, TiffRenderMode.FOR_DISPLAY)
+                            
+                            cache.put(index, bitmap)
+                            bitmap
+                        } finally {
+                            try { page.close() } catch (_: Exception) {}
+                        }
+                    } catch (e: Throwable) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        e.printStackTrace()
+                        null
                     }
-                } catch (e: Throwable) {
-                    e.printStackTrace()
-                    null
                 }
             }
+        } catch (_: kotlinx.coroutines.CancellationException) {
+            // Coroutine cancelled
         }
     }
 

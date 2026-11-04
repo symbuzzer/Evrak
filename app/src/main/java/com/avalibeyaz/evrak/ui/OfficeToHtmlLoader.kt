@@ -62,6 +62,7 @@ fun OfficeToHtmlLoader(
                     }
                 }
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 e.printStackTrace()
                 withContext(Dispatchers.Main) {
                     loadError = FileErrorUtils.getStandardizedErrorMessage(context, e)

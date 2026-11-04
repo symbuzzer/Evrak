@@ -137,6 +137,7 @@ fun ImageViewerScreen(
                 }
                 isLoading = false
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 e.printStackTrace()
                 loadError = context.getString(R.string.error_heic_open_failed, e.localizedMessage ?: "Unknown")
                 isLoading = false

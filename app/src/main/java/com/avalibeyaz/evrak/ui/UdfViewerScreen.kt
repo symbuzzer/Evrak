@@ -98,6 +98,7 @@ fun UdfViewerScreen(
                     }
                 }
             } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 e.printStackTrace()
                 wrapUdfHtmlError(context, FileErrorUtils.getStandardizedErrorMessage(context, e))
             } finally {
