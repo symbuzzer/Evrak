@@ -35,9 +35,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
@@ -1021,7 +1026,8 @@ fun MainScreen(
                     value = textFieldValue,
                     onValueChange = { textFieldValue = it },
                     label = { Text(text = stringResource(id = R.string.rename_hint)) },
-                    singleLine = true,
+                    maxLines = 3,
+                    visualTransformation = fileNameVisualTransformation,
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester)
@@ -1258,7 +1264,10 @@ fun EvrakItem(
                 Spacer(modifier = Modifier.width(2.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = evrak.name, style = MaterialTheme.typography.titleMedium)
+                MiddleEllipsisText(
+                    text = evrak.name,
+                    style = MaterialTheme.typography.titleMedium
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = dateText,
@@ -1467,4 +1476,102 @@ enum class EvrakFilter(val labelResId: Int) {
     EYP(R.string.filter_eyp),
     IMAGE(R.string.filter_image),
     OTHER(R.string.filter_other)
+}
+
+@Composable
+fun MiddleEllipsisText(
+    text: String,
+    modifier: Modifier = Modifier,
+    style: TextStyle = LocalTextStyle.current,
+    color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
+) {
+    BoxWithConstraints(modifier = modifier) {
+        val density = LocalDensity.current
+        val maxPx = with(density) { constraints.maxWidth }
+        val textMeasurer = rememberTextMeasurer()
+
+        val displayText = remember(text, style, maxPx, density) {
+            if (maxPx <= 0 || maxPx == Constraints.Infinity) return@remember text
+
+            val fullWidth = textMeasurer.measure(
+                text = AnnotatedString(text),
+                style = style,
+                maxLines = 1
+            ).size.width
+
+            if (fullWidth <= maxPx) {
+                text
+            } else {
+                truncateFileNameMiddle(text, style, maxPx, textMeasurer)
+            }
+        }
+
+        Text(
+            text = displayText,
+            style = style,
+            color = color,
+            maxLines = 1,
+            softWrap = false
+        )
+    }
+}
+
+private fun truncateFileNameMiddle(
+    text: String,
+    style: TextStyle,
+    maxPx: Int,
+    textMeasurer: TextMeasurer
+): String {
+    val lastDotIndex = text.lastIndexOf('.')
+    val (baseName, ext, numSuffixChars) = if (lastDotIndex > 0 && lastDotIndex < text.length - 1) {
+        val base = text.substring(0, lastDotIndex)
+        val extension = text.substring(lastDotIndex)
+        val suffixCount = if (base.length > 2) 2 else base.length
+        Triple(base, extension, suffixCount)
+    } else {
+        val suffixCount = if (text.length > 3) 3 else text.length
+        Triple(text, "", suffixCount)
+    }
+
+    val suffix = baseName.takeLast(numSuffixChars) + ext
+    val prefixCandidateBase = baseName.dropLast(numSuffixChars)
+    val ellipsis = "..."
+    val targetSuffix = ellipsis + suffix
+
+    val targetSuffixWidth = textMeasurer.measure(
+        text = AnnotatedString(targetSuffix),
+        style = style,
+        maxLines = 1
+    ).size.width
+
+    if (targetSuffixWidth >= maxPx) {
+        return targetSuffix
+    }
+
+    var low = 1
+    var high = prefixCandidateBase.length
+    var bestLen = 0
+
+    while (low <= high) {
+        val mid = (low + high) / 2
+        val candidate = prefixCandidateBase.substring(0, mid) + targetSuffix
+        val candidateWidth = textMeasurer.measure(
+            text = AnnotatedString(candidate),
+            style = style,
+            maxLines = 1
+        ).size.width
+
+        if (candidateWidth <= maxPx) {
+            bestLen = mid
+            low = mid + 1
+        } else {
+            high = mid - 1
+        }
+    }
+
+    return if (bestLen > 0) {
+        prefixCandidateBase.substring(0, bestLen) + targetSuffix
+    } else {
+        targetSuffix
+    }
 }

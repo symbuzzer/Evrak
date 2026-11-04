@@ -7,6 +7,10 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import com.avalibeyaz.evrak.R
 import java.io.File
 
@@ -263,4 +267,49 @@ fun shareEvrakLogEmail(context: Context, filePath: String, displayName: String? 
         e.printStackTrace()
         context.startActivity(Intent.createChooser(emailIntent, context.getString(R.string.share)))
     }
+}
+
+val fileNameVisualTransformation = VisualTransformation { text ->
+    val originalText = text.text
+    val sb = StringBuilder()
+    val offsetMappingList = IntArray(originalText.length + 1)
+    
+    var transformedIndex = 0
+    for (i in originalText.indices) {
+        offsetMappingList[i] = transformedIndex
+        sb.append(originalText[i])
+        transformedIndex++
+        
+        val c = originalText[i]
+        if (c == '_' || c == '-' || c == '.' || ((i + 1) % 15 == 0 && i + 1 < originalText.length)) {
+            sb.append('\u200B')
+            transformedIndex++
+        }
+    }
+    offsetMappingList[originalText.length] = transformedIndex
+    
+    val transformedText = sb.toString()
+    TransformedText(
+        text = AnnotatedString(transformedText),
+        offsetMapping = object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int {
+                if (offset <= 0) return 0
+                if (offset >= originalText.length) return transformedText.length
+                return offsetMappingList[offset.coerceIn(0, originalText.length)]
+            }
+            override fun transformedToOriginal(offset: Int): Int {
+                if (offset <= 0) return 0
+                if (offset >= transformedText.length) return originalText.length
+                var original = 0
+                for (j in offsetMappingList.indices) {
+                    if (offsetMappingList[j] <= offset) {
+                        original = j
+                    } else {
+                        break
+                    }
+                }
+                return original
+            }
+        }
+    )
 }

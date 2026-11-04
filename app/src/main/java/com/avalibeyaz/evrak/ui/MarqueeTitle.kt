@@ -94,7 +94,8 @@ fun MarqueeTitle(
                             value = textFieldValue,
                             onValueChange = { textFieldValue = it },
                             label = { Text(text = stringResource(id = R.string.rename_hint)) },
-                            singleLine = true,
+                            maxLines = 3,
+                            visualTransformation = fileNameVisualTransformation,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .focusRequester(focusRequester)
