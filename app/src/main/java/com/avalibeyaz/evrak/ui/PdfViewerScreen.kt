@@ -40,7 +40,7 @@ class SafeFileHandler(private val baseDir: File) : WebViewAssetLoader.PathHandle
             val file = File(baseDir, path).canonicalFile
             if (!file.absolutePath.startsWith(baseDir.canonicalPath)) return null
             if (!file.exists() || !file.isFile) return null
-            
+
             val extension = file.extension.lowercase()
             val mimeType = when (extension) {
                 "pdf" -> "application/pdf"
@@ -52,7 +52,7 @@ class SafeFileHandler(private val baseDir: File) : WebViewAssetLoader.PathHandle
                 "jpg", "jpeg" -> "image/jpeg"
                 else -> "application/octet-stream"
             }
-            
+
             return android.webkit.WebResourceResponse(mimeType, null, FileInputStream(file))
         } catch (e: Exception) {
             return null
@@ -246,7 +246,7 @@ fun PdfViewerScreen(
         }
     ) { padding ->
         val file = File(filePath)
-        
+
         val assetLoader = remember(filePath) {
             val assetsHandler = object : WebViewAssetLoader.PathHandler {
                 private val inner = WebViewAssetLoader.AssetsPathHandler(context)
@@ -258,30 +258,13 @@ fun PdfViewerScreen(
                     return response
                 }
             }
-            
+
             WebViewAssetLoader.Builder()
                 .setDomain("appassets.androidplatform.net")
                 .addPathHandler("/assets/", assetsHandler)
                 .addPathHandler("/internal/", SafeFileHandler(context.filesDir))
                 .addPathHandler("/cache/", SafeFileHandler(context.cacheDir))
                 .build()
-        }
-
-        var jsMissing by remember { mutableStateOf(false) }
-        LaunchedEffect(Unit) {
-            try {
-                val jsExists = try { context.assets.open("pdfjs/pdf.min.js").close(); true } catch (e: Exception) { false }
-                val mjsExists = try { context.assets.open("pdfjs/pdf.min.mjs").close(); true } catch (e: Exception) { false }
-                
-                if (!jsExists && !mjsExists) {
-                    Log.e("PdfViewer", "PDF.js assets missing in assets/pdfjs/")
-                    jsMissing = true
-                } else {
-                    Log.d("PdfViewer", "PDF.js assets found (js: $jsExists, mjs: $mjsExists)")
-                }
-            } catch (_: Exception) {
-                jsMissing = true
-            }
         }
 
         Column(
@@ -325,26 +308,7 @@ fun PdfViewerScreen(
                     .fillMaxSize()
                     .weight(1f)
             ) {
-                if (jsMissing) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
-                            Text(
-                                text = "PDF.js kütüphanesi eksik!",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Lütfen pdf.min.mjs (veya .js) ve pdf.worker.min.mjs dosyalarını assets/pdfjs/ klasörüne ekleyin.",
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = onBackClick) {
-                                Text("Geri Dön")
-                            }
-                        }
-                    }
-                } else if (loadError != null) {
+                if (loadError != null) {
                     ErrorView(
                         errorMessage = loadError!!,
                         onBackClick = onBackClick
@@ -395,13 +359,13 @@ fun PdfViewerScreen(
                                     settings.allowContentAccess = true
                                     settings.loadWithOverviewMode = true
                                     settings.useWideViewPort = true
-                                    settings.setSupportZoom(false) 
+                                    settings.setSupportZoom(false)
                                     settings.builtInZoomControls = false
                                     settings.displayZoomControls = false
-                                    
+
                                     isVerticalScrollBarEnabled = true
                                     isHorizontalScrollBarEnabled = true
-                                    
+
                                     webChromeClient = object : WebChromeClient() {
                                         override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
                                             val msg = consoleMessage?.message() ?: ""
@@ -436,9 +400,9 @@ fun PdfViewerScreen(
                                             }
                                         }
                                     }
-                                    
+
                                     val viewerUrl = "https://appassets.androidplatform.net/assets/pdfjs/viewer.html"
-                                    
+
                                     val fileAbsolutePath = file.absolutePath
                                     val fileUrl = when {
                                         fileAbsolutePath.startsWith(context.cacheDir.absolutePath) -> {
@@ -463,8 +427,16 @@ fun PdfViewerScreen(
                                             "https://appassets.androidplatform.net/cache$encodedPath"
                                         }
                                     }
-                                    
-                                    loadUrl("$viewerUrl?file=$fileUrl")
+
+                                    val viewerStrings = listOf(
+                                        "s_loading" to context.getString(R.string.loading),
+                                        "s_error_title" to context.getString(R.string.pdf_viewer_error_title),
+                                        "s_lib_failed" to context.getString(R.string.pdf_viewer_lib_load_failed),
+                                        "s_page_loading" to context.getString(R.string.pdf_viewer_page_loading),
+                                        "s_error" to context.getString(R.string.pdf_viewer_error)
+                                    ).joinToString("&") { (key, value) -> "$key=${android.net.Uri.encode(value)}" }
+
+                                    loadUrl("$viewerUrl?$viewerStrings&file=$fileUrl")
                                 }
                             },
                             modifier = Modifier.fillMaxSize()
@@ -482,7 +454,7 @@ fun PdfViewerScreen(
                 }
 
                 WaitScreenOverlay(
-                    show = isLoading && loadError == null && !jsMissing,
+                    show = isLoading && loadError == null,
                     message = stringResource(id = R.string.loading)
                 )
             }

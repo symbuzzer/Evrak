@@ -2,6 +2,8 @@ package com.avalibeyaz.evrak.ui
 
 import android.content.Context
 import com.avalibeyaz.evrak.MainViewModel
+import com.avalibeyaz.evrak.R
+import com.avalibeyaz.evrak.data.evrakCacheDir
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -67,12 +69,12 @@ suspend fun exportLogcatAndOpen(
             }
         }
 
-        val content = if (lines.isNotEmpty()) lines.joinToString("\n") else "Logcat kaydı bulunamadı."
+        val content = if (lines.isNotEmpty()) lines.joinToString("\n") else context.getString(R.string.logcat_no_records)
 
         val dateFormat = SimpleDateFormat("yy-MM-dd-HH-mm-ss", Locale.US)
         val fileName = "logcat-${dateFormat.format(Date(nowMs))}.evraklog"
 
-        val cacheDir = File(context.filesDir, "evrak_cache")
+        val cacheDir = context.evrakCacheDir()
         if (!cacheDir.exists()) {
             cacheDir.mkdirs()
         }

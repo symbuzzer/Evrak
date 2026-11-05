@@ -51,7 +51,7 @@ object CleanupManager {
     }
 
     private suspend fun cleanupOrphanFiles(context: Context, repository: EvrakRepository) {
-        val evrakCacheDir = File(context.filesDir, "evrak_cache")
+        val evrakCacheDir = context.evrakCacheDir()
         if (!evrakCacheDir.exists()) return
 
         val databasePaths = repository.getAllPaths().toSet()

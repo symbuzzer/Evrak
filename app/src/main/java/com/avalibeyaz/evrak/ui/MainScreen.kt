@@ -86,7 +86,7 @@ fun MainScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
+
     var isSelectionMode by remember { mutableStateOf(false) }
     val selectedIds = remember { mutableStateSetOf<Int>() }
     val selectedFileContexts = remember { mutableStateMapOf<Int, Pair<EvrakFilter, com.avalibeyaz.evrak.EvrakDateFilter>>() }
@@ -362,25 +362,25 @@ fun MainScreen(
         val filters = mutableListOf(EvrakFilter.ALL)
         if (historyList.any { it.path.endsWith(".udf", true) }) filters.add(EvrakFilter.UDF)
         if (historyList.any { it.path.endsWith(".pdf", true) }) filters.add(EvrakFilter.PDF)
-        if (historyList.any { 
-            val path = it.path.lowercase()
-            path.endsWith(".doc") || path.endsWith(".docx") ||
-            path.endsWith(".xls") || path.endsWith(".xlsx") ||
-            path.endsWith(".ppt") || path.endsWith(".pptx")
-        }) filters.add(EvrakFilter.OFFICE)
+        if (historyList.any {
+                val path = it.path.lowercase()
+                path.endsWith(".doc") || path.endsWith(".docx") ||
+                        path.endsWith(".xls") || path.endsWith(".xlsx") ||
+                        path.endsWith(".ppt") || path.endsWith(".pptx")
+            }) filters.add(EvrakFilter.OFFICE)
         if (historyList.any { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }) filters.add(EvrakFilter.TIFF)
         if (historyList.any { it.path.endsWith(".eyp", true) }) filters.add(EvrakFilter.EYP)
         if (historyList.any {
                 val path = it.path.lowercase()
                 path.endsWith(".jpg") || path.endsWith(".jpeg") ||
-                path.endsWith(".gif") || path.endsWith(".png") ||
-                path.endsWith(".webp") || path.endsWith(".bmp") ||
-                path.endsWith(".heic") || path.endsWith(".avif")
+                        path.endsWith(".gif") || path.endsWith(".png") ||
+                        path.endsWith(".webp") || path.endsWith(".bmp") ||
+                        path.endsWith(".heic") || path.endsWith(".avif")
             }) filters.add(EvrakFilter.IMAGE)
         if (historyList.any {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
-                path.endsWith(".txt") || path.endsWith(".evraklog") || path.endsWith(".zip")
+                        path.endsWith(".txt") || path.endsWith(".evraklog") || path.endsWith(".zip")
             }) filters.add(EvrakFilter.OTHER)
         filters
     }
@@ -393,22 +393,22 @@ fun MainScreen(
             EvrakFilter.OFFICE -> dateFiltered.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".doc") || path.endsWith(".docx") ||
-                path.endsWith(".xls") || path.endsWith(".xlsx") ||
-                path.endsWith(".ppt") || path.endsWith(".pptx")
+                        path.endsWith(".xls") || path.endsWith(".xlsx") ||
+                        path.endsWith(".ppt") || path.endsWith(".pptx")
             }
             EvrakFilter.TIFF -> dateFiltered.filter { it.path.endsWith(".tif", true) || it.path.endsWith(".tiff", true) }
             EvrakFilter.EYP -> dateFiltered.filter { it.path.endsWith(".eyp", true) }
             EvrakFilter.IMAGE -> dateFiltered.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".jpg") || path.endsWith(".jpeg") ||
-                path.endsWith(".gif") || path.endsWith(".png") ||
-                path.endsWith(".webp") || path.endsWith(".bmp") ||
-                path.endsWith(".heic") || path.endsWith(".avif")
+                        path.endsWith(".gif") || path.endsWith(".png") ||
+                        path.endsWith(".webp") || path.endsWith(".bmp") ||
+                        path.endsWith(".heic") || path.endsWith(".avif")
             }
             EvrakFilter.OTHER -> dateFiltered.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
-                path.endsWith(".txt") || path.endsWith(".evraklog") || path.endsWith(".zip")
+                        path.endsWith(".txt") || path.endsWith(".evraklog") || path.endsWith(".zip")
             }
         }
     }
@@ -432,11 +432,11 @@ fun MainScreen(
         topBar = {
             Column {
                 TopAppBar(
-                    title = { 
+                    title = {
                         if (isSelectionMode) {
                             Text(text = "${selectedIds.size}")
                         } else {
-                            Text(text = stringResource(id = R.string.app_name)) 
+                            Text(text = stringResource(id = R.string.app_name))
                         }
                     },
                     navigationIcon = {
@@ -561,7 +561,7 @@ fun MainScreen(
                                 state = rememberTooltipState()
                             ) {
                                 Box {
-                                    IconButton(onClick = { 
+                                    IconButton(onClick = {
                                         if (folderSelectionEnabled) {
                                             showFolderMenu = true
                                         } else {
@@ -574,7 +574,7 @@ fun MainScreen(
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
-                                    
+
                                     DropdownMenu(
                                         expanded = showFolderMenu,
                                         onDismissRequest = { showFolderMenu = false }
@@ -605,7 +605,7 @@ fun MainScreen(
                                                     if (launchIntent != null) {
                                                         context.startActivity(launchIntent)
                                                     } else {
-                                                        Toast.makeText(context, "CELSE app launch failed", Toast.LENGTH_SHORT).show()
+                                                        Toast.makeText(context, context.getString(R.string.celse_launch_failed), Toast.LENGTH_SHORT).show()
                                                     }
                                                 }
                                             )
@@ -955,24 +955,24 @@ fun MainScreen(
                         openFileWith(context, selectedEvrak!!)
                     }
                 )
-                
+
                 OptionItem(
                     icon = Icons.Default.Share,
                     label = stringResource(id = R.string.share),
                     onClick = {
                         val path = selectedEvrak!!.path
-                        val isConvertible = (path.endsWith(".udf", true) || 
-                                           path.endsWith(".tiff", true) || 
-                                           path.endsWith(".tif", true) ||
-                                           path.endsWith(".docx", true) ||
-                                           path.endsWith(".doc", true) ||
-                                           path.endsWith(".xls", true) ||
-                                           path.endsWith(".xlsx", true) ||
-                                           path.endsWith(".ppt", true) ||
-                                           path.endsWith(".pptx", true) ||
-                                           path.endsWith(".html", true) ||
-                                           path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
-                        
+                        val isConvertible = (path.endsWith(".udf", true) ||
+                                path.endsWith(".tiff", true) ||
+                                path.endsWith(".tif", true) ||
+                                path.endsWith(".docx", true) ||
+                                path.endsWith(".doc", true) ||
+                                path.endsWith(".xls", true) ||
+                                path.endsWith(".xlsx", true) ||
+                                path.endsWith(".ppt", true) ||
+                                path.endsWith(".pptx", true) ||
+                                path.endsWith(".html", true) ||
+                                path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
+
                         if (isConvertible) {
                             showFormatDialog = "share"
                             showSheet = false
@@ -982,24 +982,24 @@ fun MainScreen(
                         }
                     }
                 )
-                
+
                 OptionItem(
                     icon = Icons.Default.Save,
                     label = stringResource(id = R.string.save),
                     onClick = {
                         val path = selectedEvrak!!.path
-                        val isConvertible = (path.endsWith(".udf", true) || 
-                                           path.endsWith(".tiff", true) || 
-                                           path.endsWith(".tif", true) ||
-                                           path.endsWith(".docx", true) ||
-                                           path.endsWith(".doc", true) ||
-                                           path.endsWith(".xls", true) ||
-                                           path.endsWith(".xlsx", true) ||
-                                           path.endsWith(".ppt", true) ||
-                                           path.endsWith(".pptx", true) ||
-                                           path.endsWith(".html", true) ||
-                                           path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
-                        
+                        val isConvertible = (path.endsWith(".udf", true) ||
+                                path.endsWith(".tiff", true) ||
+                                path.endsWith(".tif", true) ||
+                                path.endsWith(".docx", true) ||
+                                path.endsWith(".doc", true) ||
+                                path.endsWith(".xls", true) ||
+                                path.endsWith(".xlsx", true) ||
+                                path.endsWith(".ppt", true) ||
+                                path.endsWith(".pptx", true) ||
+                                path.endsWith(".html", true) ||
+                                path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
+
                         if (isConvertible) {
                             showFormatDialog = "save"
                             showSheet = false
@@ -1032,7 +1032,7 @@ fun MainScreen(
                         showRenameDialog = selectedEvrak
                     }
                 )
-                
+
                 OptionItem(
                     icon = Icons.Default.Delete,
                     label = stringResource(id = R.string.delete),
@@ -1315,14 +1315,14 @@ fun EvrakItem(
     val dateText = remember(evrak.dateOpened) {
         val date = Date(evrak.dateOpened)
         val dateFormat = DateFormat.getDateFormat(context)
-        
+
         val is24Hour = DateFormat.is24HourFormat(context)
         val timePattern = if (is24Hour) "HH:mm" else "h:mm a"
         val timeFormat = SimpleDateFormat(timePattern, Locale.getDefault())
-        
+
         "${dateFormat.format(date)} - ${timeFormat.format(date)}"
     }
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1473,15 +1473,15 @@ fun OptionItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = icon, 
-            contentDescription = null, 
-            tint = color, 
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
             modifier = Modifier.size(22.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
-            text = label, 
-            color = color, 
+            text = label,
+            color = color,
             style = MaterialTheme.typography.bodyLarge
         )
     }

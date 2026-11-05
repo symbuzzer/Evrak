@@ -28,10 +28,10 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
 
     suspend fun addEvrakFromUri(uri: Uri, resolver: ContentResolver? = null, historySavingEnabled: Boolean = true): Evrak? {
         val cr = resolver ?: context.contentResolver
-        
+
         val mimeType = try { cr.getType(uri) } catch (_: Exception) { null }
         var extension = getExtensionFromMime(mimeType, uri)
-        
+
         val fileName = getFileName(uri, cr) ?: context.getString(R.string.unknown_document)
 
         if (fileName.endsWith(".evraklog", ignoreCase = true)) {
@@ -43,7 +43,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 extension = ext
             }
         }
-        
+
         val isExistingSupported = extension != null && supportedExtensions.any { it.equals(extension, ignoreCase = true) }
 
         val cacheFile = copyUriToInternalStorageWithSniffing(uri, cr) { sniffedExt ->
@@ -52,14 +52,14 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                     val isExistingUdf = extension?.equals(".udf", ignoreCase = true) == true
                     val isExistingEyp = extension?.equals(".eyp", ignoreCase = true) == true
                     val isSniffedZip = sniffedExt.equals(".docx", ignoreCase = true) || sniffedExt.equals(".zip", ignoreCase = true)
-                    
+
                     if (isExistingUdf && isSniffedZip) return@copyUriToInternalStorageWithSniffing
                     if (isExistingEyp && sniffedExt.equals(".eyp", ignoreCase = true)) return@copyUriToInternalStorageWithSniffing
-                    
+
                     val imageExtensions = setOf(".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".heic", ".avif")
                     val isExistingImage = extension?.lowercase() in imageExtensions
                     val isSniffedImage = sniffedExt.lowercase() in imageExtensions
-                    
+
                     if (!(isExistingImage && isSniffedImage)) {
                         extension = sniffedExt
                     }
@@ -73,7 +73,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 extension = deepOleExt
             }
         }
-        
+
         if (extension == ".docx" || extension == ".zip" || extension.isNullOrEmpty() || extension == ".bin" || !isExistingSupported) {
             val deepExt = deepSniffZip(cacheFile)
             if (deepExt != null) {
@@ -83,14 +83,14 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
 
         if (fileName.endsWith(".eyp", ignoreCase = true) && extension == ".zip") {
             extension = ".eyp"
-            }
-        
+        }
+
         var finalName = fileName
         if (extension != null && !finalName.endsWith(extension, ignoreCase = true)) {
             val nameWithoutExt = if (finalName.contains(".")) finalName.substringBeforeLast(".") else finalName
             finalName = "$nameWithoutExt$extension"
         }
-        
+
         val finalCacheFile = File(cacheFile.parent, "${System.currentTimeMillis()}_$finalName")
         try {
             cacheFile.copyTo(finalCacheFile, overwrite = true)
@@ -144,7 +144,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         if (historySavingEnabled && (isEvrakSupportedFormat(finalName) || isEvrakSupportedFormat(actualCacheFile.absolutePath))) {
             evrakDao.insertEvrak(newEvrak)
         }
-        
+
         return newEvrak
     }
 
@@ -216,7 +216,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 }
             }
         }
-        
+
         return result
     }
 
@@ -234,7 +234,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         val extension = if (evrak.path.contains(".")) {
             evrak.path.substring(evrak.path.lastIndexOf('.'))
         } else ""
-        
+
         var finalName = newName.trim()
         if (extension.isNotEmpty() && !finalName.endsWith(extension, ignoreCase = true)) {
             finalName += extension
@@ -266,7 +266,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 }
             }
         }
-        
+
         val realEvrak = if (evrak.id != 0) {
             evrak
         } else {
@@ -302,7 +302,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     suspend fun deleteAllEvrak() {
         evrakDao.deleteAll()
         try {
-            val cacheDir = File(context.filesDir, "evrak_cache")
+            val cacheDir = context.evrakCacheDir()
             if (cacheDir.exists()) {
                 cacheDir.listFiles()?.forEach { it.delete() }
             }
@@ -317,7 +317,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             if (uri.scheme == "content") {
                 val documentFile = DocumentFile.fromSingleUri(context, uri)
                 name = documentFile?.name
-                
+
                 if (name == null) {
                     cr.query(uri, null, null, null, null)?.use { cursor ->
                         val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
@@ -330,7 +330,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        
+
         if (name == null) {
             name = uri.path?.substringAfterLast('/')
         }
@@ -338,14 +338,14 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     }
 
     private fun copyUriToInternalStorageWithSniffing(
-        uri: Uri, 
+        uri: Uri,
         cr: ContentResolver,
         onSniffed: (String?) -> Unit
     ): File? {
         return try {
-            val cacheDir = File(context.filesDir, "evrak_cache")
+            val cacheDir = context.evrakCacheDir()
             if (!cacheDir.exists()) cacheDir.mkdirs()
-            
+
             val tempFile = File(cacheDir, "temp_${System.currentTimeMillis()}")
             var sniffedExtension: String? = null
 
@@ -407,20 +407,20 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     }
 
     private fun sniffFileType(header: ByteArray): String? {
-        if (header.size >= 4 && 
-            header[0] == 0x25.toByte() && header[1] == 0x50.toByte() && 
+        if (header.size >= 4 &&
+            header[0] == 0x25.toByte() && header[1] == 0x50.toByte() &&
             header[2] == 0x44.toByte() && header[3] == 0x46.toByte()) {
             return ".pdf"
         }
-        
-        if (header.size >= 4 && 
-            header[0] == 0x50.toByte() && header[1] == 0x4B.toByte() && 
+
+        if (header.size >= 4 &&
+            header[0] == 0x50.toByte() && header[1] == 0x4B.toByte() &&
             header[2] == 0x03.toByte() && header[3] == 0x04.toByte()) {
             return ".zip"
         }
 
-        if (header.size >= 4 && 
-            header[0] == 0xD0.toByte() && header[1] == 0xCF.toByte() && 
+        if (header.size >= 4 &&
+            header[0] == 0xD0.toByte() && header[1] == 0xCF.toByte() &&
             header[2] == 0x11.toByte() && header[3] == 0xE0.toByte()) {
             return ".ole"
         }
@@ -489,11 +489,11 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         return try {
             ZipFile(file).use { zip ->
                 val entries = zip.entries().asSequence().map { it.name }.toList()
-                
+
                 if (entries.any { it.equals("content.xml", ignoreCase = true) }) {
                     return ".udf"
                 }
-                
+
                 if (entries.any { it == "word/document.xml" }) {
                     return ".docx"
                 }
@@ -503,15 +503,15 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
                 if (entries.any { it == "xl/workbook.xml" }) {
                     return ".xlsx"
                 }
-                
+
                 if (entries.any { it.equals("AndroidManifest.xml", ignoreCase = true) || it.startsWith("classes", ignoreCase = true) }) {
                     return ".apk"
                 }
-                
+
                 if (entries.any { it == "[Content_Types].xml" }) {
                     return ".zip"
                 }
-                
+
                 null
             }
         } catch (e: Exception) {
@@ -523,7 +523,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         return try {
             val bytes = file.readBytes()
             val content = String(bytes, Charsets.UTF_16LE)
-            
+
             when {
                 content.contains("WordDocument") -> ".doc"
                 content.contains("Workbook") || content.contains("Book") -> ".xls"

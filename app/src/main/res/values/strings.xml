@@ -123,4 +123,10 @@
     <string name="history_saving_confirm_message">When this feature is enabled, documents you view are kept in the app cache for easy access later. On rooted or jailbroken devices, if you want to use the app securely, it is recommended not to enable the cache saving feature. Do you still want to enable this feature?</string>
     <string name="history_saving_title">Save to history</string>
     <string name="view_only_mode_desc">Only file viewing mode is active. Documents you have viewed are not saved to history or anywhere else.</string>
+    <string name="logcat_no_records">No logcat records found</string>
+    <string name="celse_launch_failed">Could not launch CELSE</string>
+    <string name="pdf_viewer_error_title">An error occurred</string>
+    <string name="pdf_viewer_lib_load_failed">Could not load the PDF.js library: %1$s</string>
+    <string name="pdf_viewer_page_loading">Loading page %1$d&#8230;</string>
+    <string name="pdf_viewer_error">Error: %1$s</string>
 </resources>

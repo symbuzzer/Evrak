@@ -31,7 +31,7 @@ function getMeasureContext() {
 
 if (pdfUrl) {
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
-    pdfjsLib.GlobalWorkerOptions.workerSrc = window.isMjs ? 'pdf.worker.min.mjs' : 'pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.mjs';
 
     const container = document.getElementById('viewer-container');
 
@@ -202,7 +202,7 @@ if (pdfUrl) {
             const placeholder = document.createElement('div');
             placeholder.className = 'page-placeholder';
             placeholder.dataset.pageNumber = pageNum;
-            placeholder.innerText = `Sayfa ${pageNum} yükleniyor...`;
+            placeholder.innerText = window.fmtStr(window.viewerStrings.pageLoading, pageNum);
             container.appendChild(placeholder);
 
             window.pageStates.set(pageNum, { rendered: false, rendering: false, canvas: null });
@@ -217,7 +217,7 @@ if (pdfUrl) {
         });
 
     }).catch(error => {
-        loadingElement.innerText = 'Hata: ' + error.message;
+        loadingElement.innerText = window.fmtStr(window.viewerStrings.error, error.message);
     });
 }
 
@@ -703,7 +703,3 @@ function toggleDoubleTapZoom(clientX, clientY) {
         });
     }
 }
-
-
-
-

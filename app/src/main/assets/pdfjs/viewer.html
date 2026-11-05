@@ -136,49 +136,51 @@
     </style>
 </head>
 <body>
-    <div id="loading">Yükleniyor...</div>
-    <div id="error-message" style="display:none; color: #ff5555; padding: 20px; text-align: center;">
-        <p>Bir hata oluştu!</p>
-        <p id="error-details" style="font-size: 14px;"></p>
-    </div>
-    <div id="viewer-container"></div>
+<div id="loading">Loading...</div>
+<div id="error-message" style="display:none; color: #ff5555; padding: 20px; text-align: center;">
+    <p id="error-title">An error occurred!</p>
+    <p id="error-details" style="font-size: 14px;"></p>
+</div>
+<div id="viewer-container"></div>
 
-    <script>
-        window.onerror = function(msg, url, line) {
-            document.getElementById('loading').style.display = 'none';
-            var err = document.getElementById('error-message');
-            var details = document.getElementById('error-details');
-            err.style.display = 'block';
-            details.innerHTML = msg + '<br><small>' + url + ':' + line + '</small>';
-            return false;
-        };
+<script>
+    const viewerParams = new URLSearchParams(window.location.search);
+    window.viewerStrings = {
+        loading: viewerParams.get('s_loading') || 'Loading...',
+        errorTitle: viewerParams.get('s_error_title') || 'An error occurred!',
+        libFailed: viewerParams.get('s_lib_failed') || 'Could not load the PDF.js library: %1$s',
+        pageLoading: viewerParams.get('s_page_loading') || 'Loading page %1$d...',
+        error: viewerParams.get('s_error') || 'Error: %1$s'
+    };
+    window.fmtStr = function(template, value) {
+        return template.replace(/%1\$[sd]/, function() { return value; });
+    };
+    document.getElementById('loading').innerText = window.viewerStrings.loading;
+    document.getElementById('error-title').innerText = window.viewerStrings.errorTitle;
 
-        async function loadPdfJs() {
-            try {
-                try {
-                    const module = await import('./pdf.min.mjs');
-                    window['pdfjs-dist/build/pdf'] = module;
-                    window.isMjs = true;
-                } catch (e) {
-                    const script = document.createElement('script');
-                    script.src = 'pdf.min.js';
-                    window.isMjs = false;
-                    await new Promise((resolve, reject) => {
-                        script.onload = () => resolve();
-                        script.onerror = (err) => reject(err);
-                        document.body.appendChild(script);
-                    });
-                }
+    window.onerror = function(msg, url, line) {
+        document.getElementById('loading').style.display = 'none';
+        var err = document.getElementById('error-message');
+        var details = document.getElementById('error-details');
+        err.style.display = 'block';
+        details.innerHTML = msg + '<br><small>' + url + ':' + line + '</small>';
+        return false;
+    };
 
-                const viewerScript = document.createElement('script');
-                viewerScript.src = 'viewer.js';
-                document.body.appendChild(viewerScript);
-            } catch (err) {
-                window.onerror("PDF.js kütüphanesi yüklenemedi: " + err.message);
-            }
+    async function loadPdfJs() {
+        try {
+            const module = await import('./pdf.min.mjs');
+            window['pdfjs-dist/build/pdf'] = module;
+
+            const viewerScript = document.createElement('script');
+            viewerScript.src = 'viewer.js';
+            document.body.appendChild(viewerScript);
+        } catch (err) {
+            window.onerror(window.fmtStr(window.viewerStrings.libFailed, err.message));
         }
+    }
 
-        loadPdfJs();
-    </script>
+    loadPdfJs();
+</script>
 </body>
 </html>
