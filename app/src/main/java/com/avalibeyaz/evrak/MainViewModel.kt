@@ -58,6 +58,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val folderSelectionEnabled: StateFlow<Boolean> = _folderSelectionEnabled.asStateFlow()
 
+    private val _historySavingEnabled = MutableStateFlow(
+        if (sharedPrefs.contains("history_saving_enabled")) {
+            sharedPrefs.getBoolean("history_saving_enabled", true)
+        } else {
+            val isFirstInstall = try {
+                val packageInfo = application.packageManager.getPackageInfo(application.packageName, 0)
+                packageInfo.firstInstallTime == packageInfo.lastUpdateTime
+            } catch (_: Exception) {
+                false
+            }
+            val defaultEnabled = !isFirstInstall
+            sharedPrefs.edit().putBoolean("history_saving_enabled", defaultEnabled).commit()
+            defaultEnabled
+        }
+    )
+    val historySavingEnabled: StateFlow<Boolean> = _historySavingEnabled.asStateFlow()
+
+    fun setHistorySavingEnabled(enabled: Boolean) {
+        _historySavingEnabled.value = enabled
+        sharedPrefs.edit().putBoolean("history_saving_enabled", enabled).apply()
+    }
+
 
 
     init {
@@ -87,7 +109,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         viewModelScope.launch {
             try {
-                val evrak = repository.addEvrakFromUri(uri, resolver)
+                val evrak = repository.addEvrakFromUri(uri, resolver, _historySavingEnabled.value)
                 if (evrak != null) {
                     onOpened(evrak)
                 } else {
@@ -103,7 +125,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateEvrakTimestamp(evrak: Evrak) {
         viewModelScope.launch {
-            repository.updateEvrakTimestamp(evrak)
+            repository.updateEvrakTimestamp(evrak, _historySavingEnabled.value)
         }
     }
 
@@ -115,29 +137,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun renameEvrak(evrak: Evrak, newName: String, onRenamed: ((Evrak) -> Unit)? = null) {
         viewModelScope.launch {
-            val updated = repository.renameEvrak(evrak, newName)
+            val updated = repository.renameEvrak(evrak, newName, _historySavingEnabled.value)
             onRenamed?.invoke(updated)
         }
     }
 
     fun ensureEvrak(path: String, name: String, onEnsured: (Evrak) -> Unit) {
         viewModelScope.launch {
-            val evrak = repository.ensureEvrak(path, name)
+            val evrak = repository.ensureEvrak(path, name, _historySavingEnabled.value)
             onEnsured(evrak)
         }
     }
 
     fun renameDocument(filePath: String, displayName: String, newName: String, onRenamed: (Evrak) -> Unit) {
         viewModelScope.launch {
-            val evrak = repository.ensureEvrak(filePath, displayName)
-            val updated = repository.renameEvrak(evrak, newName)
+            val evrak = repository.ensureEvrak(filePath, displayName, _historySavingEnabled.value)
+            val updated = repository.renameEvrak(evrak, newName, _historySavingEnabled.value)
             onRenamed(updated)
         }
     }
 
-    fun deleteAllEvrak() {
+    fun deleteAllEvrak(disableHistorySaving: Boolean = false) {
         viewModelScope.launch {
             repository.deleteAllEvrak()
+            if (disableHistorySaving) {
+                setHistorySavingEnabled(false)
+            }
         }
     }
 

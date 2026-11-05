@@ -87,6 +87,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
 
     val navController = rememberNavController()
     val historyList by viewModel.historyList.collectAsState()
+    val historySavingEnabled by viewModel.historySavingEnabled.collectAsState()
     val folderSelectionEnabled by viewModel.folderSelectionEnabled.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
     val fileSearchEnabled by viewModel.fileSearchEnabled.collectAsState()
@@ -122,8 +123,12 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                 onRenameClick = { evrak, newName ->
                     viewModel.renameEvrak(evrak, newName)
                 },
-                onDeleteAllClick = {
-                    viewModel.deleteAllEvrak()
+                onDeleteAllClick = { disableSaving ->
+                    viewModel.deleteAllEvrak(disableSaving)
+                },
+                historySavingEnabled = historySavingEnabled,
+                onHistorySavingChange = { enabled ->
+                    viewModel.setHistorySavingEnabled(enabled)
                 },
                 onRefresh = {
                     viewModel.refreshHistory()

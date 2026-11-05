@@ -42,6 +42,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.Image
+import coil.compose.rememberAsyncImagePainter
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -64,7 +67,7 @@ fun MainScreen(
     onItemClick: (Evrak) -> Unit,
     onDeleteClick: (Evrak) -> Unit,
     onRenameClick: (Evrak, String) -> Unit,
-    onDeleteAllClick: () -> Unit,
+    onDeleteAllClick: (Boolean) -> Unit,
     onRefresh: () -> Unit,
     onPrintClick: (Evrak, (Boolean) -> Unit) -> Unit,
     onAboutClick: () -> Unit,
@@ -77,7 +80,9 @@ fun MainScreen(
     fileSearchEnabled: Boolean = false,
     dateFilterEnabled: Boolean = false,
     selectedDateFilter: com.avalibeyaz.evrak.EvrakDateFilter = com.avalibeyaz.evrak.EvrakDateFilter.ALL,
-    onDateFilterChange: (com.avalibeyaz.evrak.EvrakDateFilter) -> Unit = {}
+    onDateFilterChange: (com.avalibeyaz.evrak.EvrakDateFilter) -> Unit = {},
+    historySavingEnabled: Boolean = true,
+    onHistorySavingChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -737,19 +742,85 @@ fun MainScreen(
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(horizontal = 24.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Description,
-                        contentDescription = null,
-                        modifier = Modifier.size(72.dp),
-                        tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(id = R.string.no_history),
-                        color = MaterialTheme.colorScheme.outline
-                    )
+                    if (historySavingEnabled) {
+                        Icon(
+                            imageVector = Icons.Default.Description,
+                            contentDescription = null,
+                            modifier = Modifier.size(72.dp),
+                            tint = MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(id = R.string.no_history),
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    } else {
+                        Image(
+                            painter = rememberAsyncImagePainter(model = R.mipmap.ic_launcher),
+                            contentDescription = null,
+                            modifier = Modifier.size(96.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(id = R.string.view_only_mode_desc),
+                            color = MaterialTheme.colorScheme.outline,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = if (historySavingEnabled) R.string.history_saving_enabled else R.string.history_saving_disabled),
+                            color = MaterialTheme.colorScheme.outline,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        var showHistorySavingConfirm by remember { mutableStateOf(false) }
+                        Switch(
+                            checked = historySavingEnabled,
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    showHistorySavingConfirm = true
+                                } else {
+                                    onHistorySavingChange(false)
+                                }
+                            }
+                        )
+                        if (showHistorySavingConfirm) {
+                            AlertDialog(
+                                onDismissRequest = { showHistorySavingConfirm = false },
+                                title = { Text(text = stringResource(id = R.string.history_saving_title)) },
+                                text = { Text(text = stringResource(id = R.string.history_saving_confirm_message)) },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = {
+                                            onHistorySavingChange(true)
+                                            showHistorySavingConfirm = false
+                                        }
+                                    ) {
+                                        Text(text = stringResource(id = R.string.ok))
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(
+                                        onClick = {
+                                            showHistorySavingConfirm = false
+                                        }
+                                    ) {
+                                        Text(text = stringResource(id = R.string.cancel))
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
         } else {
@@ -1139,14 +1210,36 @@ fun MainScreen(
     }
 
     if (showDeleteAllConfirm) {
+        var disableHistorySaving by remember { mutableStateOf(false) }
         AlertDialog(
             onDismissRequest = { showDeleteAllConfirm = false },
             title = { Text(text = stringResource(id = R.string.delete)) },
-            text = { Text(text = stringResource(id = R.string.confirm_delete_all_message)) },
+            text = {
+                Column {
+                    Text(text = stringResource(id = R.string.confirm_delete_all_message))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { disableHistorySaving = !disableHistorySaving },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = disableHistorySaving,
+                            onCheckedChange = { disableHistorySaving = it }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(id = R.string.do_not_save_to_history),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onDeleteAllClick()
+                        onDeleteAllClick(disableHistorySaving)
                         showDeleteAllConfirm = false
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)

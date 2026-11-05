@@ -26,7 +26,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         ".webp", ".bmp", ".heic", ".avif", ".evraklog"
     )
 
-    suspend fun addEvrakFromUri(uri: Uri, resolver: ContentResolver? = null): Evrak? {
+    suspend fun addEvrakFromUri(uri: Uri, resolver: ContentResolver? = null, historySavingEnabled: Boolean = true): Evrak? {
         val cr = resolver ?: context.contentResolver
         
         val mimeType = try { cr.getType(uri) } catch (_: Exception) { null }
@@ -141,16 +141,16 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             size = fileSize,
             dateOpened = System.currentTimeMillis()
         )
-        if (isEvrakSupportedFormat(finalName) || isEvrakSupportedFormat(actualCacheFile.absolutePath)) {
+        if (historySavingEnabled && (isEvrakSupportedFormat(finalName) || isEvrakSupportedFormat(actualCacheFile.absolutePath))) {
             evrakDao.insertEvrak(newEvrak)
         }
         
         return newEvrak
     }
 
-    suspend fun ensureEvrak(path: String, name: String): Evrak {
+    suspend fun ensureEvrak(path: String, name: String, historySavingEnabled: Boolean = true): Evrak {
         val isSupported = isEvrakSupportedFormat(name) || isEvrakSupportedFormat(path)
-        if (!isSupported) {
+        if (!historySavingEnabled || !isSupported) {
             return Evrak(
                 name = name,
                 path = path,
@@ -175,7 +175,8 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         }
     }
 
-    suspend fun updateEvrakTimestamp(evrak: Evrak) {
+    suspend fun updateEvrakTimestamp(evrak: Evrak, historySavingEnabled: Boolean = true) {
+        if (!historySavingEnabled) return
         val updated = evrak.copy(dateOpened = System.currentTimeMillis())
         evrakDao.updateEvrak(updated)
     }
@@ -229,7 +230,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         }
     }
 
-    suspend fun renameEvrak(evrak: Evrak, newName: String): Evrak {
+    suspend fun renameEvrak(evrak: Evrak, newName: String, historySavingEnabled: Boolean = true): Evrak {
         val extension = if (evrak.path.contains(".")) {
             evrak.path.substring(evrak.path.lastIndexOf('.'))
         } else ""
@@ -278,10 +279,12 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             dateOpened = System.currentTimeMillis()
         )
 
-        if (updatedEvrak.id != 0) {
-            evrakDao.updateEvrak(updatedEvrak)
-        } else if (isEvrakSupportedFormat(finalName) || isEvrakSupportedFormat(newPath)) {
-            evrakDao.insertEvrak(updatedEvrak)
+        if (historySavingEnabled) {
+            if (updatedEvrak.id != 0) {
+                evrakDao.updateEvrak(updatedEvrak)
+            } else if (isEvrakSupportedFormat(finalName) || isEvrakSupportedFormat(newPath)) {
+                evrakDao.insertEvrak(updatedEvrak)
+            }
         }
 
         return evrakDao.getEvrakByPath(newPath) ?: updatedEvrak
