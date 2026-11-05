@@ -774,9 +774,11 @@ fun MainScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
                             text = stringResource(id = if (historySavingEnabled) R.string.history_saving_enabled else R.string.history_saving_disabled),

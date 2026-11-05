@@ -118,8 +118,8 @@
     <string name="deselect_all">Deselect all</string>
     <string name="confirm_delete_selected">Are you sure you want to delete the selected files?</string>
     <string name="do_not_save_to_history">Also disable to save files to history feature</string>
-    <string name="history_saving_disabled">History saving feature is disabled</string>
-    <string name="history_saving_enabled">History saving feature is enabled</string>
+    <string name="history_saving_disabled">History saving: Off</string>
+    <string name="history_saving_enabled">History saving: On</string>
     <string name="history_saving_confirm_message">When this feature is enabled, documents you view are kept in the app cache for easy access later. On rooted or jailbroken devices, if you want to use the app securely, it is recommended not to enable the cache saving feature. Do you still want to enable this feature?</string>
     <string name="history_saving_title">Save to history</string>
     <string name="view_only_mode_desc">Only file viewing mode is active. Documents you have viewed are not saved to history or anywhere else.</string>

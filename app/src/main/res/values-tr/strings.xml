@@ -118,8 +118,8 @@
     <string name="deselect_all">Tümünü kaldır</string>
     <string name="confirm_delete_selected">Seçili dosyaları silmek istediğinize emin misiniz?</string>
     <string name="do_not_save_to_history">Geçmişe dosya kaydetme özelliğini de kapatın</string>
-    <string name="history_saving_disabled">Geçmişe dosya kaydetme özelliği kapalı</string>
-    <string name="history_saving_enabled">Geçmişe dosya kaydetme özelliği açık</string>
+    <string name="history_saving_disabled">Geçmiş kaydı: Kapalı</string>
+    <string name="history_saving_enabled">Geçmiş kaydı: Açık</string>
     <string name="history_saving_confirm_message">Bu özellik açıldığında, görüntülemiş olduğunuz belgeler, daha sonra kolayca erişebilmeniz için uygulamanın önbelleğinde tutulur. Root ve Jailbreak yapılmış cihazlarda, uygulamayı güvenli bir şekilde kullanmak istiyorsanız, önbelleğe kayıt özelliğini açmamanız önerilir. Yine de bu özellik açılsın mı?</string>
     <string name="history_saving_title">Geçmişe kaydet</string>
     <string name="view_only_mode_desc">Sadece dosya görüntüleme modu etkin. Görüntülemiş olduğunuz dosyalar geçmişe ve başka hiçbir yere kaydedilmez.</string>
