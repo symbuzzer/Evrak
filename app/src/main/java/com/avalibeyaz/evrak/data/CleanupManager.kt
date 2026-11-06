@@ -54,10 +54,14 @@ object CleanupManager {
         val evrakCacheDir = context.evrakCacheDir()
         if (!evrakCacheDir.exists()) return
 
+        val sharedPrefs = context.getSharedPreferences("evrak_prefs", Context.MODE_PRIVATE)
+        val historySavingEnabled = sharedPrefs.getBoolean("history_saving_enabled", true)
+        val threshold = if (historySavingEnabled) CLEANUP_THRESHOLD_MS else 0L
+
         val databasePaths = repository.getAllPaths().toSet()
         val now = System.currentTimeMillis()
         evrakCacheDir.listFiles()?.forEach { file ->
-            if (file.isFile && (now - file.lastModified() > CLEANUP_THRESHOLD_MS) && !databasePaths.contains(file.absolutePath)) {
+            if (file.isFile && (now - file.lastModified() > threshold) && !databasePaths.contains(file.absolutePath)) {
                 if (file.delete()) {
                     Log.d(TAG, "Deleted orphan file: ${file.name}")
                 }

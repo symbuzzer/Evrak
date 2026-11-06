@@ -187,9 +187,17 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
             val context = androidx.compose.ui.platform.LocalContext.current
 
             val onBackSafe = {
+                val historySavingEnabled = context.getSharedPreferences("evrak_prefs", android.content.Context.MODE_PRIVATE).getBoolean("history_saving_enabled", true)
+                if (!historySavingEnabled && filePath.isNotEmpty()) {
+                    try { File(filePath).delete() } catch (_: Exception) {}
+                }
                 if (backStackEntry.lifecycle.currentState == androidx.lifecycle.Lifecycle.State.RESUMED) {
                     if (!navController.popBackStack()) {
-                        onFinish()
+                        if (!historySavingEnabled) {
+                            context.findActivity()?.finishAndRemoveTask() ?: onFinish()
+                        } else {
+                            onFinish()
+                        }
                     }
                 }
             }

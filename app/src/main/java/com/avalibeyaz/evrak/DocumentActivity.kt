@@ -166,7 +166,15 @@ class DocumentActivity : AppCompatActivity() {
                             filePath = currentFilePath,
                             displayName = currentDisplayName,
                             forceText = forceTextState,
-                            onBack = { finish() },
+                            onBack = {
+                                val historySavingEnabled = getSharedPreferences("evrak_prefs", android.content.Context.MODE_PRIVATE).getBoolean("history_saving_enabled", true)
+                                if (!historySavingEnabled && currentFilePath.isNotEmpty()) {
+                                    try { File(currentFilePath).delete() } catch (_: Exception) {}
+                                    finishAndRemoveTask()
+                                } else {
+                                    finish()
+                                }
+                            },
                             onShare = { shareFile(currentFilePath) },
                             onRename = { newName ->
                                 viewModel.renameDocument(currentFilePath, currentDisplayName, newName) { updated ->
