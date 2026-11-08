@@ -33,7 +33,7 @@
     <string name="about_contact_developer_desc">Report a bug to the developer or say hello</string>
     <string name="about_view_on_play_store_desc">Rate the app on the Play Store</string>
     <string name="about_privacy_policy">View the privacy policy</string>
-    <string name="about_disclaimer">Disclaimer acceptance</string>
+    <string name="about_disclaimer">Review the disclaimer you have accepted</string>
     <string name="disclaimer_accepted_at">\n(Acceptance date: %1$s)</string>
     <string name="disclaimer_dialog_title">Disclaimer</string>
     <string name="disclaimer_dialog_message">Please review and accept the disclaimer to use the app</string>
@@ -129,4 +129,6 @@
     <string name="pdf_viewer_lib_load_failed">Could not load the PDF.js library: %1$s</string>
     <string name="pdf_viewer_page_loading">Loading page %1$d&#8230;</string>
     <string name="pdf_viewer_error">Error: %1$s</string>
+    <string name="tiff_compression_error">This TIFF file uses a compression method (%1$s) that is not supported by the internal viewer.</string>
+    <string name="page_load_error">Page load failed: %1$s</string>
 </resources>

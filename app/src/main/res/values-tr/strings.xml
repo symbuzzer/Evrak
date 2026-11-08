@@ -33,7 +33,7 @@
     <string name="about_contact_developer_desc">Geliştiriciye hata bildirin veya merhaba deyin</string>
     <string name="about_view_on_play_store_desc">Uygulamayı Play Store üzerinden değerlendirin</string>
     <string name="about_privacy_policy">Gizlilik bildirimine göz atın</string>
-    <string name="about_disclaimer">Sorumluluk reddi kabulü</string>
+    <string name="about_disclaimer">Kabul ettiğiniz sorumluluk reddine göz atın</string>
     <string name="disclaimer_accepted_at">\n(Kabul tarihi: %1$s)</string>
     <string name="disclaimer_dialog_title">Sorumluluk Reddi</string>
     <string name="disclaimer_dialog_message">Uygulamayı kullanabilmek için lütfen sorumluluk reddi beyanını inceleyip kabul edin</string>
@@ -129,4 +129,6 @@
     <string name="pdf_viewer_lib_load_failed">PDF.js kütüphanesi yüklenemedi: %1$s</string>
     <string name="pdf_viewer_page_loading">Sayfa %1$d yükleniyor&#8230;</string>
     <string name="pdf_viewer_error">Hata: %1$s</string>
+    <string name="tiff_compression_error">Bu TIFF dosyası, dahili görüntüleyici tarafından desteklenmeyen bir sıkıştırma yöntemi (%1$s) kullanıyor.</string>
+    <string name="page_load_error">Sayfa yüklenemedi: %1$s</string>
 </resources>
