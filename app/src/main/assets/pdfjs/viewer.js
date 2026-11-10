@@ -136,7 +136,6 @@ if (pdfUrl) {
                         textLayerDiv.style.transformOrigin = '0 0';
                         textLayerDiv.style.transform = `scale(${scale})`;
 
-                        const ctx = getMeasureContext();
                         for (let i = 0; i < textContent.items.length; i++) {
                             const item = textContent.items[i];
                             const str = item.str || "";
@@ -145,30 +144,19 @@ if (pdfUrl) {
                             const fontHeight = Math.abs(item.transform[3]) || item.height || 12;
                             const tx = item.transform[4];
                             const ty = item.transform[5];
-                            const itemWidth = item.width || 10;
 
-                            const pdfRect = [tx, ty - fontHeight * 0.15, tx + itemWidth, ty + fontHeight * 0.85];
-                            const vRect = viewport.convertToViewportRectangle(pdfRect);
-
-                            const left = Math.min(vRect[0], vRect[2]);
-                            const top = Math.min(vRect[1], vRect[3]);
-                            const width = Math.abs(vRect[2] - vRect[0]);
-                            const height = Math.abs(vRect[3] - vRect[1]);
+                            const pt = viewport.convertToViewportPoint(tx, ty);
+                            const left = pt[0];
+                            const baselineY = pt[1];
+                            const fontSize = fontHeight * viewport.scale;
+                            const top = baselineY - fontSize;
 
                             const span = document.createElement('span');
                             span.textContent = str;
                             span.style.left = left + 'px';
                             span.style.top = top + 'px';
-                            span.style.fontSize = height + 'px';
-
-                            if (width > 0 && str.length > 1) {
-                                ctx.font = height + 'px sans-serif';
-                                const measured = ctx.measureText(str).width || 1;
-                                if (measured > 0) {
-                                    const scaleX = width / measured;
-                                    span.style.transform = `scaleX(${scaleX})`;
-                                }
-                            }
+                            span.style.fontSize = fontSize + 'px';
+                            span.style.lineHeight = '1.0';
                             textLayerDiv.appendChild(span);
                         }
 
@@ -283,7 +271,7 @@ window.searchPdf = async function(query) {
                             const ty = item.transform[5];
                             const fontHeight = Math.abs(item.transform[3]) || item.height || 12;
 
-                            ctx.font = fontHeight + 'px sans-serif';
+                            ctx.font = fontHeight + 'px "Times New Roman", serif';
                             const fullStrW = ctx.measureText(str).width || 1;
                             const beforeStrW = ctx.measureText(str.substring(0, localStart)).width;
                             const matchStrW = ctx.measureText(str.substring(localStart, localEnd)).width;
@@ -294,8 +282,8 @@ window.searchPdf = async function(query) {
 
                             const subX1 = tx + (itemWidth * ratioStart);
                             const subX2 = tx + (itemWidth * ratioEnd);
-                            const subY1 = ty - fontHeight * 0.15;
-                            const subY2 = ty + fontHeight * 0.85;
+                            const subY1 = ty - fontHeight * 0.2;
+                            const subY2 = ty + fontHeight * 0.8;
 
                             matchBoxes.push({
                                 pdfRect: [subX1, subY1, subX2, subY2]
@@ -471,9 +459,9 @@ window.renderSearchHighlights = function(activeIdx) {
                 marker.className = 'search-marker';
             }
             marker.style.position = 'absolute';
-            marker.style.background = isActive ? 'rgba(255, 152, 0, 0.55)' : 'rgba(255, 235, 59, 0.45)';
-            marker.style.border = isActive ? '2px solid #e65100' : '1px solid #fbc02d';
-            marker.style.borderRadius = '2px';
+            marker.style.background = isActive ? 'rgba(255, 152, 0, 0.85)' : 'rgba(255, 235, 59, 0.65)';
+            marker.style.border = 'none';
+            marker.style.borderRadius = '0px';
             marker.style.left = Math.max(0, displayLeft) + 'px';
             marker.style.top = Math.max(0, displayTop) + 'px';
             marker.style.width = Math.max(4, displayWidth) + 'px';

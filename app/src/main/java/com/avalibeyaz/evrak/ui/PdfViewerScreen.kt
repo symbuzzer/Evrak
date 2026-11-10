@@ -328,10 +328,10 @@ fun PdfViewerScreen(
                                     addJavascriptInterface(PdfViewerBridge(
                                         onPageChanged = { current, total ->
                                             post {
-                                                currentPage = current
-                                                totalPages = total
-                                                notifyScroll()
-                                            }
+                                        currentPage = current
+                                        totalPages = total
+                                        notifyScroll()
+                                    }
                                         },
                                         onSearchResult = { current, total ->
                                             post {
