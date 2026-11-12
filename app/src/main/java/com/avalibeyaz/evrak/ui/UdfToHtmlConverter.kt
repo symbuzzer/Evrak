@@ -8,7 +8,7 @@ import java.io.File
 import java.util.zip.ZipFile
 import javax.xml.parsers.DocumentBuilderFactory
 
-object UdfHtmlConverter {
+object UdfToHtmlConverter {
 
     data class UdfBody(
         val html: String,

@@ -227,7 +227,7 @@ object DocumentConverter {
     suspend fun convertUdfToPdf(inputFile: File, outputFile: File, context: Context): ConversionResult {
         return withContext(Dispatchers.IO) {
             try {
-                val html = UdfHtmlConverter.convertUdfToHtml(inputFile, context)
+                val html = UdfToHtmlConverter.convertUdfToHtml(inputFile, context)
                 if (html.isEmpty()) {
                     return@withContext ConversionResult.Error(context.getString(R.string.error_udf_parse_failed))
                 }

@@ -90,7 +90,7 @@ fun UdfViewerScreen(
                 if (!file.exists() || file.length() == 0L) {
                     wrapUdfHtmlError(context, FileErrorUtils.getStandardizedErrorMessage(context, "file_not_found"))
                 } else {
-                    val html = UdfHtmlConverter.convertUdfToHtml(file, context)
+                    val html = UdfToHtmlConverter.convertUdfToHtml(file, context)
                     if (html.isEmpty()) {
                         wrapUdfHtmlError(context, FileErrorUtils.getStandardizedErrorMessage(context, "error_udf_read"))
                     } else {
@@ -401,7 +401,7 @@ fun UdfViewerScreen(
 
 private fun wrapUdfHtmlError(context: android.content.Context, message: String): String {
     val errorTitle = context.getString(R.string.error)
-    return UdfHtmlConverter.wrapUdfHtml(
+    return UdfToHtmlConverter.wrapUdfHtml(
         """
         <div class='error'>
             <h3>$errorTitle</h3>
