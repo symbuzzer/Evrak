@@ -86,7 +86,8 @@ fun PdfViewerScreen(
     saveFilePath: String = filePath,
     saveDisplayName: String = displayName,
     saveMimeType: String = "application/pdf",
-    onRenameClick: (String) -> Unit = {}
+    onRenameClick: (String) -> Unit = {},
+    enableSearch: Boolean = true
 ) {
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
@@ -161,32 +162,34 @@ fun PdfViewerScreen(
                         }
                     },
                     actions = {
-                        TooltipBox(
-                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                TooltipAnchorPosition.Above
-                            ),
-                            tooltip = {
-                                PlainTooltip {
-                                    Text(stringResource(id = R.string.search_in_document))
+                        if (enableSearch) {
+                            TooltipBox(
+                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                    TooltipAnchorPosition.Above
+                                ),
+                                tooltip = {
+                                    PlainTooltip {
+                                        Text(stringResource(id = R.string.search_in_document))
+                                    }
+                                },
+                                state = rememberTooltipState()
+                            ) {
+                                IconButton(onClick = {
+                                    isSearchOpen = !isSearchOpen
+                                    if (!isSearchOpen) {
+                                        searchQuery = ""
+                                        hasSearched = false
+                                        currentMatch = 0
+                                        totalMatches = 0
+                                        webViewInstance?.evaluateJavascript("clearPdfSearch()", null)
+                                    }
+                                }) {
+                                    Icon(
+                                        Icons.Default.Search,
+                                        contentDescription = stringResource(id = R.string.search_in_document),
+                                        tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                                    )
                                 }
-                            },
-                            state = rememberTooltipState()
-                        ) {
-                            IconButton(onClick = {
-                                isSearchOpen = !isSearchOpen
-                                if (!isSearchOpen) {
-                                    searchQuery = ""
-                                    hasSearched = false
-                                    currentMatch = 0
-                                    totalMatches = 0
-                                    webViewInstance?.evaluateJavascript("clearPdfSearch()", null)
-                                }
-                            }) {
-                                Icon(
-                                    Icons.Default.Search,
-                                    contentDescription = stringResource(id = R.string.search_in_document),
-                                    tint = if (isSearchOpen) MaterialTheme.colorScheme.primary else LocalContentColor.current
-                                )
                             }
                         }
                         TooltipBox(
@@ -272,7 +275,7 @@ fun PdfViewerScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (isSearchOpen && !isFullScreen) {
+            if (enableSearch && isSearchOpen && !isFullScreen) {
                 DocumentSearchBar(
                     searchQuery = searchQuery,
                     onQueryChange = { searchQuery = it },

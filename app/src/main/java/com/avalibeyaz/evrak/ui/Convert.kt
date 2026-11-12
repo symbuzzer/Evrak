@@ -327,22 +327,57 @@ object DocumentConverter {
         var pfd: ParcelFileDescriptor? = null
         var tiffRenderer: TiffRenderer? = null
         try {
-            pfd = ParcelFileDescriptor.open(inputFile, ParcelFileDescriptor.MODE_READ_ONLY)
-            tiffRenderer = TiffRenderer(pfd)
-            val pages = tiffRenderer.pageCount()
-            for (pageIndex in 0 until pages) {
-                val page = tiffRenderer.openPage(pageIndex)
-                try {
-                    val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
-                    page.render(TiffBitmap(bitmap), null, null, TiffRenderMode.FOR_DISPLAY)
+            var pages = 0
+            try {
+                pfd = ParcelFileDescriptor.open(inputFile, ParcelFileDescriptor.MODE_READ_ONLY)
+                tiffRenderer = TiffRenderer(pfd)
+                pages = tiffRenderer.pageCount()
+            } catch (e: Throwable) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                tiffRenderer = null
+            }
+
+            if (tiffRenderer != null && pages > 0) {
+                for (pageIndex in 0 until pages) {
+                    var bitmap: Bitmap? = null
+                    try {
+                        val page = tiffRenderer.openPage(pageIndex)
+                        try {
+                            val b = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
+                            page.render(TiffBitmap(b), null, null, TiffRenderMode.FOR_DISPLAY)
+                            bitmap = b
+                        } finally {
+                            try { page.close() } catch (_: Exception) {}
+                        }
+                    } catch (e: Throwable) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        bitmap = decodeJpegTiffPage(inputFile, pageIndex)
+                    }
+
+                    if (bitmap != null) {
+                        val pdfPage = pdfDocument.startPage(PdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, pageIndex + 1).create())
+                        pdfPage.canvas.drawBitmap(bitmap, 0f, 0f, null)
+                        pdfDocument.finishPage(pdfPage)
+                        bitmap.recycle()
+                    } else {
+                        throw IllegalStateException("Failed to decode page $pageIndex")
+                    }
+                }
+            } else {
+                var pageIndex = 0
+                while (true) {
+                    val bitmap = decodeJpegTiffPage(inputFile, pageIndex) ?: break
                     val pdfPage = pdfDocument.startPage(PdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, pageIndex + 1).create())
                     pdfPage.canvas.drawBitmap(bitmap, 0f, 0f, null)
                     pdfDocument.finishPage(pdfPage)
                     bitmap.recycle()
-                } finally {
-                    try { page.close() } catch (_: Exception) {}
+                    pageIndex++
+                }
+                if (pageIndex == 0) {
+                    throw IllegalStateException("Failed to parse TIFF file")
                 }
             }
+
             writePdf(pdfDocument, outputFile)
             return ConversionResult.Success(outputFile)
         } catch (e: Exception) {
@@ -352,6 +387,164 @@ object DocumentConverter {
             try { tiffRenderer?.close() } catch (_: Exception) {}
             pfd?.close(); pdfDocument.close()
         }
+    }
+
+    private fun decodeJpegTiffPage(file: File, targetIndex: Int): Bitmap? {
+        return try {
+            file.inputStream().use { input ->
+                val header = ByteArray(8)
+                if (input.read(header) < 8) return@use null
+                val isLe = header[0] == 'I'.code.toByte() && header[1] == 'I'.code.toByte()
+                val magic = if (isLe) {
+                    ((header[3].toInt() and 0xFF) shl 8) or (header[2].toInt() and 0xFF)
+                } else {
+                    ((header[2].toInt() and 0xFF) shl 8) or (header[3].toInt() and 0xFF)
+                }
+                if (magic != 42) return@use null
+
+                var ifdOffset = if (isLe) {
+                    ((header[7].toInt() and 0xFF) shl 24) or
+                    ((header[6].toInt() and 0xFF) shl 16) or
+                    ((header[5].toInt() and 0xFF) shl 8) or
+                    (header[4].toInt() and 0xFF)
+                } else {
+                    ((header[4].toInt() and 0xFF) shl 24) or
+                    ((header[5].toInt() and 0xFF) shl 16) or
+                    ((header[6].toInt() and 0xFF) shl 8) or
+                    (header[7].toInt() and 0xFF)
+                }
+
+                var currentIndex = 0
+                var stripOffsets = listOf<Long>()
+                var stripByteCounts = listOf<Long>()
+
+                while (ifdOffset != 0) {
+                    input.channel.position(ifdOffset.toLong())
+                    val countBuf = ByteArray(2)
+                    if (input.read(countBuf) < 2) break
+                    val numEntries = if (isLe) {
+                        ((countBuf[1].toInt() and 0xFF) shl 8) or (countBuf[0].toInt() and 0xFF)
+                    } else {
+                        ((countBuf[0].toInt() and 0xFF) shl 8) or (countBuf[1].toInt() and 0xFF)
+                    }
+
+                    val entryBuffer = ByteArray(12)
+                    var localOffsets = listOf<Long>()
+                    var localByteCounts = listOf<Long>()
+
+                    for (i in 0 until numEntries) {
+                        if (input.read(entryBuffer) < 12) break
+                        val tag = if (isLe) {
+                            ((entryBuffer[1].toInt() and 0xFF) shl 8) or (entryBuffer[0].toInt() and 0xFF)
+                        } else {
+                            ((entryBuffer[0].toInt() and 0xFF) shl 8) or (entryBuffer[1].toInt() and 0xFF)
+                        }
+                        val type = if (isLe) {
+                            ((entryBuffer[3].toInt() and 0xFF) shl 8) or (entryBuffer[2].toInt() and 0xFF)
+                        } else {
+                            ((entryBuffer[2].toInt() and 0xFF) shl 8) or (entryBuffer[3].toInt() and 0xFF)
+                        }
+                        val count = if (isLe) {
+                            ((entryBuffer[7].toInt() and 0xFF) shl 24) or
+                            ((entryBuffer[6].toInt() and 0xFF) shl 16) or
+                            ((entryBuffer[5].toInt() and 0xFF) shl 8) or
+                            (entryBuffer[4].toInt() and 0xFF)
+                        } else {
+                            ((entryBuffer[4].toInt() and 0xFF) shl 24) or
+                            ((entryBuffer[5].toInt() and 0xFF) shl 16) or
+                            ((entryBuffer[6].toInt() and 0xFF) shl 8) or
+                            (entryBuffer[7].toInt() and 0xFF)
+                        }
+                        val valOrOffset = if (isLe) {
+                            ((entryBuffer[11].toInt() and 0xFF) shl 24) or
+                            ((entryBuffer[10].toInt() and 0xFF) shl 16) or
+                            ((entryBuffer[9].toInt() and 0xFF) shl 8) or
+                            (entryBuffer[8].toInt() and 0xFF)
+                        } else {
+                            ((entryBuffer[8].toInt() and 0xFF) shl 24) or
+                            ((entryBuffer[9].toInt() and 0xFF) shl 16) or
+                            ((entryBuffer[10].toInt() and 0xFF) shl 8) or
+                            (entryBuffer[11].toInt() and 0xFF)
+                        }
+
+                        when (tag) {
+                            273 -> localOffsets = readTiffValues(input, isLe, type, count.toLong(), valOrOffset)
+                            279 -> localByteCounts = readTiffValues(input, isLe, type, count.toLong(), valOrOffset)
+                        }
+                    }
+
+                    if (currentIndex == targetIndex) {
+                        stripOffsets = localOffsets
+                        stripByteCounts = localByteCounts
+                        break
+                    }
+
+                    val nextIfdBuf = ByteArray(4)
+                    if (input.read(nextIfdBuf) < 4) break
+                    ifdOffset = if (isLe) {
+                        ((nextIfdBuf[3].toInt() and 0xFF) shl 24) or
+                        ((nextIfdBuf[2].toInt() and 0xFF) shl 16) or
+                        ((nextIfdBuf[1].toInt() and 0xFF) shl 8) or
+                        (nextIfdBuf[0].toInt() and 0xFF)
+                    } else {
+                        ((nextIfdBuf[0].toInt() and 0xFF) shl 24) or
+                        ((nextIfdBuf[1].toInt() and 0xFF) shl 16) or
+                        ((nextIfdBuf[2].toInt() and 0xFF) shl 8) or
+                        (nextIfdBuf[3].toInt() and 0xFF)
+                    }
+                    currentIndex++
+                }
+
+                if (stripOffsets.isNotEmpty() && stripByteCounts.isNotEmpty()) {
+                    val offset = stripOffsets[0]
+                    val length = stripByteCounts[0].toInt()
+                    val jpegBytes = ByteArray(length)
+                    val fis = input as? java.io.FileInputStream
+                    fis?.channel?.position(offset)
+                    input.read(jpegBytes)
+                    return@use android.graphics.BitmapFactory.decodeByteArray(jpegBytes, 0, length)
+                }
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun readTiffValues(input: java.io.InputStream, isLe: Boolean, type: Int, count: Long, valOrOffset: Int): List<Long> {
+        val result = mutableListOf<Long>()
+        val fis = input as? java.io.FileInputStream
+        if (count == 1L) {
+            result.add(valOrOffset.toLong() and 0xFFFFFFFFL)
+        } else {
+            val currentPos = fis?.channel?.position() ?: 0L
+            fis?.channel?.position(valOrOffset.toLong() and 0xFFFFFFFFL)
+            val byteSize = when (type) {
+                3 -> 2
+                4 -> 4
+                else -> 4
+            }
+            val buf = ByteArray((count * byteSize).toInt())
+            input.read(buf)
+            for (i in 0 until count.toInt()) {
+                val v = if (byteSize == 2) {
+                    val idx = i * 2
+                    if (isLe) ((buf[idx+1].toInt() and 0xFF) shl 8) or (buf[idx].toInt() and 0xFF)
+                    else ((buf[idx].toInt() and 0xFF) shl 8) or (buf[idx+1].toInt() and 0xFF)
+                } else {
+                    val idx = i * 4
+                    if (isLe) {
+                        ((buf[idx+3].toInt() and 0xFF) shl 24) or ((buf[idx+2].toInt() and 0xFF) shl 16) or ((buf[idx+1].toInt() and 0xFF) shl 8) or (buf[idx].toInt() and 0xFF)
+                    } else {
+                        ((buf[idx].toInt() and 0xFF) shl 24) or ((buf[idx+1].toInt() and 0xFF) shl 16) or ((buf[idx+2].toInt() and 0xFF) shl 8) or (buf[idx+3].toInt() and 0xFF)
+                    }
+                }
+                result.add(v.toLong() and 0xFFFFFFFFL)
+            }
+            fis?.channel?.position(currentPos)
+        }
+        return result
     }
 
     private suspend fun convertWordToPdfWithLibreOffice(

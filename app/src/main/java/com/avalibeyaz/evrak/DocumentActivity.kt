@@ -314,7 +314,7 @@ private fun DocumentViewerContent(
             )
         }
         isTiff -> {
-            TiffViewerScreen(
+            TiffToPdfLoader(
                 filePath = filePath,
                 displayName = displayName,
                 onBackClick = onBack,

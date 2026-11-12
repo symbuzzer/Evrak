@@ -1,0 +1,233 @@
+package com.avalibeyaz.evrak.ui
+
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.avalibeyaz.evrak.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TiffToPdfLoader(
+    filePath: String,
+    displayName: String,
+    onBackClick: () -> Unit,
+    onShareClick: () -> Unit,
+    onRenameClick: (String) -> Unit = {}
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var tempPdfPath by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var isConverting by remember { mutableStateOf(false) }
+    var conversionMessage by remember { mutableStateOf("") }
+    val defaultConvertingMessage = stringResource(id = R.string.converting)
+    var showFormatDialog by remember { mutableStateOf<String?>(null) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(filePath) {
+        withContext(Dispatchers.IO) {
+            try {
+                val file = File(filePath)
+                if (!file.exists() || file.length() == 0L) {
+                    withContext(Dispatchers.Main) {
+                        loadError = FileErrorUtils.getStandardizedErrorMessage(context, "not_found")
+                    }
+                    return@withContext
+                }
+
+                val tempDir = File(context.filesDir, "temp_v").apply { if (!exists()) mkdirs() }
+                val tempPdf = File(tempDir, "view_tiff_${System.currentTimeMillis()}_${java.util.UUID.randomUUID().toString().take(6)}.pdf")
+
+                val success = try {
+                    kotlinx.coroutines.withTimeout(60000) {
+                        val result = DocumentConverter.convertTiffToPdf(file, tempPdf, context)
+                        if (result is DocumentConverter.ConversionResult.Success) {
+                            true
+                        } else {
+                            val msg = if (result is DocumentConverter.ConversionResult.Error) result.message else "Conversion failed"
+                            withContext(Dispatchers.Main) {
+                                loadError = FileErrorUtils.getStandardizedErrorMessage(context, msg)
+                            }
+                            false
+                        }
+                    }
+                } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
+                    val timeoutMsg = FileErrorUtils.getStandardizedErrorMessage(context, "timeout")
+                    withContext(Dispatchers.Main) {
+                        loadError = timeoutMsg
+                    }
+                    false
+                }
+
+                if (success && tempPdf.exists()) {
+                    tempPdfPath = tempPdf.absolutePath
+                }
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    loadError = FileErrorUtils.getStandardizedErrorMessage(context, e)
+                }
+            } finally {
+                withContext(Dispatchers.Main) {
+                    isLoading = false
+                }
+            }
+        }
+    }
+
+    val saveTiffLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("image/tiff")
+    ) { uri ->
+        uri?.let {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    context.contentResolver.openOutputStream(it)?.use { output ->
+                        File(filePath).inputStream().use { input -> input.copyTo(output) }
+                    }
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context.applicationContext, R.string.save_success, Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context.applicationContext, R.string.save_error, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
+
+    val savePdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        uri?.let { destUri ->
+            scope.launch(Dispatchers.IO) {
+                withContext(Dispatchers.Main) {
+                    conversionMessage = defaultConvertingMessage
+                    isConverting = true
+                }
+                try {
+                    tempPdfPath?.let { path ->
+                        context.contentResolver.openOutputStream(destUri)?.use { output ->
+                            File(path).inputStream().use { input -> input.copyTo(output) }
+                        }
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context.applicationContext, R.string.save_success, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context.applicationContext, R.string.save_error, Toast.LENGTH_SHORT).show()
+                    }
+                } finally {
+                    isConverting = false
+                }
+            }
+        }
+    }
+
+    if (isLoading) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { MarqueeTitle(title = displayName, onRenameClick = onRenameClick) },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                WaitScreenOverlay(
+                    show = true,
+                    message = stringResource(id = R.string.loading)
+                )
+            }
+        }
+    } else if (tempPdfPath != null) {
+        PdfViewerScreen(
+            filePath = tempPdfPath!!,
+            displayName = displayName,
+            onBackClick = onBackClick,
+            onShareClick = { showFormatDialog = "share" },
+            onSaveClick = { showFormatDialog = "save" },
+            onRenameClick = onRenameClick,
+            enableSearch = false
+        )
+    } else {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { MarqueeTitle(title = displayName, onRenameClick = onRenameClick) },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        }
+                    }
+                )
+            }
+        ) { padding ->
+            Box(modifier = Modifier.padding(padding)) {
+                ErrorView(
+                    errorMessage = loadError ?: stringResource(id = R.string.error_unknown),
+                    onBackClick = onBackClick
+                )
+            }
+        }
+    }
+
+    if (showFormatDialog != null) {
+        FormatSelectionDialog(
+            extension = "TIFF",
+            onDismiss = { showFormatDialog = null },
+            onFormatSelected = { usePdf ->
+                if (showFormatDialog == "save") {
+                    if (usePdf) {
+                        val newName = displayName.substringBeforeLast(".") + ".pdf"
+                        savePdfLauncher.launch(newName)
+                    } else {
+                        saveTiffLauncher.launch(displayName)
+                    }
+                } else {
+                    scope.launch(Dispatchers.IO) {
+                        if (usePdf) {
+                            tempPdfPath?.let { path ->
+                                DocumentConverter.shareFile(context, File(path), "application/pdf")
+                            }
+                        } else {
+                            onShareClick()
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    WaitScreenOverlay(
+        show = isConverting,
+        message = conversionMessage
+    )
+}

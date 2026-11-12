@@ -267,7 +267,7 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                     )
                 }
                 isTiff -> {
-                    TiffViewerScreen(
+                    TiffToPdfLoader(
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,
