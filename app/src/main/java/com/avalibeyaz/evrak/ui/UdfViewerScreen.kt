@@ -236,36 +236,6 @@ fun UdfViewerScreen(
                             ),
                             tooltip = {
                                 PlainTooltip {
-                                    Text(stringResource(id = R.string.save))
-                                }
-                            },
-                            state = rememberTooltipState()
-                        ) {
-                            IconButton(onClick = { showFormatDialog = "save" }) {
-                                Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
-                            }
-                        }
-                        TooltipBox(
-                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                TooltipAnchorPosition.Above
-                            ),
-                            tooltip = {
-                                PlainTooltip {
-                                    Text(stringResource(id = R.string.share))
-                                }
-                            },
-                            state = rememberTooltipState()
-                        ) {
-                            IconButton(onClick = { showFormatDialog = "share" }) {
-                                Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
-                            }
-                        }
-                        TooltipBox(
-                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                TooltipAnchorPosition.Above
-                            ),
-                            tooltip = {
-                                PlainTooltip {
                                     Text(stringResource(id = R.string.more_options))
                                 }
                             },
@@ -288,6 +258,22 @@ fun UdfViewerScreen(
                                             if (!handled) {
                                                 Toast.makeText(context, context.getString(R.string.no_other_apps), Toast.LENGTH_SHORT).show()
                                             }
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.share)) },
+                                        leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            showFormatDialog = "share"
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.save)) },
+                                        leadingIcon = { Icon(Icons.Default.Save, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            showFormatDialog = "save"
                                         }
                                     )
                                     DropdownMenuItem(

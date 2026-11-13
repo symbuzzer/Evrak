@@ -231,42 +231,6 @@ fun TextViewerScreen(
                                     Icon(Icons.Default.Fullscreen, contentDescription = stringResource(id = R.string.full_screen))
                                 }
                             }
-                            TooltipBox(
-                                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                    TooltipAnchorPosition.Above
-                                ),
-                                tooltip = {
-                                    PlainTooltip {
-                                        Text(stringResource(id = R.string.save))
-                                    }
-                                },
-                                state = rememberTooltipState()
-                            ) {
-                                IconButton(onClick = { saveLauncher.launch(displayName) }) {
-                                    Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
-                                }
-                            }
-                        }
-                        TooltipBox(
-                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                TooltipAnchorPosition.Above
-                            ),
-                            tooltip = {
-                                PlainTooltip {
-                                    Text(stringResource(id = R.string.share))
-                                }
-                            },
-                            state = rememberTooltipState()
-                        ) {
-                            IconButton(onClick = {
-                                if (isEvrakLog) {
-                                    showEvrakLogShareDialog = true
-                                } else {
-                                    onShareClick()
-                                }
-                            }) {
-                                Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
-                            }
                         }
                         TooltipBox(
                             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
@@ -298,6 +262,28 @@ fun TextViewerScreen(
                                             }
                                         }
                                     )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.share)) },
+                                        leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            if (isEvrakLog) {
+                                                showEvrakLogShareDialog = true
+                                            } else {
+                                                onShareClick()
+                                            }
+                                        }
+                                    )
+                                    if (!isEvrakLog) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(id = R.string.save)) },
+                                            leadingIcon = { Icon(Icons.Default.Save, contentDescription = null) },
+                                            onClick = {
+                                                showMenu = false
+                                                saveLauncher.launch(displayName)
+                                            }
+                                        )
+                                    }
                                     if (!isEvrakLog) {
                                         DropdownMenuItem(
                                             text = { Text(stringResource(id = R.string.print)) },

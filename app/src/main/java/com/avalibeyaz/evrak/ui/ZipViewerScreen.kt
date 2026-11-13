@@ -210,56 +210,6 @@ fun ZipViewerScreen(
                     }
                 },
                 actions = {
-                    if (!filePath.endsWith(".eyp", ignoreCase = true)) {
-                        TooltipBox(
-                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                                positioning = TooltipAnchorPosition.Below
-                            ),
-                            tooltip = {
-                                PlainTooltip {
-                                    Text(stringResource(id = R.string.extract_zip))
-                                }
-                            },
-                            state = rememberTooltipState()
-                        ) {
-                            IconButton(onClick = {
-                                Toast.makeText(context, context.getString(R.string.select_extraction_location), Toast.LENGTH_LONG).show()
-                                folderPickerLauncher.launch(null)
-                            }) {
-                                Icon(Icons.Default.Unarchive, contentDescription = stringResource(id = R.string.extract_zip))
-                            }
-                        }
-                    }
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            positioning = TooltipAnchorPosition.Below
-                        ),
-                        tooltip = {
-                            PlainTooltip {
-                                Text(stringResource(id = R.string.save))
-                            }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = { saveLauncher.launch(displayName) }) {
-                            Icon(Icons.Default.Save, contentDescription = stringResource(id = R.string.save))
-                        }
-                    }
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-                            positioning = TooltipAnchorPosition.Below
-                        ),
-                        tooltip = {
-                            PlainTooltip {
-                                Text(stringResource(id = R.string.share))
-                            }
-                        },
-                        state = rememberTooltipState()
-                    ) {
-                        IconButton(onClick = onShareClick) {
-                            Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
-                        }
-                    }
                     TooltipBox(
                         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                             positioning = TooltipAnchorPosition.Below
@@ -279,6 +229,17 @@ fun ZipViewerScreen(
                                 expanded = showMenu,
                                 onDismissRequest = { showMenu = false }
                             ) {
+                                if (!filePath.endsWith(".eyp", ignoreCase = true)) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.extract_zip)) },
+                                        leadingIcon = { Icon(Icons.Default.Unarchive, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            Toast.makeText(context, context.getString(R.string.select_extraction_location), Toast.LENGTH_LONG).show()
+                                            folderPickerLauncher.launch(null)
+                                        }
+                                    )
+                                }
                                 DropdownMenuItem(
                                     text = { Text(stringResource(id = R.string.open_with)) },
                                     leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
@@ -288,6 +249,22 @@ fun ZipViewerScreen(
                                         if (!handled) {
                                             Toast.makeText(context, context.getString(R.string.no_other_apps), Toast.LENGTH_SHORT).show()
                                         }
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.share)) },
+                                    leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                                    onClick = {
+                                        showMenu = false
+                                        onShareClick()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.save)) },
+                                    leadingIcon = { Icon(Icons.Default.Save, contentDescription = null) },
+                                    onClick = {
+                                        showMenu = false
+                                        saveLauncher.launch(displayName)
                                     }
                                 )
                                 DropdownMenuItem(

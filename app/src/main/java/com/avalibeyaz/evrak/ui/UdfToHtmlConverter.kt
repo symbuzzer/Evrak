@@ -88,6 +88,12 @@ object UdfToHtmlConverter {
             "background-image: url('data:image/*;base64,$safeBackground'); background-repeat: repeat; background-size: auto;"
         } else ""
 
+        val formattedBody = if (body.contains("class=\"udf-page\"") || body.contains("class='udf-page'")) {
+            body
+        } else {
+            "<div class=\"udf-page\">$body</div>"
+        }
+
         return """
             <!DOCTYPE html>
             <html lang="tr">
@@ -96,6 +102,10 @@ object UdfToHtmlConverter {
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:">
                 <meta name="viewport" content="width=${pageWidthPt.toInt()}, user-scalable=yes">
                 <style>
+                    @page {
+                        size: ${pageWidthPt}pt ${pageHeightPt}pt;
+                        margin: ${topMargin}pt ${rightMargin}pt ${bottomMargin}pt ${leftMargin}pt;
+                    }
                     html { height: 100%; }
                     body {
                         min-height: 100%;
@@ -164,20 +174,26 @@ object UdfToHtmlConverter {
                             margin: 0 !important;
                             padding: 0 !important;
                             background-color: #ffffff !important;
+                            display: block !important;
                         }
                         .udf-page {
                             margin: 0 !important;
+                            padding: 0 !important;
                             box-shadow: none !important;
                             width: 100% !important;
                             min-height: 0 !important;
+                            background-color: #ffffff !important;
+                            box-sizing: border-box !important;
+                        }
+                        .udf-page + .udf-page {
+                            page-break-before: always !important;
+                            break-before: page !important;
                         }
                     }
                 </style>
             </head>
             <body>
-                <div class="udf-page">
-                    $body
-                </div>
+                $formattedBody
             </body>
             </html>
         """.trimIndent()
@@ -291,25 +307,49 @@ object UdfToHtmlConverter {
                 }
             }
 
-            val elementsSb = StringBuilder()
+            val pagesHtml = mutableListOf<String>()
+            val currentPageSb = StringBuilder()
+
             elementsEl?.let { elements ->
                 resolverStyleName = elements.attrOrNull("resolver") ?: "default"
                 forEachChildElement(elements) { child ->
-                    elementsSb.append(renderStructuralElement(child))
+                    if (child.tagName == "page-break") {
+                        if (currentPageSb.isNotEmpty()) {
+                            pagesHtml.add(currentPageSb.toString())
+                            currentPageSb.clear()
+                        }
+                        val inner = renderContainerChildren(child)
+                        if (inner.isNotEmpty()) {
+                            currentPageSb.append(inner)
+                        }
+                    } else {
+                        currentPageSb.append(renderStructuralElement(child))
+                    }
+                }
+                if (currentPageSb.isNotEmpty()) {
+                    pagesHtml.add(currentPageSb.toString())
                 }
             }
 
-            if (elementsSb.isEmpty()) {
-                elementsSb.append("<div class='info'><p>${context.getString(R.string.udf_no_content)}</p></div>")
+            if (pagesHtml.isEmpty()) {
+                pagesHtml.add("<div class='info'><p>${context.getString(R.string.udf_no_content)}</p></div>")
             }
 
             webId?.let {
-                elementsSb.append("<div class='udf-verification-bar'>")
-                elementsSb.append(context.getString(R.string.udf_verification_bar, htmlEscape(it)))
-                elementsSb.append("</div>")
+                val lastIdx = pagesHtml.size - 1
+                val lastPageContent = pagesHtml[lastIdx]
+                val verificationBar = "<div class='udf-verification-bar'>" +
+                        context.getString(R.string.udf_verification_bar, htmlEscape(it)) +
+                        "</div>"
+                pagesHtml[lastIdx] = lastPageContent + verificationBar
             }
 
-            return UdfBody(elementsSb.toString(), pageWidthPt, pageHeightPt, topMargin, bottomMargin, leftMargin, rightMargin, backgroundImageBase64)
+            val fullBodySb = StringBuilder()
+            for (pageHtml in pagesHtml) {
+                fullBodySb.append("<div class=\"udf-page\">").append(pageHtml).append("</div>")
+            }
+
+            return UdfBody(fullBodySb.toString(), pageWidthPt, pageHeightPt, topMargin, bottomMargin, leftMargin, rightMargin, backgroundImageBase64)
         }
 
         private fun parseStyles(stylesEl: Element) {
@@ -390,8 +430,7 @@ object UdfToHtmlConverter {
                     "paragraph" -> renderParagraph(el, dataScope)
                     "table" -> renderTable(el, dataScope)
                     "page-break" -> {
-                        val inner = renderContainerChildren(el, dataScope)
-                        "<div class=\"udf-page-break\"></div>$inner"
+                        renderContainerChildren(el, dataScope)
                     }
                     else -> ""
                 }
