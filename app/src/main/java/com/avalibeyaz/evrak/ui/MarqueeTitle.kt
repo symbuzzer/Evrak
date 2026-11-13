@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.avalibeyaz.evrak.R
 import kotlinx.coroutines.delay
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MarqueeTitle(
     title: String,
@@ -31,26 +32,46 @@ fun MarqueeTitle(
     var showRenameDialog by remember { mutableStateOf(false) }
 
     Box(modifier = modifier) {
-        Row(
-            modifier = Modifier
-                .then(
-                    if (onRenameClick != null) {
-                        Modifier.clickable { showMenu = true }
-                    } else Modifier
-                ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Visible,
-                modifier = Modifier.basicMarquee(
-                    iterations = Int.MAX_VALUE,
-                    animationMode = MarqueeAnimationMode.Immediately,
-                    velocity = 40.dp
+        val titleContent = @Composable {
+            Row(
+                modifier = Modifier
+                    .then(
+                        if (onRenameClick != null) {
+                            Modifier.clickable { showMenu = true }
+                        } else Modifier
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Visible,
+                    modifier = Modifier.basicMarquee(
+                        iterations = Int.MAX_VALUE,
+                        animationMode = MarqueeAnimationMode.Immediately,
+                        velocity = 40.dp
+                    )
                 )
-            )
+            }
+        }
+
+        if (onRenameClick != null) {
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                    TooltipAnchorPosition.Above
+                ),
+                tooltip = {
+                    PlainTooltip {
+                        Text(stringResource(id = R.string.rename))
+                    }
+                },
+                state = rememberTooltipState()
+            ) {
+                titleContent()
+            }
+        } else {
+            titleContent()
         }
 
         if (onRenameClick != null) {

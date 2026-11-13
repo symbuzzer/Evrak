@@ -11,7 +11,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -35,7 +39,8 @@ fun UdfViewerScreen(
     displayName: String,
     onBackClick: () -> Unit,
     onShareClick: () -> Unit,
-    onRenameClick: (String) -> Unit = {}
+    onRenameClick: (String) -> Unit = {},
+    onDeleteClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -46,6 +51,9 @@ fun UdfViewerScreen(
     var conversionMessage by remember { mutableStateOf("") }
     val defaultConvertingMessage = stringResource(id = R.string.converting)
     var isFullScreen by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var isPrinting by remember { mutableStateOf(false) }
 
     var isSearchOpen by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -252,11 +260,90 @@ fun UdfViewerScreen(
                                 Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
                             }
                         }
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.more_options))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            Box {
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(id = R.string.more_options))
+                                }
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.open_with)) },
+                                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            val handled = openFileWithSystemChooser(context, filePath)
+                                            if (!handled) {
+                                                Toast.makeText(context, context.getString(R.string.no_other_apps), Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.print)) },
+                                        leadingIcon = { Icon(Icons.Default.Print, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            printFile(context, filePath, displayName) { converting ->
+                                                isPrinting = converting
+                                            }
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.delete), color = MaterialTheme.colorScheme.error) },
+                                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                        onClick = {
+                                            showMenu = false
+                                            showDeleteConfirm = true
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 )
             }
         }
     ) { padding ->
+        if (showDeleteConfirm) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirm = false },
+                title = { Text(text = stringResource(id = R.string.delete)) },
+                text = { Text(text = stringResource(id = R.string.confirm_delete)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteConfirm = false
+                            if (onDeleteClick != null) {
+                                onDeleteClick()
+                            } else {
+                                try { File(filePath).delete() } catch (_: Exception) {}
+                                onBackClick()
+                            }
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(text = stringResource(id = R.string.delete))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirm = false }) {
+                        Text(text = stringResource(id = R.string.cancel))
+                    }
+                }
+            )
+        }
         val webViewScrollState = rememberWebViewScrollState()
 
         Column(
@@ -347,6 +434,11 @@ fun UdfViewerScreen(
                 WaitScreenOverlay(
                     show = isConverting,
                     message = conversionMessage
+                )
+
+                WaitScreenOverlay(
+                    show = isPrinting,
+                    message = stringResource(id = R.string.preparing)
                 )
 
                 loadError?.let { error ->

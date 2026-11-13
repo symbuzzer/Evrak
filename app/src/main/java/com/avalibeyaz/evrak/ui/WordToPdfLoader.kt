@@ -26,7 +26,8 @@ fun WordToPdfLoader(
     displayName: String,
     onBackClick: () -> Unit,
     onShareClick: () -> Unit,
-    onRenameClick: (String) -> Unit = {}
+    onRenameClick: (String) -> Unit = {},
+    onDeleteClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -168,7 +169,9 @@ fun WordToPdfLoader(
             onBackClick = onBackClick,
             onShareClick = { showFormatDialog = "share" },
             onSaveClick = { showFormatDialog = "save" },
-            onRenameClick = onRenameClick
+            onRenameClick = onRenameClick,
+            onDeleteClick = onDeleteClick,
+            originalFilePath = filePath
         )
     } else {
         Scaffold(

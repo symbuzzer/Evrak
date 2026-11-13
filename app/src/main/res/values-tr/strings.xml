@@ -131,4 +131,7 @@
     <string name="pdf_viewer_error">Hata: %1$s</string>
     <string name="tiff_compression_error">Bu TIFF dosyası, dahili görüntüleyici tarafından desteklenmeyen bir sıkıştırma yöntemi (%1$s) kullanıyor.</string>
     <string name="page_load_error">Sayfa yüklenemedi: %1$s</string>
+    <string name="send_to_developer">Geliştiriciye gönder</string>
+    <string name="share_evraklog_title">Paylaşım seçeneği:</string>
+    <string name="more_options">Diğer seçenekler</string>
 </resources>

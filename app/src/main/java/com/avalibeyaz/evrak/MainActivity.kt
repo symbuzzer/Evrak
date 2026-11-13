@@ -247,6 +247,14 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                 viewModel.ensureEvrak(filePath, displayName) { _ -> }
             }
 
+            val onDeleteSafe = {
+                viewModel.ensureEvrak(filePath, displayName) { evrak ->
+                    viewModel.deleteEvrak(evrak)
+                }
+                try { File(filePath).delete() } catch (_: Exception) {}
+                onBackSafe()
+            }
+
             when {
                 forceText || isText -> {
                     TextViewerScreen(
@@ -254,7 +262,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) },
-                        onRenameClick = onRenameSafe
+                        onRenameClick = onRenameSafe,
+                        onDeleteClick = onDeleteSafe
                     )
                 }
                 isPdf -> {
@@ -263,7 +272,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) },
-                        onRenameClick = onRenameSafe
+                        onRenameClick = onRenameSafe,
+                        onDeleteClick = onDeleteSafe
                     )
                 }
                 isTiff -> {
@@ -272,7 +282,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) },
-                        onRenameClick = onRenameSafe
+                        onRenameClick = onRenameSafe,
+                        onDeleteClick = onDeleteSafe
                     )
                 }
                 isImage -> {
@@ -281,7 +292,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) },
-                        onRenameClick = onRenameSafe
+                        onRenameClick = onRenameSafe,
+                        onDeleteClick = onDeleteSafe
                     )
                 }
                 isOffice -> {
@@ -290,7 +302,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) },
-                        onRenameClick = onRenameSafe
+                        onRenameClick = onRenameSafe,
+                        onDeleteClick = onDeleteSafe
                     )
                 }
                 isExcel -> {
@@ -299,7 +312,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) },
-                        onRenameClick = onRenameSafe
+                        onRenameClick = onRenameSafe,
+                        onDeleteClick = onDeleteSafe
                     )
                 }
                 isPowerPoint -> {
@@ -308,7 +322,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) },
-                        onRenameClick = onRenameSafe
+                        onRenameClick = onRenameSafe,
+                        onDeleteClick = onDeleteSafe
                     )
                 }
                 isUdf -> {
@@ -317,7 +332,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) },
-                        onRenameClick = onRenameSafe
+                        onRenameClick = onRenameSafe,
+                        onDeleteClick = onDeleteSafe
                     )
                 }
                 isZip || isEyp -> {
@@ -331,7 +347,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                             viewModel.ensureEvrak(entryPath, entryName) { evrak ->
                                 navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
                             }
-                        }
+                        },
+                        onDeleteClick = onDeleteSafe
                     )
                 }
                 isHtml -> {
@@ -340,7 +357,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                         displayName = displayName,
                         onBackClick = onBackSafe,
                         onShareClick = { shareFile(context, filePath) },
-                        onRenameClick = onRenameSafe
+                        onRenameClick = onRenameSafe,
+                        onDeleteClick = onDeleteSafe
                     )
                 }
                 else -> {

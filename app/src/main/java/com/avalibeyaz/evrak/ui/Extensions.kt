@@ -11,6 +11,12 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.activity.ComponentActivity
+import androidx.lifecycle.lifecycleScope
+import androidx.print.PrintHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.avalibeyaz.evrak.R
 import java.io.File
 
@@ -185,7 +191,6 @@ fun openDocumentTask(context: Context, filePath: String, displayName: String) {
             putExtra("display_name", displayName)
             putExtra("internal_open", true)
             addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
-            addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
         }
         context.startActivity(intent)
     }
@@ -311,5 +316,121 @@ val fileNameVisualTransformation = VisualTransformation { text ->
                 return original
             }
         }
+    )
+}
+
+fun printFile(
+    context: Context,
+    filePath: String,
+    displayName: String,
+    onConvertingChange: (Boolean) -> Unit = {}
+) {
+    val file = File(filePath)
+    if (!file.exists()) return
+
+    val isImage = filePath.endsWith(".jpg", true) ||
+            filePath.endsWith(".jpeg", true) ||
+            filePath.endsWith(".png", true) ||
+            filePath.endsWith(".gif", true) ||
+            filePath.endsWith(".webp", true) ||
+            filePath.endsWith(".bmp", true) ||
+            filePath.endsWith(".heic", true) ||
+            filePath.endsWith(".avif", true)
+
+    if (filePath.endsWith(".pdf", true)) {
+        onConvertingChange(true)
+        try {
+            doPrint(context, file, displayName)
+        } finally {
+            onConvertingChange(false)
+        }
+    } else if (isImage) {
+        onConvertingChange(true)
+        try {
+            doPrintImage(context, file, displayName)
+        } finally {
+            onConvertingChange(false)
+        }
+    } else {
+        val activity = context.findActivity() as? ComponentActivity
+        if (activity != null) {
+            activity.lifecycleScope.launch(Dispatchers.IO) {
+                withContext(Dispatchers.Main) { onConvertingChange(true) }
+                try {
+                    val tempPdf = File(context.cacheDir, "print_temp_${System.currentTimeMillis()}.pdf")
+                    val result = DocumentConverter.convert(file, tempPdf, context)
+                    if (result is DocumentConverter.ConversionResult.Success) {
+                        withContext(Dispatchers.Main) {
+                            doPrint(context, tempPdf, displayName)
+                        }
+                    } else if (result is DocumentConverter.ConversionResult.Error) {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, context.getString(R.string.error_conversion_failed, result.message), Toast.LENGTH_LONG).show()
+                        }
+                    }
+                } finally {
+                    withContext(Dispatchers.Main) { onConvertingChange(false) }
+                }
+            }
+        }
+    }
+}
+
+private fun doPrintImage(context: Context, file: File, displayName: String) {
+    val printHelper = PrintHelper(context)
+    printHelper.scaleMode = PrintHelper.SCALE_MODE_FIT
+    val bitmap = android.graphics.BitmapFactory.decodeFile(file.absolutePath)
+    if (bitmap != null) {
+        printHelper.printBitmap(displayName, bitmap)
+    }
+}
+
+private fun doPrint(context: Context, file: File, displayName: String) {
+    val printManager = context.getSystemService(Context.PRINT_SERVICE) as android.print.PrintManager
+    val jobName = "${context.getString(R.string.app_name)} - $displayName"
+
+    printManager.print(
+        jobName,
+        object : android.print.PrintDocumentAdapter() {
+            override fun onLayout(
+                oldAttributes: android.print.PrintAttributes?,
+                newAttributes: android.print.PrintAttributes?,
+                cancellationSignal: android.os.CancellationSignal?,
+                callback: LayoutResultCallback?,
+                extras: android.os.Bundle?
+            ) {
+                if (cancellationSignal?.isCanceled == true) {
+                    callback?.onLayoutCancelled()
+                    return
+                }
+
+                val info = android.print.PrintDocumentInfo.Builder(displayName)
+                    .setContentType(android.print.PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+                    .build()
+                callback?.onLayoutFinished(info, true)
+            }
+
+            override fun onWrite(
+                pages: Array<out android.print.PageRange>?,
+                destination: android.os.ParcelFileDescriptor?,
+                cancellationSignal: android.os.CancellationSignal?,
+                callback: WriteResultCallback?
+            ) {
+                var input: java.io.FileInputStream? = null
+                var output: java.io.FileOutputStream? = null
+                try {
+                    input = java.io.FileInputStream(file)
+                    output = java.io.FileOutputStream(destination?.fileDescriptor)
+                    input.copyTo(output)
+                    callback?.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    callback?.onWriteFailed(e.message)
+                } finally {
+                    try { input?.close() } catch (_: Exception) {}
+                }
+            }
+        },
+        null
     )
 }

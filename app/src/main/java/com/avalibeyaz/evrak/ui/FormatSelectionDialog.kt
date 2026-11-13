@@ -4,7 +4,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -68,4 +70,41 @@ private fun FormatOptionItem(
         Spacer(modifier = Modifier.width(16.dp))
         Text(text = label, style = MaterialTheme.typography.bodyLarge)
     }
+}
+
+@Composable
+fun EvrakLogShareDialog(
+    onDismiss: () -> Unit,
+    onSendToDeveloper: () -> Unit,
+    onShare: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(id = R.string.share_evraklog_title)) },
+        text = {
+            Column {
+                FormatOptionItem(
+                    icon = Icons.Default.Email,
+                    label = stringResource(id = R.string.send_to_developer),
+                    onClick = {
+                        onSendToDeveloper()
+                        onDismiss()
+                    }
+                )
+                FormatOptionItem(
+                    icon = Icons.Default.Share,
+                    label = stringResource(id = R.string.share),
+                    onClick = {
+                        onShare()
+                        onDismiss()
+                    }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = R.string.cancel))
+            }
+        }
+    )
 }

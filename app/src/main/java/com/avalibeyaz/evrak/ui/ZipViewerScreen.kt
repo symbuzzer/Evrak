@@ -14,7 +14,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Unarchive
@@ -46,7 +48,8 @@ fun ZipViewerScreen(
     onBackClick: () -> Unit,
     onShareClick: () -> Unit,
     onRenameClick: (String) -> Unit = {},
-    onEntryClick: (String, String) -> Unit
+    onEntryClick: (String, String) -> Unit,
+    onDeleteClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -63,6 +66,8 @@ fun ZipViewerScreen(
     
     var selectedEntry by remember { mutableStateOf<String?>(null) }
     var showSheet by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     val saveLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip")
@@ -255,10 +260,79 @@ fun ZipViewerScreen(
                             Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
                         }
                     }
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            positioning = TooltipAnchorPosition.Below
+                        ),
+                        tooltip = {
+                            PlainTooltip {
+                                Text(stringResource(id = R.string.more_options))
+                            }
+                        },
+                        state = rememberTooltipState()
+                    ) {
+                        Box {
+                            IconButton(onClick = { showMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(id = R.string.more_options))
+                            }
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.open_with)) },
+                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
+                                    onClick = {
+                                        showMenu = false
+                                        val handled = openFileWithSystemChooser(context, filePath)
+                                        if (!handled) {
+                                            Toast.makeText(context, context.getString(R.string.no_other_apps), Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.delete), color = MaterialTheme.colorScheme.error) },
+                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                    onClick = {
+                                        showMenu = false
+                                        showDeleteConfirm = true
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             )
         }
     ) { padding ->
+        if (showDeleteConfirm) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirm = false },
+                title = { Text(text = stringResource(id = R.string.delete)) },
+                text = { Text(text = stringResource(id = R.string.confirm_delete)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteConfirm = false
+                            if (onDeleteClick != null) {
+                                onDeleteClick()
+                            } else {
+                                try { File(filePath).delete() } catch (_: Exception) {}
+                                onBackClick()
+                            }
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(text = stringResource(id = R.string.delete))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirm = false }) {
+                        Text(text = stringResource(id = R.string.cancel))
+                    }
+                }
+            )
+        }
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = {

@@ -26,7 +26,8 @@ fun OfficeToHtmlLoader(
     displayName: String,
     onBackClick: () -> Unit,
     onShareClick: () -> Unit,
-    onRenameClick: (String) -> Unit = {}
+    onRenameClick: (String) -> Unit = {},
+    onDeleteClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -126,7 +127,8 @@ fun OfficeToHtmlLoader(
             onSaveClick = { saveOriginalLauncher.launch(displayName) },
             originalExtension = filePath.substringAfterLast(".").uppercase(),
             originalFilePath = filePath,
-            onRenameClick = onRenameClick
+            onRenameClick = onRenameClick,
+            onDeleteClick = onDeleteClick
         )
     } else {
         Scaffold(

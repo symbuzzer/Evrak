@@ -131,4 +131,7 @@
     <string name="pdf_viewer_error">Error: %1$s</string>
     <string name="tiff_compression_error">This TIFF file uses a compression method (%1$s) that is not supported by the internal viewer.</string>
     <string name="page_load_error">Page load failed: %1$s</string>
+    <string name="send_to_developer">Send to developer</string>
+    <string name="share_evraklog_title">Share option:</string>
+    <string name="more_options">More options</string>
 </resources>

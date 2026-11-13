@@ -14,7 +14,11 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -43,13 +47,17 @@ fun TextViewerScreen(
     displayName: String,
     onBackClick: () -> Unit,
     onShareClick: () -> Unit,
-    onRenameClick: (String) -> Unit = {}
+    onRenameClick: (String) -> Unit = {},
+    onDeleteClick: (() -> Unit)? = null
 ) {
     var textContent by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     var isFullScreen by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var isPrinting by remember { mutableStateOf(false) }
 
     var isSearchOpen by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -59,6 +67,7 @@ fun TextViewerScreen(
     var textLayoutResultState by remember { mutableStateOf<TextLayoutResult?>(null) }
 
     val isEvrakLog = filePath.endsWith(".evraklog", ignoreCase = true)
+    var showEvrakLogShareDialog by remember { mutableStateOf(false) }
 
     BackHandler(enabled = isFullScreen) {
         isFullScreen = false
@@ -251,7 +260,7 @@ fun TextViewerScreen(
                         ) {
                             IconButton(onClick = {
                                 if (isEvrakLog) {
-                                    shareEvrakLogEmail(context, filePath, displayName)
+                                    showEvrakLogShareDialog = true
                                 } else {
                                     onShareClick()
                                 }
@@ -259,11 +268,103 @@ fun TextViewerScreen(
                                 Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
                             }
                         }
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.more_options))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            Box {
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(id = R.string.more_options))
+                                }
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.open_with)) },
+                                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            val handled = openFileWithSystemChooser(context, filePath)
+                                            if (!handled) {
+                                                Toast.makeText(context, context.getString(R.string.no_other_apps), Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    )
+                                    if (!isEvrakLog) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(id = R.string.print)) },
+                                            leadingIcon = { Icon(Icons.Default.Print, contentDescription = null) },
+                                            onClick = {
+                                                showMenu = false
+                                                printFile(context, filePath, displayName) { converting ->
+                                                    isPrinting = converting
+                                                }
+                                            }
+                                        )
+                                    }
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.delete), color = MaterialTheme.colorScheme.error) },
+                                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                        onClick = {
+                                            showMenu = false
+                                            showDeleteConfirm = true
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 )
             }
         }
     ) { padding ->
+        if (showDeleteConfirm) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirm = false },
+                title = { Text(text = stringResource(id = R.string.delete)) },
+                text = { Text(text = stringResource(id = R.string.confirm_delete)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteConfirm = false
+                            if (onDeleteClick != null) {
+                                onDeleteClick()
+                            } else {
+                                try { File(filePath).delete() } catch (_: Exception) {}
+                                onBackClick()
+                            }
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(text = stringResource(id = R.string.delete))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirm = false }) {
+                        Text(text = stringResource(id = R.string.cancel))
+                    }
+                }
+            )
+        }
+        if (showEvrakLogShareDialog) {
+            EvrakLogShareDialog(
+                onDismiss = { showEvrakLogShareDialog = false },
+                onSendToDeveloper = {
+                    shareEvrakLogEmail(context, filePath, displayName)
+                },
+                onShare = {
+                    onShareClick()
+                }
+            )
+        }
         val scrollState = rememberScrollState()
 
         LaunchedEffect(currentMatchIndex, textLayoutResultState) {
@@ -317,6 +418,11 @@ fun TextViewerScreen(
                     .weight(1f)
                     .background(Color.White)
             ) {
+                WaitScreenOverlay(
+                    show = isPrinting,
+                    message = stringResource(id = R.string.preparing)
+                )
+
                 if (isLoading) {
                     WaitScreenOverlay(
                         show = true,

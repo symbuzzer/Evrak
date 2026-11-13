@@ -92,6 +92,8 @@ fun MainScreen(
     val selectedFileContexts = remember { mutableStateMapOf<Int, Pair<EvrakFilter, com.avalibeyaz.evrak.EvrakDateFilter>>() }
     var showDeleteSelectedConfirm by remember { mutableStateOf(false) }
     var showDeleteAllConfirm by remember { mutableStateOf(false) }
+    var showEvrakLogShareDialog by remember { mutableStateOf(false) }
+    var evrakToShare by remember { mutableStateOf<Evrak?>(null) }
 
     var selectedEvrak by remember { mutableStateOf<Evrak?>(null) }
     var showDeleteConfirm by remember { mutableStateOf<Evrak?>(null) }
@@ -537,7 +539,34 @@ fun MainScreen(
                                     onClick = {
                                         if (selectedIds.isNotEmpty()) {
                                             val selectedEvraks = filteredList.filter { selectedIds.contains(it.id) }
-                                            shareFiles(context, selectedEvraks)
+                                            if (selectedEvraks.size == 1) {
+                                                val evrak = selectedEvraks[0]
+                                                selectedEvrak = evrak
+                                                val path = evrak.path
+                                                val isEvrakLog = path.endsWith(".evraklog", true)
+                                                val isConvertible = (path.endsWith(".udf", true) ||
+                                                        path.endsWith(".tiff", true) ||
+                                                        path.endsWith(".tif", true) ||
+                                                        path.endsWith(".docx", true) ||
+                                                        path.endsWith(".doc", true) ||
+                                                        path.endsWith(".xls", true) ||
+                                                        path.endsWith(".xlsx", true) ||
+                                                        path.endsWith(".ppt", true) ||
+                                                        path.endsWith(".pptx", true) ||
+                                                        path.endsWith(".html", true) ||
+                                                        path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
+
+                                                if (isEvrakLog) {
+                                                    evrakToShare = evrak
+                                                    showEvrakLogShareDialog = true
+                                                } else if (isConvertible) {
+                                                    showFormatDialog = "share"
+                                                } else {
+                                                    shareFile(context, evrak)
+                                                }
+                                            } else {
+                                                shareFiles(context, selectedEvraks)
+                                            }
                                         }
                                     },
                                     enabled = selectedIds.isNotEmpty()
@@ -963,6 +992,7 @@ fun MainScreen(
                     label = stringResource(id = R.string.share),
                     onClick = {
                         val path = selectedEvrak!!.path
+                        val isEvrakLog = path.endsWith(".evraklog", true)
                         val isConvertible = (path.endsWith(".udf", true) ||
                                 path.endsWith(".tiff", true) ||
                                 path.endsWith(".tif", true) ||
@@ -975,7 +1005,11 @@ fun MainScreen(
                                 path.endsWith(".html", true) ||
                                 path.endsWith(".htm", true)) && !path.endsWith(".txt", true)
 
-                        if (isConvertible) {
+                        if (isEvrakLog) {
+                            showSheet = false
+                            evrakToShare = selectedEvrak
+                            showEvrakLogShareDialog = true
+                        } else if (isConvertible) {
                             showFormatDialog = "share"
                             showSheet = false
                         } else {
@@ -1256,13 +1290,30 @@ fun MainScreen(
             }
         )
     }
+
+    if (showEvrakLogShareDialog && evrakToShare != null) {
+        EvrakLogShareDialog(
+            onDismiss = {
+                showEvrakLogShareDialog = false
+                evrakToShare = null
+            },
+            onSendToDeveloper = {
+                val ev = evrakToShare
+                if (ev != null) {
+                    shareEvrakLogEmail(context, ev.path, ev.name)
+                }
+            },
+            onShare = {
+                val ev = evrakToShare
+                if (ev != null) {
+                    shareFile(context, ev)
+                }
+            }
+        )
+    }
 }
 
 private fun shareFile(context: android.content.Context, evrak: Evrak) {
-    if (evrak.path.endsWith(".evraklog", true)) {
-        shareEvrakLogEmail(context, evrak.path, evrak.name)
-        return
-    }
     val file = File(evrak.path)
     val uri = FileProvider.getUriForFile(
         context,

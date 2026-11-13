@@ -183,7 +183,8 @@ class DocumentActivity : AppCompatActivity() {
                                     setDocumentTaskDescription(updated.name)
                                 }
                             },
-                            onTryAsText = { forceTextState = true }
+                            onTryAsText = { forceTextState = true },
+                            viewModel = viewModel
                         )
                     }
                 }
@@ -236,10 +237,6 @@ class DocumentActivity : AppCompatActivity() {
     }
 
     private fun shareFile(filePath: String) {
-        if (filePath.endsWith(".evraklog", true)) {
-            shareEvrakLogEmail(this, filePath, queryDisplayName(Uri.fromFile(File(filePath))) ?: File(filePath).name)
-            return
-        }
         val file = File(filePath)
         if (!file.exists()) return
         val uri = FileProvider.getUriForFile(
@@ -264,8 +261,18 @@ private fun DocumentViewerContent(
     onBack: () -> Unit,
     onShare: () -> Unit,
     onRename: (String) -> Unit,
-    onTryAsText: () -> Unit
+    onTryAsText: () -> Unit,
+    viewModel: MainViewModel
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val onDelete = {
+        viewModel.ensureEvrak(filePath, displayName) { evrak ->
+            viewModel.deleteEvrak(evrak)
+        }
+        try { File(filePath).delete() } catch (_: Exception) {}
+        context.findActivity()?.finishAndRemoveTask() ?: onBack()
+    }
+
     val isPdf = filePath.endsWith(".pdf", ignoreCase = true)
     val isTiff = filePath.endsWith(".tif", ignoreCase = true) ||
             filePath.endsWith(".tiff", ignoreCase = true)
@@ -301,7 +308,8 @@ private fun DocumentViewerContent(
                 displayName = displayName,
                 onBackClick = onBack,
                 onShareClick = onShare,
-                onRenameClick = onRename
+                onRenameClick = onRename,
+                onDeleteClick = onDelete
             )
         }
         isPdf -> {
@@ -310,7 +318,8 @@ private fun DocumentViewerContent(
                 displayName = displayName,
                 onBackClick = onBack,
                 onShareClick = onShare,
-                onRenameClick = onRename
+                onRenameClick = onRename,
+                onDeleteClick = onDelete
             )
         }
         isTiff -> {
@@ -319,7 +328,8 @@ private fun DocumentViewerContent(
                 displayName = displayName,
                 onBackClick = onBack,
                 onShareClick = onShare,
-                onRenameClick = onRename
+                onRenameClick = onRename,
+                onDeleteClick = onDelete
             )
         }
         isImage -> {
@@ -328,7 +338,8 @@ private fun DocumentViewerContent(
                 displayName = displayName,
                 onBackClick = onBack,
                 onShareClick = onShare,
-                onRenameClick = onRename
+                onRenameClick = onRename,
+                onDeleteClick = onDelete
             )
         }
         isOffice -> {
@@ -337,7 +348,8 @@ private fun DocumentViewerContent(
                 displayName = displayName,
                 onBackClick = onBack,
                 onShareClick = onShare,
-                onRenameClick = onRename
+                onRenameClick = onRename,
+                onDeleteClick = onDelete
             )
         }
         isExcel -> {
@@ -346,7 +358,8 @@ private fun DocumentViewerContent(
                 displayName = displayName,
                 onBackClick = onBack,
                 onShareClick = onShare,
-                onRenameClick = onRename
+                onRenameClick = onRename,
+                onDeleteClick = onDelete
             )
         }
         isPowerPoint -> {
@@ -355,7 +368,8 @@ private fun DocumentViewerContent(
                 displayName = displayName,
                 onBackClick = onBack,
                 onShareClick = onShare,
-                onRenameClick = onRename
+                onRenameClick = onRename,
+                onDeleteClick = onDelete
             )
         }
         isUdf -> {
@@ -364,7 +378,8 @@ private fun DocumentViewerContent(
                 displayName = displayName,
                 onBackClick = onBack,
                 onShareClick = onShare,
-                onRenameClick = onRename
+                onRenameClick = onRename,
+                onDeleteClick = onDelete
             )
         }
         isHtml -> {
@@ -373,7 +388,8 @@ private fun DocumentViewerContent(
                 displayName = displayName,
                 onBackClick = onBack,
                 onShareClick = onShare,
-                onRenameClick = onRename
+                onRenameClick = onRename,
+                onDeleteClick = onDelete
             )
         }
         else -> {

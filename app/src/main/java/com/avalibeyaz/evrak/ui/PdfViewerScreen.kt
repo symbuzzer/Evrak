@@ -17,7 +17,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -87,7 +91,9 @@ fun PdfViewerScreen(
     saveDisplayName: String = displayName,
     saveMimeType: String = "application/pdf",
     onRenameClick: (String) -> Unit = {},
-    enableSearch: Boolean = true
+    enableSearch: Boolean = true,
+    onDeleteClick: (() -> Unit)? = null,
+    originalFilePath: String? = null
 ) {
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
@@ -100,6 +106,9 @@ fun PdfViewerScreen(
     var totalMatches by remember { mutableIntStateOf(0) }
     var hasSearched by remember { mutableStateOf(false) }
     var webViewInstance by remember { mutableStateOf<ObservableWebView?>(null) }
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var isPrinting by remember { mutableStateOf(false) }
 
     BackHandler(enabled = isFullScreen) {
         isFullScreen = false
@@ -243,11 +252,92 @@ fun PdfViewerScreen(
                                 Icon(Icons.Default.Share, contentDescription = stringResource(id = R.string.share))
                             }
                         }
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.more_options))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            Box {
+                                IconButton(onClick = { showMenu = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(id = R.string.more_options))
+                                }
+                                DropdownMenu(
+                                    expanded = showMenu,
+                                    onDismissRequest = { showMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.open_with)) },
+                                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            val targetPath = originalFilePath ?: filePath
+                                            val handled = openFileWithSystemChooser(context, targetPath)
+                                            if (!handled) {
+                                                Toast.makeText(context, context.getString(R.string.no_other_apps), Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.print)) },
+                                        leadingIcon = { Icon(Icons.Default.Print, contentDescription = null) },
+                                        onClick = {
+                                            showMenu = false
+                                            val targetPath = originalFilePath ?: filePath
+                                            printFile(context, targetPath, displayName) { converting ->
+                                                isPrinting = converting
+                                            }
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(id = R.string.delete), color = MaterialTheme.colorScheme.error) },
+                                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                        onClick = {
+                                            showMenu = false
+                                            showDeleteConfirm = true
+                                        }
+                                    )
+                                }
+                            }
+                        }
                     }
                 )
             }
         }
     ) { padding ->
+        if (showDeleteConfirm) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirm = false },
+                title = { Text(text = stringResource(id = R.string.delete)) },
+                text = { Text(text = stringResource(id = R.string.confirm_delete)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteConfirm = false
+                            if (onDeleteClick != null) {
+                                onDeleteClick()
+                            } else {
+                                try { File(originalFilePath ?: filePath).delete() } catch (_: Exception) {}
+                                onBackClick()
+                            }
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(text = stringResource(id = R.string.delete))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirm = false }) {
+                        Text(text = stringResource(id = R.string.cancel))
+                    }
+                }
+            )
+        }
         val file = File(filePath)
 
         val assetLoader = remember(filePath) {
@@ -459,6 +549,11 @@ fun PdfViewerScreen(
                 WaitScreenOverlay(
                     show = isLoading && loadError == null,
                     message = stringResource(id = R.string.loading)
+                )
+
+                WaitScreenOverlay(
+                    show = isPrinting,
+                    message = stringResource(id = R.string.preparing)
                 )
             }
         }

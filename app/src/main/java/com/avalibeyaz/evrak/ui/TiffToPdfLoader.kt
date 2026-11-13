@@ -25,7 +25,8 @@ fun TiffToPdfLoader(
     displayName: String,
     onBackClick: () -> Unit,
     onShareClick: () -> Unit,
-    onRenameClick: (String) -> Unit = {}
+    onRenameClick: (String) -> Unit = {},
+    onDeleteClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -175,7 +176,9 @@ fun TiffToPdfLoader(
             onShareClick = { showFormatDialog = "share" },
             onSaveClick = { showFormatDialog = "save" },
             onRenameClick = onRenameClick,
-            enableSearch = false
+            enableSearch = false,
+            onDeleteClick = onDeleteClick,
+            originalFilePath = filePath
         )
     } else {
         Scaffold(
