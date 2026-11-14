@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.MoreVert
@@ -22,9 +23,14 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.avalibeyaz.evrak.R
 import kotlinx.coroutines.Dispatchers
@@ -90,11 +96,14 @@ fun UdfViewerScreen(
     }
     var showFormatDialog by remember { mutableStateOf<String?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    var signatureInfo by remember { mutableStateOf<UdfToHtmlConverter.UdfSignatureInfo?>(null) }
+    var showSignatureDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(filePath) {
         withContext(Dispatchers.IO) {
+            val file = File(filePath)
+            signatureInfo = if (file.exists()) UdfToHtmlConverter.readUdfSignatureInfo(file) else null
             htmlContent = try {
-                val file = File(filePath)
                 if (!file.exists() || file.length() == 0L) {
                     wrapUdfHtmlError(context, FileErrorUtils.getStandardizedErrorMessage(context, "file_not_found"))
                 } else {
@@ -182,11 +191,54 @@ fun UdfViewerScreen(
                 TopAppBar(
                     title = { MarqueeTitle(title = displayName, onRenameClick = onRenameClick) },
                     navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.back))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = onBackClick) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back))
+                            }
                         }
                     },
                     actions = {
+                        val hasSignature = signatureInfo?.hasSignature == true
+                        val eSigTooltip = stringResource(id = R.string.e_signature)
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(eSigTooltip)
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = {
+                                if (hasSignature) {
+                                    showSignatureDialog = true
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.document_not_signed),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_e_signature),
+                                    contentDescription = eSigTooltip,
+                                    tint = if (hasSignature) Color(0xFF2E7D32) else Color(0xFFD32F2F)
+                                )
+                            }
+                        }
                         TooltipBox(
                             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                                 TooltipAnchorPosition.Above
@@ -471,6 +523,72 @@ fun UdfViewerScreen(
                             onShareClick()
                         }
                     }
+                }
+            }
+        )
+    }
+
+    if (showSignatureDialog) {
+        val signers = signatureInfo?.signers.orEmpty()
+        AlertDialog(
+            onDismissRequest = { showSignatureDialog = false },
+            title = {
+                Text(text = stringResource(id = R.string.e_signatures_title))
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (signers.isEmpty()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = Color(0xFF2E7D32),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = "ALİ BEYAZ",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    } else {
+                        signers.forEach { signer ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2E7D32),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = signer,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(id = R.string.signature_warning),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSignatureDialog = false }) {
+                    Text(text = stringResource(id = R.string.ok))
                 }
             }
         )

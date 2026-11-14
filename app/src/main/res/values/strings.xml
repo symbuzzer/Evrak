@@ -15,6 +15,7 @@
     <string name="no_filter_results">No files found for selected filter</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="back">Back</string>
     <string name="open_with">Open with</string>
     <string name="open_file">Open file</string>
     <string name="opened_with_evrak">Opened with Evrak</string>
@@ -86,6 +87,9 @@
     <string name="udf_verification_bar">You can verify this document in the UYAP Information System at http://vatandas.uyap.gov.tr using &lt;strong&gt;%1$s&lt;/strong&gt;.</string>
     <string name="udf_invalid_content">Invalid content</string>
     <string name="udf_no_content">No content found</string>
+    <string name="e_signature">e-signature</string>
+    <string name="document_not_signed">Document is not signed</string>
+    <string name="e_signatures_title">Signatures:</string>
 
     <string name="downloads">Downloads</string>
     <string name="documents">Documents</string>
@@ -134,4 +138,5 @@
     <string name="send_to_developer">Send to developer</string>
     <string name="share_evraklog_title">Share option:</string>
     <string name="more_options">Options</string>
+    <string name="signature_warning">Warning: The accuracy of this information is not guaranteed</string>
 </resources>

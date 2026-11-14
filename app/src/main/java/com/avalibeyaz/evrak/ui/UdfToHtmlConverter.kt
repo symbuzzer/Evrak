@@ -10,6 +10,11 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 object UdfToHtmlConverter {
 
+    data class UdfSignatureInfo(
+        val hasSignature: Boolean,
+        val signers: List<String> = emptyList()
+    )
+
     data class UdfBody(
         val html: String,
         val pageWidthPt: Double,
@@ -22,6 +27,71 @@ object UdfToHtmlConverter {
     )
 
     data class UdfFileData(val xml: String, val backgroundImageBase64: String? = null)
+
+    fun readUdfSignatureInfo(file: File): UdfSignatureInfo {
+        return try {
+            ZipFile(file).use { zip ->
+                val signEntry = zip.entries().asSequence().firstOrNull {
+                    !it.isDirectory && it.name.substringAfterLast('/').equals("sign.sgn", ignoreCase = true)
+                } ?: return UdfSignatureInfo(hasSignature = false)
+
+                val signBytes = zip.getInputStream(signEntry).use { it.readBytes() }
+                val signers = parseSignersFromBytes(signBytes)
+                UdfSignatureInfo(hasSignature = true, signers = signers)
+            }
+        } catch (_: Exception) {
+            UdfSignatureInfo(hasSignature = false)
+        }
+    }
+
+    private fun parseSignersFromBytes(bytes: ByteArray): List<String> {
+        val signers = mutableListOf<String>()
+        try {
+            val cf = java.security.cert.CertificateFactory.getInstance("X.509")
+            val certs = cf.generateCertificates(bytes.inputStream())
+            for (cert in certs) {
+                val x509 = cert as? java.security.cert.X509Certificate ?: continue
+                if (x509.basicConstraints < 0) {
+                    val cn = extractCnFromDn(x509.subjectX500Principal.name) ?: extractCnFromDn(x509.subjectDN.name)
+                    if (!cn.isNullOrBlank()) {
+                        signers.add(cn)
+                    }
+                }
+            }
+        } catch (_: Exception) {
+        }
+
+        if (signers.isEmpty()) {
+            try {
+                val text = bytes.toString(Charsets.UTF_8)
+                val matches = Regex("""CN\s*=\s*([^,\r\n\t]+)""", RegexOption.IGNORE_CASE).findAll(text)
+                for (match in matches) {
+                    val name = match.groupValues[1].trim()
+                    if (name.isNotEmpty() && !isKnownCaName(name)) {
+                        signers.add(name)
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+
+        return signers.distinct()
+    }
+
+    private fun extractCnFromDn(dn: String): String? {
+        val match = Regex("""(?:^|,|\s*)CN\s*=\s*"?([^,"]+)"?""", RegexOption.IGNORE_CASE).find(dn)
+        return match?.groupValues?.get(1)?.trim()
+    }
+
+    private fun isKnownCaName(name: String): Boolean {
+        val upper = name.uppercase()
+        return upper.contains("TURKTRUST") || upper.contains("TÜRKTRUST") ||
+                upper.contains("E-TUĞRA") || upper.contains("E-TUGRA") ||
+                upper.contains("KAMU SM") || upper.contains("SER TİFİKA") ||
+                upper.contains("SERTİFİKA") || upper.contains("HİZMETLERİ") ||
+                upper.contains("HIZMETLERI") || upper.contains("ROOT") ||
+                upper.contains("KÖK") || upper.contains("AUTHORITY") ||
+                upper.contains("E-İMZA KANUNU")
+    }
 
     fun readUdfFileData(file: File): UdfFileData? {
         return try {

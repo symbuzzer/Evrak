@@ -205,8 +205,20 @@ fun ZipViewerScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            positioning = TooltipAnchorPosition.Above
+                        ),
+                        tooltip = {
+                            PlainTooltip {
+                                Text(stringResource(id = R.string.back))
+                            }
+                        },
+                        state = rememberTooltipState()
+                    ) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back))
+                        }
                     }
                 },
                 actions = {

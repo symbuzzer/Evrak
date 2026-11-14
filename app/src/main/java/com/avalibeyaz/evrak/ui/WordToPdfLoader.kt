@@ -148,8 +148,20 @@ fun WordToPdfLoader(
                 TopAppBar(
                     title = { MarqueeTitle(title = displayName, onRenameClick = onRenameClick) },
                     navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.back))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = onBackClick) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back))
+                            }
                         }
                     }
                 )
@@ -179,8 +191,20 @@ fun WordToPdfLoader(
                 TopAppBar(
                     title = { MarqueeTitle(title = displayName, onRenameClick = onRenameClick) },
                     navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        TooltipBox(
+                            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Above
+                            ),
+                            tooltip = {
+                                PlainTooltip {
+                                    Text(stringResource(id = R.string.back))
+                                }
+                            },
+                            state = rememberTooltipState()
+                        ) {
+                            IconButton(onClick = onBackClick) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back))
+                            }
                         }
                     }
                 )

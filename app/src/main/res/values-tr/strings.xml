@@ -15,6 +15,7 @@
     <string name="no_filter_results">Seçilen filtreye uygun dosya bulunamadı</string>
     <string name="ok">Tamam</string>
     <string name="cancel">İptal</string>
+    <string name="back">Geri</string>
     <string name="open_with">Birlikte aç</string>
     <string name="open_file">Dosya aç</string>
     <string name="opened_with_evrak">Evrak ile açıldı</string>
@@ -86,6 +87,9 @@
     <string name="udf_verification_bar">UYAP Bilişim Sistemindeki bu dokümana http://vatandas.uyap.gov.tr adresinden &lt;strong&gt;%1$s&lt;/strong&gt; ile erişebilirsiniz.</string>
     <string name="udf_invalid_content">Geçersiz içerik</string>
     <string name="udf_no_content">İçerik bulunamadı</string>
+    <string name="e_signature">e-imza</string>
+    <string name="document_not_signed">Evrak imzalı değil</string>
+    <string name="e_signatures_title">İmzalar:</string>
 
     <string name="downloads">İndirilenler</string>
     <string name="documents">Belgeler</string>
@@ -134,4 +138,5 @@
     <string name="send_to_developer">Geliştiriciye gönder</string>
     <string name="share_evraklog_title">Paylaşım seçeneği:</string>
     <string name="more_options">Seçenekler</string>
+    <string name="signature_warning">Uyarı: Bu bilgilerin doğruluğu garanti edilmez</string>
 </resources>
