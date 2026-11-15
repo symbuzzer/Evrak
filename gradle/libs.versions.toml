@@ -18,6 +18,7 @@ coil = "2.7.0"
 webkit = "1.12.1"
 tiff-renderer = "3.0.0"
 zip4j = "2.11.5"
+junrar = "8.1.2"
 play-review = "2.0.2"
 
 [libraries]
@@ -48,6 +49,7 @@ coil-gif = { group = "io.coil-kt", name = "coil-gif", version.ref = "coil" }
 androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "webkit" }
 tiff-renderer = { group = "io.github.lucf15", name = "tiffrenderer", version.ref = "tiff-renderer" }
 zip4j = { group = "net.lingala.zip4j", name = "zip4j", version.ref = "zip4j" }
+junrar = { group = "com.github.junrar", name = "junrar", version.ref = "junrar" }
 play-review-ktx = { group = "com.google.android.play", name = "review-ktx", version.ref = "play-review" }
 
 [plugins]

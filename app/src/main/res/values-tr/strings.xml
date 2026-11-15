@@ -19,7 +19,7 @@
     <string name="open_with">Birlikte aç</string>
     <string name="open_file">Dosya aç</string>
     <string name="opened_with_evrak">Evrak ile açıldı</string>
-    <string name="no_other_apps">Bu dosyayı açmak için başka uygulama yok</string>
+    <string name="no_other_apps">Bu dosyayı görüntüleyebilecek başka bir uygulama yok</string>
 
     <string name="error">Hata</string>
     <string name="error_file_incomplete">Dosya henüz tamamen indirilmedi veya boş. Lütfen tekrar deneyin.</string>
@@ -27,7 +27,7 @@
     <string name="about_developed_by">%1$s tarafından geliştirilmiştir</string>
     <string name="about_developer_name">Av. Arb. Ali BEYAZ</string>
     <string name="about_supported_formats">Desteklenen formatlar:</string>
-    <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS PPTX PPT EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
+    <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS PPTX PPT EYP ZIP RAR HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
     <string name="about_celse_integration_desc">CELSE uygulaması entegrasyonunu gerçekleştirin</string>
     <string name="about_share_app_desc">Evrak uygulamasını paylaşın</string>
@@ -59,7 +59,7 @@
 
     <string name="error_heic_open_failed">HEIC dosyası açılamadı: %1$s</string>
     <string name="error_heic_codec_missing">Cihazınız bu HEIC görselini açmak için gerekli donanımsal veya yazılımsal kod çözücüye (HEVC) sahip değil.</string>
-    <string name="share_app_text">Evrak Android uygulaması ile; UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, PPTX, PPT, EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF dosyalarını ücretsiz ve reklamsız olarak görüntüleyin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
+    <string name="share_app_text">Evrak Android uygulaması ile; UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, PPTX, PPT, EYP, ZIP, RAR, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF dosyalarını ücretsiz ve reklamsız olarak görüntüleyin: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
 
     <string name="filter_all">Tümü</string>
     <string name="filter_today">Bugün</string>
@@ -98,10 +98,10 @@
     <string name="save_success">Dosya başarıyla kaydedildi</string>
     <string name="save_error">Dosya kaydedilirken hata oluştu</string>
     <string name="full_screen">Tam ekran</string>
-    <string name="extract_zip">Dosyaları çıkar</string>
+    <string name="extract_archive">Arşivi çıkar</string>
     <string name="extracting">Dosyalar çıkarılıyor&#8230;</string>
     <string name="extract_success">Dosyalar başarıyla çıkarıldı</string>
-    <string name="extract_error">Zip dosyası çıkarılamadı</string>
+    <string name="extract_error">Arşiv çıkarılamadı</string>
     <string name="select_extraction_location">Dosyaların çıkarılacağı konumu seçin</string>
     <string name="open_action">Aç</string>
     <string name="file_count">%1$d dosya</string>

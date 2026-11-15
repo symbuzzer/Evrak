@@ -159,6 +159,17 @@ fun UnsupportedViewerScreen(
                 ) {
                     Text(text = stringResource(id = R.string.try_opening_as_text))
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    onClick = {
+                        openFileWith(context, filePath, displayName)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = stringResource(id = R.string.open_with) + "...")
+                }
             }
 
             WaitScreenOverlay(

@@ -17,6 +17,14 @@
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/x-rar-compressed" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/vnd.rar" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="application/msword" />
         </intent>
         <intent>
@@ -191,6 +199,9 @@
                 <data android:mimeType="application/x-zip" android:scheme="content"/>
                 <data android:mimeType="application/zip" android:scheme="content"/>
                 <data android:mimeType="application/x-zip-compressed" android:scheme="content"/>
+                <data android:mimeType="application/x-rar-compressed" android:scheme="content"/>
+                <data android:mimeType="application/vnd.rar" android:scheme="content"/>
+                <data android:mimeType="application/rar" android:scheme="content"/>
             </intent-filter>
 
             <intent-filter android:priority="200">
@@ -279,11 +290,18 @@
                 <data android:mimeType="application/eyp"/>
                 <data android:mimeType="application/zip"/>
                 <data android:mimeType="application/x-zip-compressed"/>
+                <data android:mimeType="application/x-rar-compressed"/>
+                <data android:mimeType="application/vnd.rar"/>
+                <data android:mimeType="application/rar"/>
                 <data android:mimeType="application/octet-stream"/>
                 <data android:pathSuffix=".eyp" />
                 <data android:pathSuffix=".EYP" />
+                <data android:pathSuffix=".rar" />
+                <data android:pathSuffix=".RAR" />
                 <data android:pathPattern=".*.eyp" />
                 <data android:pathPattern=".*.EYP" />
+                <data android:pathPattern=".*.rar" />
+                <data android:pathPattern=".*.RAR" />
             </intent-filter>
 
             <intent-filter>

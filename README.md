@@ -2,7 +2,7 @@
 [<img width="220" height="66" src="https://github.com/user-attachments/assets/7c2fadad-e134-4566-a5cb-9f4a0f32732a" />](https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak)
 
 
-**Evrak**, avukatların ve arabulucuların günlük iş akışında en sık karşılaştığı dosya formatlarını (UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, EYP, ZIP, HTML) ve diğer bazı yaygın dosya formatlarını (PPTX, PPT, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF) tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan ücretsiz ve reklamsız bir Android uygulamasıdır.
+**Evrak**, avukatların ve arabulucuların günlük iş akışında en sık karşılaştığı dosya formatlarını (UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, EYP, ZIP, RAR, HTML) ve diğer bazı yaygın dosya formatlarını (PPTX, PPT, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF) tek bir uygulama üzerinden basit, sade ve hızlı bir şekilde görüntülemesini sağlayan ücretsiz ve reklamsız bir Android uygulamasıdır.
 
 UYAP, CELSE, e-arabulucu, e-Adalet vb. uygulamalar üzerinden veya e-posta/Whatsapp vb. mesajlaşma uygulamaları aracılığıyla gelen evrakları açmak için genellikle birden fazla farklı uygulamaya ihtiyaç duyulur. Evrak Android uygulaması, bu ihtiyacı tek bir yerde, gereksiz karmaşıklık olmadan çözer.  
 
@@ -10,14 +10,14 @@ Ayrıca Evrak Android uygulaması; özellikle UDF'den dönüştürülen PDF dosy
 
 ## Özellikler
 
-- **Çoklu format desteği:** UDF, TIFF, PDF, Word (DOCX, DOC), Excel (XLSX, XLS), PowerPoint (PPTX, PPT), EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF
+- **Çoklu format desteği:** UDF, TIFF, PDF, Word (DOCX, DOC), Excel (XLSX, XLS), PowerPoint (PPTX, PPT), EYP, ZIP, RAR, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF
 - **Basit ve hızlı:** Dosyayı aç, görüntüle - başka hiçbir şeye gerek yok
 - **Belge içi arama:** Metin içeren belgelerde kelime araması yapılabilir
 - **Paylaşma ve kaydetme:** Görüntülenen dosyalar istenilen yere kaydedilebilir veya doğrudan başka uygulamalarla paylaşılabilir
 - **UDF, TIFF, Word (DOCX, DOC), Excel (XLSX, XLS), PowerPoint (PPTX, PPT) ve HTML dosyalarını PDF'e çevirme:** Paylaşma ve kaydetme esnasında istenirse bu dosyalar PDF'e çevrilebilir
 - **Sorunsuz Türkçe karakterler:** Özellikle UDF'den dönüştürülen PDF dosyalarındaki Türkçe karakterlerin görüntülenememe sorunu yok
-- **ZIP dosyalarını görüntüleme ve ayıklama:** ZIP paketlerinin içeriği görüntülenebilir ve istenilen klasöre ayıklanabilir
-- **Yazdırma:** Bütün dosya türleri (EYP ve ZIP hariç), Android'in kendi yazdırma özelliği ile doğrudan cihazınızdan yazdırılabilir
+- **ZIP ve RAR dosyalarını görüntüleme ve ayıklama:** ZIP ve RAR paketlerinin içeriği görüntülenebilir ve istenilen klasöre ayıklanabilir
+- **Yazdırma:** Bütün dosya türleri (EYP, ZIP ve RAR hariç), Android'in kendi yazdırma özelliği ile doğrudan cihazınızdan yazdırılabilir
 - **Geçmiş:** Açılan dosyalar tarih sırasına göre uygulama içinde listelenir
 - **Dosya arama:** Geçmişteki dosyalar isimleri ile aranabilir
 - **Filtreleme:** Geçmişteki dosyaları dosya türüne ve görüntüleme tarihine göre filtrelenebilir
@@ -51,7 +51,7 @@ Evrak uygulamasının, CELSE ile Uyap Doküman Editör'ü uygulaması olmadan do
 | Excel      | `.xlsx`, `.xls`                                                    |
 | PowerPoint | `.pptx`, `.ppt`                                                    |
 | EYP        | `.eyp`                                                             |
-| Arşiv      | `.zip`                                                             |
+| Arşiv      | `.zip`, `.rar`                                                     |
 | HTML       | `.html`, `.htm`                                                    |
 | Metin      | `.txt`                                                             |
 | Görsel     | `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.heic`, `.avif` |
@@ -68,6 +68,7 @@ Bu proje aşağıdaki açık kaynak kütüphaneleri kullanmaktadır:
 | [tiffrenderer](https://github.com/lucf15/TiffRenderer) — TIFF render motoru ve PDF dönüşümü                                | Apache License 2.0 |
 | [LibreOffice Core](https://www.libreoffice.org/) (LibreOfficeKit) — DOCX/DOC/XLSX/XLS/PPTX/PPT görüntüleme ve PDF dönüşümü | Mozilla Public License 2.0 |
 | [Zip4j](https://github.com/srikanth-lingala/zip4j) — ZIP görüntüleme, ayıklama ve karakter kodlama desteği                 | Apache License 2.0 |
+| [junrar](https://github.com/junrar/junrar) — RAR görüntüleme ve ayıklama desteği                                          | Apache License 2.0 |
 
 ### Android / Kotlin
 

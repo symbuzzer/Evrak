@@ -275,6 +275,9 @@ fun MainScreen(
             "text/plain",
             "application/zip",
             "application/x-zip-compressed",
+            "application/x-rar-compressed",
+            "application/vnd.rar",
+            "application/rar",
             "application/octet-stream"
         )
         initialUri = folderUri
@@ -382,7 +385,7 @@ fun MainScreen(
         if (historyList.any {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
-                        path.endsWith(".txt") || path.endsWith(".evraklog") || path.endsWith(".zip")
+                        path.endsWith(".txt") || path.endsWith(".evraklog") || path.endsWith(".zip") || path.endsWith(".rar")
             }) filters.add(EvrakFilter.OTHER)
         filters
     }
@@ -410,7 +413,7 @@ fun MainScreen(
             EvrakFilter.OTHER -> dateFiltered.filter {
                 val path = it.path.lowercase()
                 path.endsWith(".html") || path.endsWith(".htm") ||
-                        path.endsWith(".txt") || path.endsWith(".evraklog") || path.endsWith(".zip")
+                        path.endsWith(".txt") || path.endsWith(".evraklog") || path.endsWith(".zip") || path.endsWith(".rar")
             }
         }
     }
@@ -966,10 +969,10 @@ fun MainScreen(
                 HorizontalDivider()
                 Spacer(modifier = Modifier.height(4.dp))
 
-                if (selectedEvrak!!.path.endsWith(".zip", true)) {
+                if (selectedEvrak!!.path.endsWith(".zip", true) || selectedEvrak!!.path.endsWith(".rar", true)) {
                     OptionItem(
                         icon = Icons.Default.Unarchive,
-                        label = stringResource(id = R.string.extract_zip),
+                        label = stringResource(id = R.string.extract_archive),
                         onClick = {
                             showSheet = false
                             Toast.makeText(context, context.getString(R.string.select_extraction_location), Toast.LENGTH_LONG).show()
@@ -1046,7 +1049,7 @@ fun MainScreen(
                     }
                 )
 
-                if (!selectedEvrak!!.path.endsWith(".zip", true) && !selectedEvrak!!.path.endsWith(".eyp", true) && !selectedEvrak!!.path.endsWith(".evraklog", true)) {
+                if (!selectedEvrak!!.path.endsWith(".zip", true) && !selectedEvrak!!.path.endsWith(".rar", true) && !selectedEvrak!!.path.endsWith(".eyp", true) && !selectedEvrak!!.path.endsWith(".evraklog", true)) {
                     OptionItem(
                         icon = Icons.Default.Print,
                         label = stringResource(id = R.string.print),
@@ -1328,31 +1331,7 @@ private fun shareFile(context: android.content.Context, evrak: Evrak) {
     context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share)))
 }
 
-private fun openFileWith(context: android.content.Context, evrak: Evrak) {
-    val file = File(evrak.path)
-    val uri = FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.fileprovider",
-        file
-    )
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(uri, getMimeType(evrak.path))
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        putExtra("from_open_with", true)
-        putExtra("file_path", evrak.path)
-        putExtra("display_name", evrak.name)
-    }
 
-    val packageManager = context.packageManager
-    val activities = packageManager.queryIntentActivities(intent, 0)
-    val isOtherAppAvailable = activities.any { it.activityInfo.packageName != context.packageName }
-
-    if (!isOtherAppAvailable) {
-        Toast.makeText(context, context.getString(R.string.no_other_apps), Toast.LENGTH_SHORT).show()
-    }
-
-    context.startActivity(Intent.createChooser(intent, context.getString(R.string.open_with)))
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

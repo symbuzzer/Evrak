@@ -233,6 +233,8 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
 
             val isZip = filePath.endsWith(".zip", ignoreCase = true)
 
+            val isRar = filePath.endsWith(".rar", ignoreCase = true)
+
             val isEyp = filePath.endsWith(".eyp", ignoreCase = true)
 
             val onRenameSafe: (String) -> Unit = { newName ->
@@ -338,6 +340,21 @@ fun EvrakApp(viewModel: MainViewModel, intent: Intent?, showCelseIntegration: Bo
                 }
                 isZip || isEyp -> {
                     ZipViewerScreen(
+                        filePath = filePath,
+                        displayName = displayName,
+                        onBackClick = onBackSafe,
+                        onShareClick = { shareFile(context, filePath) },
+                        onRenameClick = onRenameSafe,
+                        onEntryClick = { entryPath, entryName ->
+                            viewModel.ensureEvrak(entryPath, entryName) { evrak ->
+                                navController.navigate("viewer/${Uri.encode(evrak.path)}/${Uri.encode(evrak.name)}")
+                            }
+                        },
+                        onDeleteClick = onDeleteSafe
+                    )
+                }
+                isRar -> {
+                    RarViewerScreen(
                         filePath = filePath,
                         displayName = displayName,
                         onBackClick = onBackSafe,

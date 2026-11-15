@@ -58,24 +58,7 @@ class DocumentActivity : AppCompatActivity() {
             return
         }
 
-        if (filePathExtra.isEmpty() && uriExtra != null) {
-            val name = queryDisplayName(uriExtra).orEmpty()
-            val type = intent.type.orEmpty()
-            val forwardToMain = when {
-                name.endsWith(".udf", true) -> false
-                name.isNotEmpty() -> name.endsWith(".zip", true) || name.endsWith(".eyp", true)
-                else -> type == "application/zip" ||
-                        type == "application/x-zip-compressed" ||
-                        type == "application/eyp"
-            }
-            if (forwardToMain) {
-                startActivity(
-                    Intent(intent).setComponent(ComponentName(this, MainActivity::class.java))
-                )
-                finish()
-                return
-            }
-        }
+
 
         if (displayNameExtra.isNotEmpty()) {
             setDocumentTaskDescription(displayNameExtra)
@@ -301,6 +284,10 @@ private fun DocumentViewerContent(
 
     val isText = filePath.endsWith(".txt", ignoreCase = true) || filePath.endsWith(".evraklog", ignoreCase = true)
 
+    val isZip = filePath.endsWith(".zip", ignoreCase = true)
+    val isRar = filePath.endsWith(".rar", ignoreCase = true)
+    val isEyp = filePath.endsWith(".eyp", ignoreCase = true)
+
     when {
         forceText || isText -> {
             TextViewerScreen(
@@ -389,6 +376,36 @@ private fun DocumentViewerContent(
                 onBackClick = onBack,
                 onShareClick = onShare,
                 onRenameClick = onRename,
+                onDeleteClick = onDelete
+            )
+        }
+        isZip || isEyp -> {
+            ZipViewerScreen(
+                filePath = filePath,
+                displayName = displayName,
+                onBackClick = onBack,
+                onShareClick = onShare,
+                onRenameClick = onRename,
+                onEntryClick = { entryPath, entryName ->
+                    viewModel.ensureEvrak(entryPath, entryName) { evrak ->
+                        openDocumentTask(context, evrak.path, evrak.name)
+                    }
+                },
+                onDeleteClick = onDelete
+            )
+        }
+        isRar -> {
+            RarViewerScreen(
+                filePath = filePath,
+                displayName = displayName,
+                onBackClick = onBack,
+                onShareClick = onShare,
+                onRenameClick = onRename,
+                onEntryClick = { entryPath, entryName ->
+                    viewModel.ensureEvrak(entryPath, entryName) { evrak ->
+                        openDocumentTask(context, evrak.path, evrak.name)
+                    }
+                },
                 onDeleteClick = onDelete
             )
         }

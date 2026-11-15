@@ -253,10 +253,7 @@ fun PdfViewerScreen(
                                         onClick = {
                                             showMenu = false
                                             val targetPath = originalFilePath ?: filePath
-                                            val handled = openFileWithSystemChooser(context, targetPath)
-                                            if (!handled) {
-                                                Toast.makeText(context, context.getString(R.string.no_other_apps), Toast.LENGTH_SHORT).show()
-                                            }
+                                            openFileWith(context, targetPath, displayName)
                                         }
                                     )
                                     DropdownMenuItem(

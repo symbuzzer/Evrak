@@ -1,0 +1,483 @@
+package com.avalibeyaz.evrak.ui
+
+import android.content.Intent
+import android.widget.Toast
+import androidx.compose.ui.draw.alpha
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Unarchive
+import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import com.avalibeyaz.evrak.R
+import com.github.junrar.Archive
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@Composable
+fun RarViewerScreen(
+    filePath: String,
+    displayName: String,
+    onBackClick: () -> Unit,
+    onShareClick: () -> Unit,
+    onRenameClick: (String) -> Unit = {},
+    onEntryClick: (String, String) -> Unit,
+    onDeleteClick: (() -> Unit)? = null
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    val currentCharset = remember(filePath) {
+        RarUtils.determineCharset(filePath)
+    }
+    
+    var rarEntries by remember { mutableStateOf<List<String>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    var isExtracting by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    var selectedEntry by remember { mutableStateOf<String?>(null) }
+    var showSheet by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    val saveLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/vnd.rar")
+    ) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.openOutputStream(it)?.use { output ->
+                    File(filePath).inputStream().use { input ->
+                        input.copyTo(output)
+                    }
+                }
+                Toast.makeText(context, context.getString(R.string.save_success), Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(context, context.getString(R.string.save_error), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let { treeUri ->
+            isExtracting = true
+            scope.launch(Dispatchers.IO) {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        treeUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    )
+                    
+                    RarUtils.extractRar(context, filePath, treeUri, currentCharset)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, context.getString(R.string.extract_success), Toast.LENGTH_LONG).show()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, context.getString(R.string.extract_error), Toast.LENGTH_SHORT).show()
+                    }
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        isExtracting = false
+                    }
+                }
+            }
+        }
+    }
+
+    fun loadRarEntries() {
+        try {
+            val file = File(filePath)
+            if (file.exists()) {
+                Archive(file).use { archive ->
+                    val headers = archive.fileHeaders
+                    val entriesList = mutableListOf<String>()
+                    if (headers != null) {
+                        for (header in headers) {
+                            if (!header.isDirectory) {
+                                val name = header.fileName
+                                if (name != null && name.length > 0) {
+                                    entriesList.add(name)
+                                }
+                            }
+                        }
+                    }
+                    rarEntries = entriesList
+                }
+                errorMessage = null
+            } else {
+                errorMessage = FileErrorUtils.getStandardizedErrorMessage(context, "not_found")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            errorMessage = FileErrorUtils.getStandardizedErrorMessage(context, e)
+        } finally {
+            isLoading = false
+        }
+    }
+
+    LaunchedEffect(filePath, currentCharset) {
+        withContext(Dispatchers.IO) {
+            loadRarEntries()
+        }
+    }
+
+    fun openRarEntry(name: String) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                try {
+                    context.cacheDir.listFiles()?.forEach { f ->
+                        if (f.isDirectory && f.name.startsWith("rar_temp_")) {
+                            f.deleteRecursively()
+                        }
+                    }
+                    context.externalCacheDir?.listFiles()?.forEach { f ->
+                        if (f.isDirectory && f.name.startsWith("rar_temp_")) {
+                            f.deleteRecursively()
+                        }
+                    }
+                } catch (_: Exception) {}
+
+                val file = File(filePath)
+                Archive(file).use { archive ->
+                    val headers = archive.fileHeaders
+                    var targetHeader: com.github.junrar.rarfile.FileHeader? = null
+                    if (headers != null) {
+                        for (header in headers) {
+                            val headerName = header.fileName
+                            if (headerName == name && !header.isDirectory) {
+                                targetHeader = header
+                                break
+                            }
+                        }
+                    }
+                    if (targetHeader != null) {
+                        val entryName = name.substringAfterLast('/').substringAfterLast('\\')
+                        val tempDir = File(context.cacheDir, "rar_temp_${System.currentTimeMillis()}").apply { mkdirs() }
+                        val tempFile = File(tempDir, entryName)
+                        
+                        tempFile.outputStream().use { output ->
+                            archive.extractFile(targetHeader, output)
+                        }
+                        withContext(Dispatchers.Main) {
+                            onEntryClick(tempFile.absolutePath, entryName)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    MarqueeTitle(
+                        title = displayName,
+                        onRenameClick = onRenameClick
+                    )
+                },
+                navigationIcon = {
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            positioning = TooltipAnchorPosition.Above
+                        ),
+                        tooltip = {
+                            PlainTooltip {
+                                Text(stringResource(id = R.string.back))
+                            }
+                        },
+                        state = rememberTooltipState()
+                    ) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.back))
+                        }
+                    }
+                },
+                actions = {
+                    TooltipBox(
+                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                            positioning = TooltipAnchorPosition.Below
+                        ),
+                        tooltip = {
+                            PlainTooltip {
+                                Text(stringResource(id = R.string.more_options))
+                            }
+                        },
+                        state = rememberTooltipState()
+                    ) {
+                        Box {
+                            IconButton(onClick = { showMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(id = R.string.more_options))
+                            }
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.extract_archive)) },
+                                    leadingIcon = { Icon(Icons.Default.Unarchive, contentDescription = null) },
+                                    onClick = {
+                                        showMenu = false
+                                        Toast.makeText(context, context.getString(R.string.select_extraction_location), Toast.LENGTH_LONG).show()
+                                        folderPickerLauncher.launch(null)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.open_with)) },
+                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
+                                    onClick = {
+                                        showMenu = false
+                                        openFileWith(context, filePath, displayName)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.share)) },
+                                    leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                                    onClick = {
+                                        showMenu = false
+                                        onShareClick()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.save)) },
+                                    leadingIcon = { Icon(Icons.Default.Save, contentDescription = null) },
+                                    onClick = {
+                                        showMenu = false
+                                        saveLauncher.launch(displayName)
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(id = R.string.delete), color = MaterialTheme.colorScheme.error) },
+                                    leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                                    onClick = {
+                                        showMenu = false
+                                        showDeleteConfirm = true
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        if (showDeleteConfirm) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirm = false },
+                title = { Text(text = stringResource(id = R.string.delete)) },
+                text = { Text(text = stringResource(id = R.string.confirm_delete)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteConfirm = false
+                            if (onDeleteClick != null) {
+                                onDeleteClick()
+                            } else {
+                                try { File(filePath).delete() } catch (_: Exception) {}
+                                onBackClick()
+                            }
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(text = stringResource(id = R.string.delete))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirm = false }) {
+                        Text(text = stringResource(id = R.string.cancel))
+                    }
+                }
+            )
+        }
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                scope.launch {
+                    isRefreshing = true
+                    withContext(Dispatchers.IO) {
+                        loadRarEntries()
+                    }
+                    delay(500)
+                    isRefreshing = false
+                }
+            },
+            modifier = Modifier.padding(padding)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                if (isLoading) {
+                    WaitScreenOverlay(
+                        show = true,
+                        message = stringResource(id = R.string.loading)
+                    )
+                } else if (errorMessage != null) {
+                    ErrorView(
+                        errorMessage = errorMessage!!,
+                        onBackClick = onBackClick
+                    )
+                } else {
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            text = stringResource(id = R.string.file_count, rarEntries.size),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+
+                        HorizontalDivider()
+
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(rarEntries, key = { it }) { name ->
+                                val isSupported = isEvrakSupportedFormat(name)
+
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { value ->
+                                        if (value != SwipeToDismissBoxValue.Settled) {
+                                            selectedEntry = name
+                                            showSheet = true
+                                            false
+                                        } else {
+                                            true
+                                        }
+                                    }
+                                )
+
+                                SwipeToDismissBox(
+                                    state = dismissState,
+                                    backgroundContent = {
+                                        val direction = dismissState.dismissDirection
+                                        val color = when (direction) {
+                                            SwipeToDismissBoxValue.StartToEnd -> MaterialTheme.colorScheme.primaryContainer
+                                            SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.primaryContainer
+                                            else -> androidx.compose.ui.graphics.Color.Transparent
+                                        }
+                                        val alignment = when (direction) {
+                                            SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                                            SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+                                            else -> Alignment.Center
+                                        }
+                                        val icon = Icons.Default.Menu
+
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(color, MaterialTheme.shapes.medium)
+                                                .padding(horizontal = 24.dp),
+                                            contentAlignment = alignment
+                                        ) {
+                                            if (direction != SwipeToDismissBoxValue.Settled) {
+                                                Icon(
+                                                    imageVector = icon,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                                )
+                                            }
+                                        }
+                                    },
+                                    content = {
+                                        Card(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .alpha(if (isSupported) 1f else 0.5f)
+                                                .combinedClickable(
+                                                    onClick = { openRarEntry(name) },
+                                                    onLongClick = {
+                                                        selectedEntry = name
+                                                        showSheet = true
+                                                    }
+                                                ),
+                                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(16.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = name,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Start
+                                                )
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                WaitScreenOverlay(
+                    show = isExtracting,
+                    message = stringResource(id = R.string.extracting)
+                )
+            }
+        }
+    }
+
+    if (showSheet && selectedEntry != null) {
+        ModalBottomSheet(
+            onDismissRequest = { showSheet = false }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+            ) {
+                Text(
+                    text = selectedEntry!!.substringAfterLast('/').substringAfterLast('\\'),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(4.dp))
+
+                OptionItem(
+                    icon = Icons.AutoMirrored.Filled.OpenInNew,
+                    label = stringResource(id = R.string.open_action),
+                    onClick = {
+                        showSheet = false
+                        openRarEntry(selectedEntry!!)
+                    }
+                )
+            }
+        }
+    }
+}

@@ -243,7 +243,7 @@ fun ZipViewerScreen(
                             ) {
                                 if (!filePath.endsWith(".eyp", ignoreCase = true)) {
                                     DropdownMenuItem(
-                                        text = { Text(stringResource(id = R.string.extract_zip)) },
+                                        text = { Text(stringResource(id = R.string.extract_archive)) },
                                         leadingIcon = { Icon(Icons.Default.Unarchive, contentDescription = null) },
                                         onClick = {
                                             showMenu = false
@@ -257,10 +257,7 @@ fun ZipViewerScreen(
                                     leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
                                     onClick = {
                                         showMenu = false
-                                        val handled = openFileWithSystemChooser(context, filePath)
-                                        if (!handled) {
-                                            Toast.makeText(context, context.getString(R.string.no_other_apps), Toast.LENGTH_SHORT).show()
-                                        }
+                                        openFileWith(context, filePath, displayName)
                                     }
                                 )
                                 DropdownMenuItem(

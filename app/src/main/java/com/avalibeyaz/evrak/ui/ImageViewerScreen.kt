@@ -243,10 +243,7 @@ fun ImageViewerScreen(
                                         leadingIcon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
                                         onClick = {
                                             showMenu = false
-                                            val handled = openFileWithSystemChooser(context, filePath)
-                                            if (!handled) {
-                                                Toast.makeText(context, context.getString(R.string.no_other_apps), Toast.LENGTH_SHORT).show()
-                                            }
+                                            openFileWith(context, filePath, displayName)
                                         }
                                     )
                                     DropdownMenuItem(

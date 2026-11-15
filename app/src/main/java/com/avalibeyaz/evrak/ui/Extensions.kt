@@ -75,6 +75,7 @@ fun getMimeType(path: String): String {
         path.endsWith(".txt", true) -> "text/plain"
         path.endsWith(".evraklog", true) -> "text/plain"
         path.endsWith(".zip", true) -> "application/zip"
+        path.endsWith(".rar", true) -> "application/vnd.rar"
         path.endsWith(".eyp", true) -> "application/eyp"
         else -> "application/octet-stream"
     }
@@ -93,69 +94,15 @@ fun isEvrakSupportedFormat(path: String): Boolean {
             lower.endsWith(".udf") ||
             lower.endsWith(".html") || lower.endsWith(".htm") ||
             lower.endsWith(".txt") || lower.endsWith(".evraklog") ||
-            lower.endsWith(".zip") || lower.endsWith(".eyp")
+            lower.endsWith(".zip") || lower.endsWith(".rar") || lower.endsWith(".eyp")
 }
 
-fun openFileWithSystemChooser(context: Context, filePath: String): Boolean {
-    val file = File(filePath)
-    if (!file.exists()) return false
 
-    val uri = androidx.core.content.FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.fileprovider",
-        file
-    )
-    val mimeType = getMimeType(filePath)
-    val ext = filePath.substringAfterLast('.', "").lowercase()
-
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(uri, mimeType)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        if (context !is Activity) {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-    }
-
-    val activities = context.packageManager.queryIntentActivities(intent, 0)
-    if (activities.isNotEmpty()) {
-        for (resolveInfo in activities) {
-            val pkg = resolveInfo.activityInfo.packageName
-            try {
-                context.grantUriPermission(
-                    pkg,
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            } catch (_: Exception) {}
-        }
-
-        if (ext == "apk" || mimeType == "application/vnd.android.package-archive") {
-            try {
-                context.startActivity(intent)
-                return true
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-
-        val chooserIntent = Intent.createChooser(intent, context.getString(R.string.open_with)).apply {
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            if (context !is Activity) {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-        }
-        try {
-            context.startActivity(chooserIntent)
-            return true
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-    return false
-}
 
 fun isArchiveType(path: String): Boolean {
-    return path.endsWith(".zip", ignoreCase = true) || path.endsWith(".eyp", ignoreCase = true)
+    return path.endsWith(".zip", ignoreCase = true) || 
+           path.endsWith(".rar", ignoreCase = true) || 
+           path.endsWith(".eyp", ignoreCase = true)
 }
 
 fun Intent?.isExternalOpenIntent(): Boolean {

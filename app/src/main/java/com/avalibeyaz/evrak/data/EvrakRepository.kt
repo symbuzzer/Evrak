@@ -22,7 +22,7 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
     suspend fun getAllPaths(): List<String> = evrakDao.getAllPaths()
 
     private val supportedExtensions = setOf(
-        ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt", ".zip", ".eyp",
+        ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".pptx", ".ppt", ".tiff", ".tif", ".png", ".jpg", ".jpeg", ".gif", ".udf", ".html", ".htm", ".txt", ".zip", ".rar", ".eyp",
         ".webp", ".bmp", ".heic", ".avif", ".evraklog"
     )
 
@@ -419,6 +419,13 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
             return ".zip"
         }
 
+        if (header.size >= 6 &&
+            header[0] == 0x52.toByte() && header[1] == 0x61.toByte() &&
+            header[2] == 0x72.toByte() && header[3] == 0x21.toByte() &&
+            header[4] == 0x1A.toByte() && header[5] == 0x07.toByte()) {
+            return ".rar"
+        }
+
         if (header.size >= 4 &&
             header[0] == 0xD0.toByte() && header[1] == 0xCF.toByte() &&
             header[2] == 0x11.toByte() && header[3] == 0xE0.toByte()) {
@@ -549,6 +556,17 @@ class EvrakRepository(private val context: Context, private val evrakDao: EvrakD
         }
 
         val ext = (extension ?: file.name.substringAfterLast('.', "")).lowercase().removePrefix(".")
+        
+        if (ext == "rar" || file.name.endsWith(".rar", true)) {
+            return try {
+                com.github.junrar.Archive(file).use { archive ->
+                    archive.fileHeaders != null && archive.fileHeaders.isNotEmpty()
+                }
+            } catch (_: Exception) {
+                false
+            }
+        }
+
         val zipExtensions = setOf("zip", "udf", "docx", "xlsx", "pptx", "eyp")
 
         if (ext in zipExtensions || file.name.endsWith(".udf", true) || file.name.endsWith(".zip", true) || file.name.endsWith(".eyp", true)) {

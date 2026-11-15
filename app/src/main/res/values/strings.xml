@@ -19,7 +19,7 @@
     <string name="open_with">Open with</string>
     <string name="open_file">Open file</string>
     <string name="opened_with_evrak">Opened with Evrak</string>
-    <string name="no_other_apps">No other apps available to open this file</string>
+    <string name="no_other_apps">No other app available to view this file</string>
 
     <string name="error">Error</string>
     <string name="error_file_incomplete">The file has not been completely downloaded yet or is empty. Please try again.</string>
@@ -27,7 +27,7 @@
     <string name="about_developed_by">Developed by %1$s</string>
     <string name="about_developer_name">Ali BEYAZ</string>
     <string name="about_supported_formats">Supported formats:</string>
-    <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS PPTX PPT EYP ZIP HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
+    <string name="about_supported_formats_list">UDF TIFF PDF DOCX DOC XLSX XLS PPTX PPT EYP ZIP RAR HTML TXT JPG GIF PNG WEBP BMP HEIC AVIF</string>
 
     <string name="about_celse_integration_desc">Perform CELSE app integration</string>
     <string name="about_share_app_desc">Share the Evrak app</string>
@@ -59,7 +59,7 @@
 
     <string name="error_heic_open_failed">Failed to open HEIC file: %1$s</string>
     <string name="error_heic_codec_missing">Your device does not have the required hardware or software decoder (HEVC) to open this HEIC image.</string>
-    <string name="share_app_text">View UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, PPTX, PPT, EYP, ZIP, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF files for free and ad-free with the Evrak Android app: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
+    <string name="share_app_text">View UDF, TIFF, PDF, DOCX, DOC, XLSX, XLS, PPTX, PPT, EYP, ZIP, RAR, HTML, TXT, JPG, GIF, PNG, WEBP, BMP, HEIC, AVIF files for free and ad-free with the Evrak Android app: https://play.google.com/store/apps/details?id=com.avalibeyaz.evrak</string>
 
     <string name="filter_all">All</string>
     <string name="filter_today">Today</string>
@@ -98,10 +98,10 @@
     <string name="save_success">File saved successfully</string>
     <string name="save_error">An error occurred while saving the file</string>
     <string name="full_screen">Full screen</string>
-    <string name="extract_zip">Extract ZIP</string>
+    <string name="extract_archive">Extract archive</string>
     <string name="extracting">Extracting files&#8230;</string>
     <string name="extract_success">Files extracted successfully</string>
-    <string name="extract_error">Failed to extract ZIP file</string>
+    <string name="extract_error">Failed to extract archive</string>
     <string name="select_extraction_location">Select the location where files will be extracted</string>
     <string name="open_action">Open</string>
     <string name="file_count">%1$d files</string>
