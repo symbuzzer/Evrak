@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -29,8 +30,8 @@ fun DisclaimerDialog(
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    var hasClickedLink by remember { mutableStateOf(false) }
-    var secondsRemaining by remember { mutableIntStateOf(5) }
+    var hasClickedLink by rememberSaveable { mutableStateOf(false) }
+    var secondsRemaining by rememberSaveable { mutableStateOf(5) }
 
     LaunchedEffect(hasClickedLink) {
         if (hasClickedLink) {

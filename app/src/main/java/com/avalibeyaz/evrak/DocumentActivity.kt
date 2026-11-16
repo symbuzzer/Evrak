@@ -24,6 +24,7 @@ import java.io.File
 
 class DocumentActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by viewModels()
+    private var currentIntentState by mutableStateOf<Intent?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         android.webkit.WebView.enableSlowWholeDocumentDraw()
@@ -34,37 +35,10 @@ class DocumentActivity : AppCompatActivity() {
             LibreOfficeManager.init(applicationContext)
         }
 
-        handleIntent(intent)
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        handleIntent(intent)
-    }
-
-    private fun handleIntent(intent: Intent) {
-        val filePathExtra = intent.getStringExtra("file_path") ?: ""
-        val displayNameExtra = intent.getStringExtra("display_name") ?: ""
-        val uriExtra: Uri? = intent.documentUri()
-
-        if (uriExtra != null && isDirectoryUri(uriExtra)) {
-            finish()
-            return
-        }
-
-        if (filePathExtra.isNotEmpty() && File(filePathExtra).isDirectory) {
-            finish()
-            return
-        }
-
-
-
-        if (displayNameExtra.isNotEmpty()) {
-            setDocumentTaskDescription(displayNameExtra)
-        }
+        currentIntentState = intent
 
         setContent {
+            val activeIntent = currentIntentState
             val context = androidx.compose.ui.platform.LocalContext.current
             var isDisclaimerAccepted by remember {
                 mutableStateOf(com.avalibeyaz.evrak.data.DisclaimerManager.isDisclaimerAccepted(context))
@@ -80,15 +54,32 @@ class DocumentActivity : AppCompatActivity() {
                             finish()
                         }
                     )
-                } else {
-                    var currentFilePath by remember { mutableStateOf(filePathExtra) }
-                    var currentDisplayName by remember { mutableStateOf(displayNameExtra) }
-                    var forceTextState by remember { mutableStateOf(false) }
-                    var isLoading by remember { mutableStateOf(currentFilePath.isEmpty() && uriExtra != null) }
-                    var documentError by remember { mutableStateOf<String?>(null) }
+                } else if (activeIntent != null) {
+                    val filePathExtra = activeIntent.getStringExtra("file_path") ?: ""
+                    val displayNameExtra = activeIntent.getStringExtra("display_name") ?: ""
+                    val uriExtra: Uri? = activeIntent.documentUri()
 
-                    LaunchedEffect(intent) {
-                        val isExternal = intent.isExternalOpenIntent()
+                    if ((uriExtra != null && isDirectoryUri(uriExtra)) || (filePathExtra.isNotEmpty() && File(filePathExtra).isDirectory)) {
+                        SideEffect {
+                            finish()
+                        }
+                        return@EvrakTheme
+                    }
+
+                    if (displayNameExtra.isNotEmpty()) {
+                        SideEffect {
+                            setDocumentTaskDescription(displayNameExtra)
+                        }
+                    }
+
+                    var currentFilePath by remember(activeIntent) { mutableStateOf(filePathExtra) }
+                    var currentDisplayName by remember(activeIntent) { mutableStateOf(displayNameExtra) }
+                    var forceTextState by remember(activeIntent) { mutableStateOf(false) }
+                    var isLoading by remember(activeIntent) { mutableStateOf(currentFilePath.isEmpty() && uriExtra != null) }
+                    var documentError by remember(activeIntent) { mutableStateOf<String?>(null) }
+
+                    LaunchedEffect(activeIntent) {
+                        val isExternal = activeIntent.isExternalOpenIntent()
                         if (currentFilePath.isEmpty() && uriExtra != null) {
                             try {
                                 contentResolver.takePersistableUriPermission(
@@ -173,6 +164,12 @@ class DocumentActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        currentIntentState = intent
     }
 
     private fun queryDisplayName(uri: Uri): String? {
